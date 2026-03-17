@@ -1393,7 +1393,7 @@ function renderKanban() {
     board.appendChild(col);
     const cardsEl = col.querySelector('.kanban-cards');
     if (!cols.length) { cardsEl.innerHTML='<div class="empty-col">Sem campanhas</div>'; return; }
-    cols.forEach(c => { cardsEl.innerHTML += renderCampaignCard(c); });
+    cols.forEach(c => { cardsEl.insertAdjacentHTML('beforeend', renderCampaignCard(c)); });
   });
 }
 
@@ -1405,7 +1405,7 @@ function renderCampaignCard(c) {
   const isSelected = selectedCards.has(c.id);
   return '<div class="campaign-card'+(isSelected?' selected':'')+'" id="card-'+c.id+'"' +
     ' draggable="true"' +
-    ' ondragstart="dragStart(event,\''+c.id+'\')\"' +
+    ' ondragstart="dragStart(event,this)"' +
     ' ondragend="dragEnd(event)"' +
     ' onclick="cardClick(event,\''+c.id+'\')">' +
     '<div class="card-checkbox'+(isSelected?' checked visible':'')+'" onclick="event.stopPropagation();toggleCardSelection(\''+c.id+'\')">' +
@@ -1506,7 +1506,7 @@ function applyStatusRules(c, oldStatus, newStatus) {
   if (!c) return;
 
   // ── Em planejamento → cria tarefa "Planejar [nome]" para o responsável ──
-  if (newStatus === 'Em planejamento' && oldStatus !== 'Em planejamento') {
+  if (newStatus === 'Em planejamento' && (oldStatus !== 'Em planejamento' || oldStatus === null)) {
     const jaTemPlanning = (c.subtasks||[]).some(s=>s._auto==='planning');
     if (!jaTemPlanning) {
       if (!c.subtasks) c.subtasks = [];
@@ -2439,9 +2439,13 @@ function addNewCanal() {
   inp.value = '';
 }
 
+let _saving = false;
 function saveCampaign() {
+  if (_saving) return;
+  _saving = true;
+  setTimeout(() => { _saving = false; }, 2000);
   const name = document.getElementById('f-name')?.value?.trim();
-  if (!name) { alert('Insira o nome da campanha'); return; }
+  if (!name) { _saving = false; alert('Insira o nome da campanha'); return; }
 
   const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val);
   const canais = [...document.querySelectorAll('#multi-canais .multi-item.selected')].map(el=>el.dataset.canal||el.textContent);
@@ -2634,22 +2638,25 @@ function renderPersonal() {
     const blocked=isBlocked(s,c);
     const late=isLate(s);
     const uc=URG_COLOR[s.urgency]||{color:'#888',bg:'#eee'};
+    const scc=STATUS_COLOR[c.status]||{color:'#888',bg:'rgba(136,136,136,.08)'};
     const depTask=s.dep?(c.subtasks||[]).find(x=>x.id===s.dep):null;
-    return '<div class="task-block'+(isDone?' done':'')+'" onclick="openCampaignDetail(\''+c.id+'\')" style="padding-left:16px">'+
+    return '<div class="task-block'+(isDone?' done':'')+'" onclick="openCampaignDetail(''+c.id+'')" style="padding-left:16px;cursor:pointer">'+
       '<div style="position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:4px 0 0 4px;background:'+uc.color+'"></div>'+
-      '<div class="task-cb '+(isDone?'checked':'')+'" onclick="event.stopPropagation();toggleSubtaskPersonal(\''+c.id+'\',\''+s.id+'\')">'+
+      '<div class="task-cb '+(isDone?'checked':'')+'" onclick="event.stopPropagation();toggleSubtaskPersonal(''+c.id+'',''+s.id+'')">'+
         (isDone?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
       '</div>'+
       '<div class="task-body">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:3px">'+
           '<div class="task-title"'+(isDone?' style="text-decoration:line-through;opacity:.5"':'')+'>'+s.title+'</div>'+
-          '<select onchange="changeUrgency(\''+c.id+'\',\''+s.id+'\',this.value)" onclick="event.stopPropagation()" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none">'+
+          '<select onchange="changeUrgency(''+c.id+'',''+s.id+'',this.value)" onclick="event.stopPropagation()" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none">'+
             URGENCIAS.map(u=>'<option value="'+u+'"'+(u===s.urgency?' selected':'')+'>'+u+'</option>').join('')+
           '</select>'+
         '</div>'+
-        '<div class="task-campaign">'+c.name+'</div>'+
-        '<div class="task-meta-line" style="margin-top:4px">'+
-          '<span class="sub-tag">'+s.canal+'</span>'+
+        '<div class="task-campaign" style="margin-bottom:5px">'+c.name+'</div>'+
+        '<div class="task-meta-line" style="margin-top:2px;gap:4px">'+
+          '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>'+
+          '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>'+
+          (s.canal?'<span class="sub-tag">'+s.canal+'</span>':'')+
           (s.due?'<span style="font-size:11px;color:var(--text-muted)">⏰ '+formatDue(s.due)+'</span>':'')+
           (late?'<span class="late-badge">⚠ Atrasada</span>':'')+
         '</div>'+
@@ -2796,14 +2803,13 @@ function calSelectDay(d,y,m) {
 ═══════════════════════════════════════════════════════ */
 let draggedId = null;
 
-function dragStart(e, id) {
+function dragStart(e, el) {
+  // el is the card element itself
+  const id = el.id.replace('card-','');
   draggedId = id;
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', id);
-  setTimeout(() => {
-    const el = document.getElementById('card-'+id);
-    if (el) el.classList.add('dragging');
-  }, 0);
+  setTimeout(() => { el.classList.add('dragging'); }, 0);
 }
 
 function dragEnd(e) {
@@ -2876,15 +2882,20 @@ function toggleCardSelection(id) {
 }
 
 function updateCardSelectionUI() {
-  // Update card classes
   document.querySelectorAll('.campaign-card').forEach(el => {
     const cid = el.id?.replace('card-','');
-    if (selectedCards.has(cid)) el.classList.add('selected');
-    else el.classList.remove('selected');
+    const isSel = selectedCards.has(cid);
+    el.classList.toggle('selected', isSel);
+    const cb = el.querySelector('.card-checkbox');
+    if (cb) {
+      cb.classList.toggle('checked', isSel);
+      cb.classList.toggle('visible', isSel);
+      cb.innerHTML = isSel ? '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>' : '';
+    }
   });
-  // Update bulk bar
   const bar = document.getElementById('bulk-delete-bar');
   const cnt = document.getElementById('bulk-count');
+  if (!bar) return;
   if (selectedCards.size > 0) {
     bar.classList.add('show');
     cnt.textContent = selectedCards.size + ' selecionada' + (selectedCards.size>1?'s':'');
@@ -2905,8 +2916,10 @@ function bulkDelete() {
   campaigns = campaigns.filter(c => !selectedCards.has(c.id));
   selectedCards.clear();
   saveData();
-  renderKanban();
-  updateCardSelectionUI();
+  renderKanban(); // cards re-rendered, selection cleared visually
+  // Force hide bar
+  const bar = document.getElementById('bulk-delete-bar');
+  if (bar) bar.classList.remove('show');
   showToast(n + ' campanha' + noun + ' excluída' + noun, '#ef4444');
 }
 
