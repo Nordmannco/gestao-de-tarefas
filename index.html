@@ -845,12 +845,16 @@ async function loadMembers() {
 }
 
 function saveMembers() {
+  // Always save to localStorage first
   localStorage.setItem(MEMBERS_KEY, JSON.stringify(MEMBERS));
+  // Supabase sync in background
   if (_db) {
-    _db.from('nordmann_data').upsert(
-      {key:'members', payload:JSON.stringify(MEMBERS), updated_at:new Date().toISOString()},
-      {onConflict:'key'}
-    ).catch(function(){});
+    try {
+      _db.from('nordmann_data').upsert(
+        {key:'members', payload:JSON.stringify(MEMBERS), updated_at:new Date().toISOString()},
+        {onConflict:'key'}
+      );
+    } catch(e) {}
   }
 }
 
@@ -1176,10 +1180,17 @@ function renderAdmin() {
 
 /* PERSISTENCE */
 function saveData() {
+  // Always save to localStorage first — immediate, never fails
   localStorage.setItem(STORAGE_KEY, JSON.stringify(campaigns));
   updateStorageInfo();
+  // Supabase sync in background — never blocks UI
   if (_db) {
-    _db.from('nordmann_data').upsert({key:'campaigns',payload:JSON.stringify(campaigns),updated_at:new Date().toISOString()},{onConflict:'key'}).catch(()=>{});
+    try {
+      _db.from('nordmann_data').upsert(
+        {key:'campaigns', payload:JSON.stringify(campaigns), updated_at:new Date().toISOString()},
+        {onConflict:'key'}
+      );
+    } catch(e) {}
   }
 }
 
@@ -1507,7 +1518,7 @@ function applyStatusRules(c, oldStatus, newStatus) {
   if (!c) return;
 
   // -- Em planejamento → cria tarefa "Planejar [nome]" para o responsável --
-  if (newStatus === 'Em planejamento' && (oldStatus !== 'Em planejamento' || oldStatus === null)) {
+  if (newStatus === 'Em planejamento') {
     const jaTemPlanning = (c.subtasks||[]).some(s=>s._auto==='planning');
     if (!jaTemPlanning) {
       if (!c.subtasks) c.subtasks = [];
