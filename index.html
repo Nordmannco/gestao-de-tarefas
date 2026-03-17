@@ -1739,6 +1739,12 @@ function renderCampaignForm(existingData) {
   currentTemplate = existingData?.templateType || null;
   tplData = existingData?.templateData ? JSON.parse(JSON.stringify(existingData.templateData)) : {};
 
+  // canais selectable
+  let _canaisAtual = Array.isArray(existingData?.canais) ? [...existingData.canais] : [];
+  const canaisHtml = [...CANAIS, ..._canaisAtual.filter(c=>!CANAIS.includes(c))].map(c=>
+    '<div class="multi-item'+(_canaisAtual.includes(c)?' selected':'')+' onclick="toggleMulti(this)" data-canal="'+c+'">'+c+'</div>'
+  ).join('');
+
   const membersHtml = MEMBERS.map(m=>
     '<div class="multi-item '+(m.id===window.currentUser?.id?'selected':'')+'" onclick="toggleMulti(this)" data-val="'+m.id+'">'+
     '<div class="m-dot" style="background:'+m.color+'"></div>'+m.name+'</div>'
@@ -1765,6 +1771,8 @@ function renderCampaignForm(existingData) {
       MEMBERS.map(m=>'<option value="'+m.id+'"'+(m.id===(existingData?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>').join('')+
     '</select></div></div>'+
     '<div class="form-group"><label class="form-label">Participantes</label><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
+    '<div class="form-group"><label class="form-label">Canais</label><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
+    '<div style="margin-top:6px;display:flex;gap:6px"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:28px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:28px">+ Adicionar</button></div></div>'+
     '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
     '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
@@ -1881,7 +1889,11 @@ function renderTplCampanhasForm() {
 
   /* ── inicializa defaults se primeira vez ── */
   if (!d._defaultsApplied) {
-    const membros = Object.keys(CL_DEFAULTS);
+    // Use participants selected in form, fallback to all defaults
+    const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
+      const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
+    }).filter(Boolean);
+    const membros = selectedNames.length ? selectedNames.filter(n=>CL_DEFAULTS[n]) : Object.keys(CL_DEFAULTS);
     if (!d.checklistsMembro) d.checklistsMembro = {};
     membros.forEach(nome => {
       if (!d.checklistsMembro[nome] || !d.checklistsMembro[nome].length) {
@@ -2252,7 +2264,39 @@ function tplStepRemove(membId, idx) {
   renderTplFields();
 }
 
-function toggleMulti(el) { el.classList.toggle('selected'); }
+function toggleMulti(el) {
+  el.classList.toggle('selected');
+  // Se é participante e template campanhas está ativo, sincroniza checklist
+  if (el.closest('#multi-participants') && currentTemplate==='campanhas') {
+    syncCampanhasChecklist();
+  }
+}
+
+function syncCampanhasChecklist() {
+  // Pega participantes selecionados
+  const selected = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>{
+    const m = MEMBERS.find(x=>x.id===el.dataset.val);
+    return m?.name;
+  }).filter(Boolean);
+
+  // Para cada membro nos defaults, verifica se está selecionado
+  const membrosComDefault = Object.keys(CL_DEFAULTS);
+  membrosComDefault.forEach(nome => {
+    const isSelected = selected.includes(nome);
+    if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
+    if (isSelected && (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length)) {
+      // Adiciona checklist padrão
+      tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>({texto:t,done:false}));
+    } else if (!isSelected && tplData.checklistsMembro[nome]) {
+      // Remove checklist
+      delete tplData.checklistsMembro[nome];
+    }
+  });
+
+  // Re-renderiza os campos do template se visível
+  const container = document.getElementById('tpl-fields-container');
+  if (container && currentTemplate==='campanhas') renderTplFields();
+}
 
 function addSubForm() {
   const sf = {id:uid(), title:'', canal:'Geral', urgency:'Normal', owner:window.currentUser?.id||'', due:'', dep:'', note:''};
@@ -2282,31 +2326,72 @@ function removeSubForm(id) {
   document.getElementById('sf-'+id)?.remove();
 }
 
+function addNewCanal() {
+  const inp = document.getElementById('f-canal-novo');
+  const val = inp?.value?.trim();
+  if (!val) return;
+  const container = document.getElementById('multi-canais');
+  if (!container) return;
+  // Check if already exists
+  if ([...container.querySelectorAll('.multi-item')].some(el=>el.textContent===val)) { inp.value=''; return; }
+  const el = document.createElement('div');
+  el.className = 'multi-item selected';
+  el.setAttribute('data-canal', val);
+  el.onclick = function(){ this.classList.toggle('selected'); };
+  el.textContent = val;
+  container.insertBefore(el, container.querySelector('+ div') || null);
+  container.appendChild(el);
+  inp.value = '';
+}
+
 function saveCampaign() {
   const name = document.getElementById('f-name')?.value?.trim();
   if (!name) { alert('Insira o nome da campanha'); return; }
-  const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val);
-  const subs = subForms.map(sf=>({
-    id:sf.id,
-    title:document.getElementById('sf-title-'+sf.id)?.value?.trim()||'Subtarefa',
-    canal:document.getElementById('sf-canal-'+sf.id)?.value||'Geral',
-    urgency:document.getElementById('sf-urg-'+sf.id)?.value||'Normal',
-    owner:document.getElementById('sf-owner-'+sf.id)?.value||'',
-    due:document.getElementById('sf-due-'+sf.id)?.value||'',
-    dep:document.getElementById('sf-dep-'+sf.id)?.value||null,
-    note:document.getElementById('sf-note-'+sf.id)?.value?.trim()||'',
-    status:'Pendente', checklist:[],
-  }));
 
-  // Auto-subtasks for E-mail MKT
-  if (currentTemplate==='email') {
-    const giovana = MEMBERS.find(m=>m.name.toLowerCase().includes('giovana'));
-    const bia     = MEMBERS.find(m=>m.name.toLowerCase().includes('bia'));
-    const bannerSub = {id:uid(),title:'Banner do e-mail',canal:'E-mail',urgency:'Normal',
-      owner:giovana?.id||'',due:'',dep:null,note:'Criação do banner conforme briefing',status:'Pendente',checklist:[]};
-    const enviaSub  = {id:uid(),title:'Envio do e-mail',canal:'E-mail',urgency:'Normal',
-      owner:bia?.id||'',due:'',dep:bannerSub.id,note:'Depende do banner de Giovana',status:'Pendente',checklist:[]};
-    subs.push(bannerSub, enviaSub);
+  const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val);
+  const canais = [...document.querySelectorAll('#multi-canais .multi-item.selected')].map(el=>el.dataset.canal||el.textContent);
+
+  // Collect subtasks — from template or from manual subForms
+  let subs = [];
+  if (currentTemplate && tplData) {
+    // For template 'campanhas': build subs from checklists per member
+    if (currentTemplate === 'campanhas') {
+      const clm = tplData.checklistsMembro || {};
+      Object.entries(clm).forEach(([nome, itens]) => {
+        const m = MEMBERS.find(x=>x.name===nome);
+        (itens||[]).forEach(it => {
+          subs.push({
+            id:uid(), title:it.texto||nome+' — item',
+            canal:'Geral', urgency:'Normal',
+            owner:m?.id||'', due:'',
+            status:it.done?'Concluído':'Pendente',
+            dep:null, checklist:[], note:'',
+          });
+        });
+      });
+    }
+    // For email MKT: auto subtasks
+    if (currentTemplate === 'email') {
+      const giovana = MEMBERS.find(m=>m.name.toLowerCase().includes('giovana'));
+      const bia     = MEMBERS.find(m=>m.name.toLowerCase().includes('bia'));
+      const bannerSub = {id:uid(),title:'Banner do e-mail',canal:'E-mail',urgency:'Normal',
+        owner:giovana?.id||'',due:'',dep:null,note:'',status:'Pendente',checklist:[]};
+      const enviaSub  = {id:uid(),title:'Envio do e-mail',canal:'E-mail',urgency:'Normal',
+        owner:bia?.id||'',due:'',dep:bannerSub.id,note:'',status:'Pendente',checklist:[]};
+      subs = [bannerSub, enviaSub];
+    }
+  } else {
+    subs = subForms.map(sf=>({
+      id:sf.id,
+      title:document.getElementById('sf-title-'+sf.id)?.value?.trim()||'Subtarefa',
+      canal:document.getElementById('sf-canal-'+sf.id)?.value||'Geral',
+      urgency:document.getElementById('sf-urg-'+sf.id)?.value||'Normal',
+      owner:document.getElementById('sf-owner-'+sf.id)?.value||'',
+      due:document.getElementById('sf-due-'+sf.id)?.value||'',
+      dep:document.getElementById('sf-dep-'+sf.id)?.value||null,
+      note:document.getElementById('sf-note-'+sf.id)?.value?.trim()||'',
+      status:'Pendente', checklist:[],
+    }));
   }
 
   campaigns.push({
@@ -2315,9 +2400,10 @@ function saveCampaign() {
     status:document.getElementById('f-status').value,
     startDate:document.getElementById('f-start').value,
     endDate:document.getElementById('f-end').value,
-    endTime:document.getElementById('f-end-time').value,
+    endTime:document.getElementById('f-end-time')?.value||'',
     owner:document.getElementById('f-owner').value,
     participants: participants.length ? participants : [document.getElementById('f-owner').value],
+    canais: canais,
     driveLink:document.getElementById('f-drive')?.value?.trim()||'',
     description:document.getElementById('f-desc')?.value?.trim()||'',
     subtasks:subs, comments:[],
