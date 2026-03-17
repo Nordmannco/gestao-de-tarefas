@@ -2452,15 +2452,36 @@ const CL_ENCERRAMENTO_DEFAULTS = [
 ];
 
 function campCheckItem(it, i, path, colorDot) {
-  return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border-light)">'+
-    '<div class="tpl-cl-cb'+(it.done?' checked':'')+'" onclick="tplClToggle(\''+path+'\','+i+')" style="flex-shrink:0">'+
-      (it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
-    '</div>'+
-    '<input style="flex:1;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;'+(it.done?'text-decoration:line-through;opacity:.5':'')+'" '+
-      'value="'+esc(it.texto||'')+'" placeholder="Item..." '+
-      'oninput="tplClText(\''+path+'\','+i+',this.value)">'+
-    '<button class="tpl-remove-btn" style="opacity:.4" onclick="tplClRemove(\''+path+'\','+i+')">×</button>'+
-  '</div>';
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--border-light)';
+  // Checkbox
+  var cb = document.createElement('div');
+  cb.className = 'tpl-cl-cb' + (it.done?' checked':'');
+  cb.style.flexShrink = '0';
+  if (it.done) cb.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
+  cb.onclick = (function(p,idx){return function(){tplClToggle(p,idx);};})(path,i);
+  // Text input
+  var inp = document.createElement('input');
+  inp.style.cssText = 'flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;' + (it.done?'text-decoration:line-through;opacity:.5':'');
+  inp.value = it.texto || '';
+  inp.placeholder = 'Item...';
+  inp.oninput = (function(p,idx){return function(){tplClText(p,idx,this.value);};})(path,i);
+  // Canal select
+  var sel = document.createElement('select');
+  sel.style.cssText = 'font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:1px 4px;cursor:pointer;max-width:110px';
+  CANAIS.forEach(function(c){ var o=document.createElement('option');o.value=c;o.textContent=c;if(c===(it.canal||'Geral'))o.selected=true;sel.appendChild(o); });
+  sel.onchange = (function(p,idx){return function(){tplClCanal(p,idx,this.value);};})(path,i);
+  // Remove button
+  var rm = document.createElement('button');
+  rm.className = 'tpl-remove-btn';
+  rm.style.opacity = '.4';
+  rm.textContent = '×';
+  rm.onclick = (function(p,idx){return function(){tplClRemove(p,idx);};})(path,i);
+  wrap.appendChild(cb);
+  wrap.appendChild(inp);
+  wrap.appendChild(sel);
+  wrap.appendChild(rm);
+  return wrap.outerHTML;
 }
 
 function renderTplCampanhasForm() {
@@ -2476,7 +2497,7 @@ function renderTplCampanhasForm() {
     if (!d.checklistsMembro) d.checklistsMembro = {};
     membros.forEach(nome => {
       if (!d.checklistsMembro[nome] || !d.checklistsMembro[nome].length) {
-        d.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>({texto:t,done:false}));
+        d.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
       }
     });
     if (!d.checklistEncerramento || !d.checklistEncerramento.length) {
@@ -2783,6 +2804,15 @@ function tplClText(path, idx, val) {
   const arr = obj[parts[parts.length-1]];
   if (arr&&arr[idx]) arr[idx].texto=val;
 }
+
+function tplClCanal(path, idx, val) {
+  const keys = path.split('.');
+  let obj = tplData;
+  for (let k of keys.slice(0,-1)) obj = obj[k];
+  const arr = obj[keys[keys.length-1]];
+  if (arr && arr[idx]) { arr[idx].canal = val; }
+  // No re-render needed — select already updated
+}
 function tplClRemove(path, idx) {
   const parts = path.split('.');
   let obj = tplData;
@@ -2791,15 +2821,12 @@ function tplClRemove(path, idx) {
   if (arr) arr.splice(idx,1);
   renderTplFields();
 }
-function tplClAdd(path, inputEl, forceEmpty) {
-  const val = inputEl ? inputEl.value.trim() : '';
+function tplClAdd(path) {
   const parts = path.split('.');
   let obj = tplData;
-  for (let i=0;i<parts.length-1;i++) { if(!obj[parts[i]])obj[parts[i]]={};obj=obj[parts[i]]; }
-  const key = parts[parts.length-1];
-  if (!obj[key]) obj[key]=[];
-  obj[key].push({texto: forceEmpty?'':val, done:false});
-  renderTplFields();
+  for (let k=0;k<parts.length-1;k++) obj=obj[parts[k]];
+  const arr = obj[parts[parts.length-1]];
+  if (arr) { arr.push({texto:'',canal:'Geral',done:false}); renderTplFields(); }
 }
 
 function tplSlideAdd() {
@@ -2865,7 +2892,7 @@ function syncCampanhasChecklist() {
     if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
     if (isSelected && (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length)) {
       // Adiciona checklist padrão
-      tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>({texto:t,done:false}));
+      tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
     } else if (!isSelected && tplData.checklistsMembro[nome]) {
       // Remove checklist
       delete tplData.checklistsMembro[nome];
