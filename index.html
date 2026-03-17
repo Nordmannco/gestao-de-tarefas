@@ -275,7 +275,15 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   padding:12px 14px;cursor:pointer;transition:all var(--transition);
 }
 .campaign-card:hover{border-color:var(--c-campanha);box-shadow:0 2px 8px rgba(124,106,247,.1)}
-.campaign-card.selected{border-color:var(--c-campanha);background:var(--c-campanha-bg);box-shadow:0 0 0 2px rgba(124,106,247,.2)}
+.campaign-card.selected{border-color:var(--c-campanha);background:rgba(124,106,247,.04);box-shadow:0 0 0 2px rgba(124,106,247,.15)}
+.card-checkbox{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border);background:var(--bg-card);position:absolute;top:10px;right:10px;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
+.card-checkbox.visible{display:flex}
+.card-checkbox.checked{background:var(--c-campanha);border-color:var(--c-campanha)}
+.campaign-card:hover .card-checkbox{display:flex}
+.campaign-card.selected .card-checkbox{display:flex}
+.campaign-card{position:relative;user-select:none}
+.campaign-card.dragging{opacity:.35;transform:rotate(1.5deg);box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.kanban-cards.drag-over{background:var(--c-campanha-bg);border-radius:8px;outline:2px dashed var(--c-campanha);outline-offset:4px;min-height:60px}
 #bulk-delete-bar{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--sidebar-bg);color:#fff;border-radius:20px;padding:8px 18px;display:flex;align-items:center;gap:12px;font-size:12px;z-index:500;opacity:0;pointer-events:none;transition:opacity .2s}
 #bulk-delete-bar.show{opacity:1;pointer-events:all}
 #bulk-delete-bar button{height:26px;padding:0 12px;border-radius:10px;border:none;font-size:11px;cursor:pointer;font-family:var(--font)}
@@ -1376,7 +1384,12 @@ function renderKanban() {
     const cols = filtered.filter(c=>c.status===status);
     const col = document.createElement('div');
     col.className = 'kanban-col';
-    col.innerHTML = '<div class="kanban-col-header"><div class="col-dot" style="background:'+sc.dot+'"></div><span class="col-title">'+status+'</span><span class="col-count">'+cols.length+'</span></div><div class="kanban-cards" id="col-'+status.replace(/\s/g,'_')+'"></div>';
+    col.innerHTML = '<div class="kanban-col-header"><div class="col-dot" style="background:'+sc.dot+'"></div><span class="col-title">'+status+'</span><span class="col-count">'+cols.length+'</span></div>'+
+      '<div class="kanban-cards" id="col-'+status.replace(/\s/g,'_')+'"'+
+      ' ondragover="dragOver(event,\''+status+'\')"'+
+      ' ondragleave="dragLeave(event)"'+
+      ' ondrop="dropCard(event,\''+status+'\')"'+
+      '></div>';
     board.appendChild(col);
     const cardsEl = col.querySelector('.kanban-cards');
     if (!cols.length) { cardsEl.innerHTML='<div class="empty-col">Sem campanhas</div>'; return; }
@@ -1389,7 +1402,15 @@ function renderCampaignCard(c) {
   const owner = getMember(c.owner);
   const progColor = prog.pct===100?'var(--c-conteudo)':prog.pct>50?'var(--c-tarefa)':'var(--c-campanha)';
   const cc = c.comments?.length||0;
-  return '<div class="campaign-card" id="card-'+c.id+'" onclick="cardClick(event,\''+c.id+'\')">'+
+  const isSelected = selectedCards.has(c.id);
+  return '<div class="campaign-card'+(isSelected?' selected':'')+'" id="card-'+c.id+'"' +
+    ' draggable="true"' +
+    ' ondragstart="dragStart(event,\''+c.id+'\')\"' +
+    ' ondragend="dragEnd(event)"' +
+    ' onclick="cardClick(event,\''+c.id+'\')">' +
+    '<div class="card-checkbox'+(isSelected?' checked visible':'')+'" onclick="event.stopPropagation();toggleCardSelection(\''+c.id+'\')">' +
+      (isSelected?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
+    '</div>'+
     '<div class="card-header"><span class="card-name">'+c.name+'</span>'+typeTag(c.type)+'</div>'+
     '<div class="card-meta"><div class="card-member">'+avatarHtml(owner,18)+'<span>'+(owner?owner.name:'')+'</span></div>'+
     '<span class="card-date">'+formatDate(c.endDate)+'</span></div>'+
@@ -1539,11 +1560,12 @@ function c_updateStatus(id, status) {
   c.status = status;
   applyStatusRules(c, oldStatus, status);
   saveData();
-  // Re-abre o detalhe para refletir mudanças
-  openCampaignDetail(id);
-  if (currentView==='kanban') renderKanban();
+  // Fecha painel e re-renderiza kanban para mover o card
+  closePanel();
+  renderKanban();
   if (currentView==='personal') renderPersonal();
-  showToast('Status atualizado','#7c6af7');
+  if (currentView==='overview') renderOverview();
+  showToast('Status: ' + status, '#7c6af7');
 }
 
 function toggleSubtaskDetail(campId, subId) {
@@ -1779,11 +1801,11 @@ function closePanel() {
 function deleteCampaign() {
   if (!editingCampId) return;
   const c = getCampaign(editingCampId); if (!c) return;
-  if (!confirm('Excluir "'+c.name+'"? Não pode ser desfeito.')) return;
   campaigns = campaigns.filter(x=>x.id!==editingCampId);
-  saveData(); closePanel();
+  saveData();
+  closePanel();
+  renderKanban();
   showToast('"'+c.name+'" excluída','#ef4444');
-  if (currentView==='kanban') renderKanban();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2484,14 +2506,15 @@ function saveCampaign() {
     templateData: currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null,
   });
   subForms=[]; currentTemplate=null; tplData={};
-  // Aplica regra de status antes de salvar
   const newCamp = campaigns[campaigns.length-1];
   applyStatusRules(newCamp, null, newCamp.status);
-  saveData(); closePanel();
-  showToast('Campanha criada','#3ecf8e');
+  saveData();
+  // Renderiza ANTES de fechar para evitar flicker
   renderKanban();
   if (currentView==='personal') renderPersonal();
   if (currentView==='overview') renderOverview();
+  closePanel();
+  showToast('Campanha criada','#3ecf8e');
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2769,6 +2792,59 @@ function calSelectDay(d,y,m) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   DRAG & DROP KANBAN
+═══════════════════════════════════════════════════════ */
+let draggedId = null;
+
+function dragStart(e, id) {
+  draggedId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+  setTimeout(() => {
+    const el = document.getElementById('card-'+id);
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+
+function dragEnd(e) {
+  const el = document.getElementById('card-'+draggedId);
+  if (el) el.classList.remove('dragging');
+  // Remove all drag-over highlights
+  document.querySelectorAll('.kanban-cards.drag-over').forEach(c => c.classList.remove('drag-over'));
+  draggedId = null;
+}
+
+function dragOver(e, status) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  // Highlight target column
+  document.querySelectorAll('.kanban-cards.drag-over').forEach(c => c.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+
+function dragLeave(e) {
+  // Only remove if leaving the container (not entering a child)
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+}
+
+function dropCard(e, status) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!draggedId) return;
+  const c = getCampaign(draggedId);
+  if (!c || c.status === status) return;
+  const oldStatus = c.status;
+  c.status = status;
+  applyStatusRules(c, oldStatus, status);
+  saveData();
+  renderKanban();
+  if (currentView==='personal') renderPersonal();
+  showToast(c.name + ' → ' + status, '#7c6af7');
+}
+
+/* ═══════════════════════════════════════════════════════
    MULTI-SELECT & BULK DELETE
 ═══════════════════════════════════════════════════════ */
 let selectedCards = new Set();
@@ -2776,15 +2852,13 @@ let isSelecting = false;
 let selectStartId = null;
 
 function cardClick(e, id) {
-  // If meta/ctrl/shift held, toggle selection
-  if (e.metaKey || e.ctrlKey || e.shiftKey) {
-    e.stopPropagation();
+  // If in selection mode, any click toggles
+  if (selectedCards.size > 0) {
     toggleCardSelection(id);
     return;
   }
-  // If already in selection mode, toggle
-  if (selectedCards.size > 0) {
-    e.stopPropagation();
+  // Cmd/Ctrl/Shift for multi-select
+  if (e.metaKey || e.ctrlKey || e.shiftKey) {
     toggleCardSelection(id);
     return;
   }
@@ -2828,7 +2902,6 @@ function bulkDelete() {
   if (!selectedCards.size) return;
   const n = selectedCards.size;
   const noun = n > 1 ? 's' : '';
-  if (!confirm('Excluir ' + n + ' campanha' + noun + '? Não pode ser desfeito.')) return;
   campaigns = campaigns.filter(c => !selectedCards.has(c.id));
   selectedCards.clear();
   saveData();
