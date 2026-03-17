@@ -843,20 +843,24 @@ async function loadMembers() {
     const s = localStorage.getItem(MEMBERS_KEY);
     if (s) MEMBERS = JSON.parse(s);
   } catch(e) {}
-  if (_db) {
-    try {
-      const res = await _db.from('nordmann_data').select('payload').eq('key','members').single();
-      if (res.error) {
-        console.warn('[Nordmann] loadMembers Supabase error:', res.error.message);
-      } else if (res.data && res.data.payload) {
-        const r = JSON.parse(res.data.payload);
-        if (Array.isArray(r) && r.length > 0) {
-          MEMBERS = r;
-          localStorage.setItem(MEMBERS_KEY, JSON.stringify(r));
-          console.log('[Nordmann] Membros carregados do Supabase:', r.length);
-        }
+  if (!_db) return;
+  try {
+    // Use .then() to avoid DataCloneError from Supabase SDK internal postMessage
+    const payload = await _db
+      .from('nordmann_data')
+      .select('payload')
+      .eq('key','members')
+      .single()
+      .then(res => res.data?.payload || null);
+    if (payload) {
+      const r = JSON.parse(payload);
+      if (Array.isArray(r) && r.length > 0) {
+        MEMBERS = r;
+        localStorage.setItem(MEMBERS_KEY, JSON.stringify(r));
       }
-    } catch(e) { console.warn('[Nordmann] loadMembers error:', e); }
+    }
+  } catch(e) {
+    // Silently ignore — localStorage fallback already loaded above
   }
 }
 
@@ -1519,15 +1523,22 @@ function saveData() {
 
 async function loadData() {
   try { const s = localStorage.getItem(STORAGE_KEY); if (s) campaigns = JSON.parse(s); } catch(e) {}
-  if (_db) {
-    try {
-      const {data,error} = await _db.from('nordmann_data').select('payload').eq('key','campaigns').single();
-      if (!error && data?.payload) {
-        const r = JSON.parse(data.payload);
-        if (Array.isArray(r) && r.length >= campaigns.length) { campaigns = r; localStorage.setItem(STORAGE_KEY,JSON.stringify(r)); }
+  if (!_db) return;
+  try {
+    const payload = await _db
+      .from('nordmann_data')
+      .select('payload')
+      .eq('key','campaigns')
+      .single()
+      .then(res => res.data?.payload || null);
+    if (payload) {
+      const r = JSON.parse(payload);
+      if (Array.isArray(r) && r.length >= campaigns.length) {
+        campaigns = r;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
       }
-    } catch(e) {}
-  }
+    }
+  } catch(e) {}
 }
 
 function updateStorageInfo() {
@@ -2376,7 +2387,9 @@ function selectTemplate(id) {
   else { currentTemplate = id; tplData = {}; }
   document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('active'));
   if (currentTemplate) {
-    document.querySelector('.tpl-card[onclick="selectTemplate(\''+currentTemplate+'\')"]')?.classList.add('active');
+    document.querySelector('.tpl-card[onclick="selectTemplate(\''+currentTemplate+'\')"')?.classList.add('active');
+    // Sincroniza participantes já selecionados ao ativar template
+    if (document.querySelector('#multi-participants')) syncTemplateParticipants();
     renderTplFields();
   } else {
     document.getElementById('tpl-fields-container').innerHTML='';
@@ -2872,9 +2885,49 @@ function tplStepRemove(membId, idx) {
 
 function toggleMulti(el) {
   el.classList.toggle('selected');
-  // Se é participante e template campanhas está ativo, sincroniza checklist
-  if (el.closest('#multi-participants') && currentTemplate==='campanhas') {
+  // Ao mudar participante, sincroniza o template ativo
+  if (el.closest('#multi-participants') && currentTemplate) {
+    syncTemplateParticipants();
+  }
+}
+
+function syncTemplateParticipants() {
+  const selected = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>{
+    const m = MEMBERS.find(x=>x.id===el.dataset.val);
+    return m;
+  }).filter(Boolean);
+  const selectedNames = selected.map(m=>m.name);
+  const selectedIds   = selected.map(m=>m.id);
+
+  if (currentTemplate === 'campanhas') {
     syncCampanhasChecklist();
+  }
+
+  else if (currentTemplate === 'demanda') {
+    // Ativa/desativa blocos de membro conforme seleção
+    if (!tplData.membrosAtivos) tplData.membrosAtivos = [];
+    if (!tplData.blocosMembros) tplData.blocosMembros = {};
+
+    MEMBERS.forEach(m => {
+      const isSelected = selectedIds.includes(m.id);
+      const jaAtivo = tplData.membrosAtivos.includes(m.id);
+      if (isSelected && !jaAtivo) {
+        tplData.membrosAtivos.push(m.id);
+        // Inicializa bloco com 1 passo vazio se ainda não tem
+        if (!tplData.blocosMembros[m.id] || !tplData.blocosMembros[m.id].passos?.length) {
+          tplData.blocosMembros[m.id] = { passos: [{id:uid(), titulo:'', urgencia:'Normal', prazo:'', dep:null}] };
+        }
+      } else if (!isSelected && jaAtivo) {
+        tplData.membrosAtivos = tplData.membrosAtivos.filter(id=>id!==m.id);
+      }
+    });
+    renderTplFields();
+  }
+
+  else if (currentTemplate === 'publicacoes' || currentTemplate === 'email') {
+    // Para publicações e e-mail, só re-renderiza — os blocos são fixos (Bia/Giovana)
+    // Mas destaca visualmente quem está selecionado
+    renderTplFields();
   }
 }
 
