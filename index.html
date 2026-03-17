@@ -735,6 +735,33 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 </div>
 
 <!-- CRONOGRAMA MODAL -->
+<div id="resumo-backdrop" onclick="if(event.target===this)closeResumoModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:12px;width:min(640px,95vw);max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border)">
+      <span style="font-size:14px;font-weight:600">⚡ Resumo estratégico</span>
+      <button onclick="closeResumoModal()" style="width:28px;height:28px;border:none;background:var(--bg-surface);border-radius:6px;cursor:pointer;font-size:16px;color:var(--text-muted)">×</button>
+    </div>
+    <div style="padding:16px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
+      <div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Objetivo</div>
+        <textarea id="resumo-objetivo" style="width:100%;min-height:70px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Gerar pico em 24h, aumentar base VIP, liquidar estoque..."></textarea>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Resumo estratégico</div>
+        <textarea id="resumo-estrategico" style="width:100%;min-height:80px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Como a campanha está estruturada..."></textarea>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Oferta</div>
+        <textarea id="resumo-oferta" style="width:100%;min-height:60px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Descontos, brindes, condições especiais..."></textarea>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="closeResumoModal()" style="height:34px;padding:0 16px;border:0.5px solid var(--border);border-radius:6px;background:transparent;font-size:13px;cursor:pointer;color:var(--text-secondary)">Cancelar</button>
+      <button onclick="saveResumoModal()" style="height:34px;padding:0 16px;border:none;border-radius:6px;background:var(--c-campanha);color:#fff;font-size:13px;cursor:pointer;font-weight:500">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="cronograma-backdrop" onclick="if(event.target===this)closeCronogramaModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
   <div style="background:var(--bg-card);border-radius:12px;width:min(700px,95vw);max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border)">
@@ -846,6 +873,27 @@ window.currentUser = null;
 const SB_URL = 'https://qnwmhncfbzmukrqypkuc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFud21obmNmYnptdWtycXlwa3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MDU1MzksImV4cCI6MjA4OTI4MTUzOX0.DL9KcXEdwCf42BOH7GP7PDOAbJG1nznl_S8TbPSu1rA';
 let _db = null;
+
+function openResumoModal() {
+  var bd = document.getElementById('resumo-backdrop');
+  if (!bd) return;
+  document.getElementById('resumo-objetivo').value = tplData.objetivos || '';
+  document.getElementById('resumo-estrategico').value = tplData.resumoEstrategico || '';
+  document.getElementById('resumo-oferta').value = tplData.ofertas || '';
+  bd.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('resumo-objetivo').focus(); }, 100);
+}
+function closeResumoModal() {
+  var bd = document.getElementById('resumo-backdrop');
+  if (bd) bd.style.display = 'none';
+}
+function saveResumoModal() {
+  tplData.objetivos = document.getElementById('resumo-objetivo').value;
+  tplData.resumoEstrategico = document.getElementById('resumo-estrategico').value;
+  tplData.ofertas = document.getElementById('resumo-oferta').value;
+  closeResumoModal();
+  renderTplFields();
+}
 
 function openCronogramaModal() {
   var backdrop = document.getElementById('cronograma-backdrop');
@@ -2421,9 +2469,11 @@ function renderCampaignForm(existingData) {
       MEMBERS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(existingData?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>';}).join('')+
     '</select></div></div>'+
     '<div class="form-group"><label class="form-label">Participantes</label><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
-    '<div class="form-group"><label class="form-label">Canais</label><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
-    '<div style="margin-top:6px;display:flex;gap:6px"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:28px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:28px">+ Adicionar</button></div></div>'+
-    parentHtml+
+    (currentTemplate !== 'campanhas' ? (
+      '<div class="form-group"><label class="form-label">Canais</label><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
+      '<div style="margin-top:6px;display:flex;gap:6px"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:28px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:28px">+ Adicionar</button></div></div>'
+    ) : '')+
+    (currentTemplate !== 'campanhas' ? parentHtml : '')+
     '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
     '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
@@ -2585,19 +2635,16 @@ function renderTplCampanhasForm() {
     d._defaultsApplied = true;
   }
 
-  /* -- Participantes selecionados com CL_DEFAULTS -- */
+  /* -- Participantes selecionados -- */
   const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
     const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
   }).filter(Boolean);
-  // Somente membros SELECIONADOS e que têm defaults aparecem no checklist
-  // Só mostra membros EFETIVAMENTE SELECIONADOS com defaults — remove ao desmarcar
   const membrosVisiveis = selectedNames.length
-    ? selectedNames.filter(n=>CL_DEFAULTS[n] || d.checklistsMembro?.[n]?.length)
+    ? selectedNames.filter(n=>CL_DEFAULTS[n]||d.checklistsMembro?.[n]?.length)
     : [];
 
   const memberColors = {};
-  MEMBERS.forEach((m,idx)=>{ memberColors[m.name] = m.color || '#888'; });
-
+  MEMBERS.forEach((m)=>{ memberColors[m.name] = m.color || '#888'; });
   const checklistsMembro = d.checklistsMembro||{};
 
   /* -- Datas-chave -- */
@@ -2610,17 +2657,22 @@ function renderTplCampanhasForm() {
     '</div>'
   ).join('');
 
-  /* -- Checklists por membro — só quem está selecionado -- */
+  /* -- Checklists por membro — Preparação + Encerramento juntos -- */
   const clMembrosHtml = membrosVisiveis.map(nome=>{
     const itens = checklistsMembro[nome]||[];
     const color = memberColors[nome]||'#888';
     const path = 'checklistsMembro.'+nome;
-    // Briefing de Giovana fica DENTRO do bloco dela
-    let extraHtml = '';
+    const inputId = 'tpl-cl-new-'+nome.replace(/\s/g,'_');
+
+    // Encerramento items for this member
+    const encItens = (d.checklistEncerramento||[]).filter(x=>x.membro===nome);
+
+    // Giovana briefing inside her block
+    let briefingHtml = '';
     if (nome === 'Giovana') {
       const gio = d.giovanaBriefing||{};
-      extraHtml =
-        '<div style="background:var(--bg-surface);border-radius:6px;padding:10px;margin-bottom:10px;border:0.5px solid var(--border)">'+
+      briefingHtml =
+        '<div style="background:var(--bg-card);border-radius:6px;padding:10px;margin-bottom:10px;border:0.5px solid var(--border)">'+
         '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Briefing das artes</div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
         ['pretitulo','titulo','sub','cta','entrelinhas'].map((k,i)=>{
@@ -2631,59 +2683,71 @@ function renderTplCampanhasForm() {
         }).join('')+
         '</div></div>';
     }
+
     const itensHtml = itens.map((it,i)=>campCheckItem(it,i,path,color)).join('');
-    const inputId = 'tpl-cl-new-'+nome.replace(/\s/g,'_');
-    return '<div style="margin-bottom:14px;padding:10px;background:var(--bg-surface);border-radius:6px;border:0.5px solid var(--border)">'+
+
+    // Encerramento section for this member
+    const encHtmlMembro = encItens.length ? (
+      '<div style="margin-top:10px;padding-top:8px;border-top:0.5px dashed var(--border)">'+
+      '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">🔒 Encerramento</div>'+
+      encItens.map(it=>{
+        const globalIdx = (d.checklistEncerramento||[]).indexOf(it);
+        return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'+
+          '<div class="tpl-cl-cb'+(it.done?' checked':'')+'" onclick="tplClToggle(\'checklistEncerramento\','+globalIdx+')" style="flex-shrink:0">'+
+            (it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
+          '</div>'+
+          '<span style="font-size:12px;color:var(--text-secondary);flex:1">'+esc(it.texto||'')+'</span>'+
+        '</div>';
+      }).join('')+
+      '</div>'
+    ) : '';
+
+    return '<div style="margin-bottom:10px;padding:10px;background:var(--bg-surface);border-radius:6px;border:0.5px solid var(--border)">'+
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'+
         '<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'+
         '<span style="font-size:11px;font-weight:600;color:var(--text-primary)">'+nome+'</span>'+
         '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">'+itens.length+' tarefas</span>'+
       '</div>'+
-      extraHtml+
+      briefingHtml+
+      '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">✅ Execução</div>'+
       '<div>'+itensHtml+
         '<div style="display:flex;gap:6px;margin-top:6px">'+
           '<input class="form-input" id="'+inputId+'" placeholder="Nova tarefa..." style="height:28px;font-size:11px" '+
-            'onkeydown="if(event.key==\'Enter\'){tplClAdd(\''+path+'\',this);event.preventDefault()}">'+
+            'onkeydown="if(event.key===\'Enter\'){tplClAdd(\''+path+'\',this);event.preventDefault()}">'+
           '<button class="btn-add-sub" style="height:28px;font-size:11px;flex-shrink:0" onclick="tplClAdd(\''+path+'\',document.getElementById(\''+inputId+'\'))">+</button>'+
         '</div>'+
       '</div>'+
+      encHtmlMembro+
     '</div>';
   }).join('');
 
-  /* -- Checklist encerramento — com membro responsável -- */
-  const clEnc = d.checklistEncerramento||[];
-  const encHtml = (function(){
-    var path = 'checklistEncerramento';
-    var allNames = ['— Geral —'].concat(MEMBERS.map(function(m){return m.name;}));
-    return clEnc.map(function(it,i){
-      var memOpts = allNames.map(function(n){return '<option value="'+n+'"'+(n===(it.membro||'— Geral —')?' selected':'')+'>'+n+'</option>';}).join('');
-      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--border-light)">'+
-        '<div class="tpl-cl-cb'+(it.done?' checked':'')+'" onclick="tplClToggle(\''+path+'\','+i+')" style="flex-shrink:0">'+
-          (it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
-        '</div>'+
-        '<input style="flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;'+(it.done?'text-decoration:line-through;opacity:.5':'')+' " '+
-          'value="'+esc(it.texto||'')+'" placeholder="Item de encerramento..." '+
-          'oninput="tplClText(\''+path+'\','+i+',this.value)">'+
-        '<select style="font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:1px 4px;max-width:100px" '+
-          'onchange="tplData.checklistEncerramento['+i+'].membro=this.value">'+memOpts+'</select>'+
-        '<button class="tpl-remove-btn" style="opacity:.4" onclick="tplClRemove(\''+path+'\','+i+')">×</button>'+
-      '</div>';
-    }).join('');
-  })();
+  /* -- Resumo estratégico (summary shown inline) -- */
+  const resumoPreview = d.resumoEstrategico||d.objetivos||d.ofertas
+    ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-height:60px;overflow:hidden">'+
+        esc((d.objetivos?'Objetivo: '+d.objetivos+'\n':'')+(d.resumoEstrategico?d.resumoEstrategico+'\n':'')+(d.ofertas?'Oferta: '+d.ofertas:'')).slice(0,200)+
+      '</div>'
+    : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum resumo definido</span>';
 
-  /* -- Metas -- */
-  const metas = d.metas||{};
+  /* -- Cronograma preview -- */
+  const cronoPreview = d.cronograma
+    ? '<div style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6;max-height:80px;overflow:hidden">'+esc(d.cronograma).slice(0,300)+(d.cronograma.length>300?'...':'')+'</div>'
+    : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum cronograma definido</span>';
 
   return (
-    /* BRIEFING */
+    /* RESUMO ESTRATÉGICO */
     '<div class="tpl-section">'+
-      '<div class="tpl-section-title">⚡ Briefing da campanha</div>'+
-      '<div class="form-group"><label class="form-label">Objetivo</label>'+
-        '<textarea class="form-textarea" oninput="tplData.objetivos=this.value;autoResize(this)" placeholder="Gerar pico em 24h, aumentar base VIP, liquidar estoque...">'+(d.objetivos||'')+'</textarea></div>'+
-      '<div class="form-group"><label class="form-label">Resumo estratégico</label>'+
-        '<textarea class="form-textarea" oninput="tplData.resumoEstrategico=this.value;autoResize(this)" placeholder="Como a campanha está estruturada...">'+(d.resumoEstrategico||'')+'</textarea></div>'+
-      '<div class="form-group"><label class="form-label">Oferta</label>'+
-        '<textarea class="form-textarea" oninput="tplData.ofertas=this.value;autoResize(this)" placeholder="Descontos, brindes, condições especiais...">'+(d.ofertas||'')+'</textarea></div>'+
+      '<div class="tpl-section-title" style="justify-content:space-between">⚡ Resumo estratégico'+
+        '<button type="button" class="btn-add-sub" onclick="openResumoModal()">✏️ Editar</button>'+
+      '</div>'+
+      resumoPreview+
+    '</div>'+
+
+    /* CRONOGRAMA */
+    '<div class="tpl-section">'+
+      '<div class="tpl-section-title" style="justify-content:space-between">📋 Cronograma'+
+        '<button type="button" class="btn-add-sub" onclick="openCronogramaModal()">✏️ Editar</button>'+
+      '</div>'+
+      cronoPreview+
     '</div>'+
 
     /* DATAS */
@@ -2694,44 +2758,11 @@ function renderTplCampanhasForm() {
       '<div id="tpl-dyn-datasChave">'+datasHtml+'</div>'+
     '</div>'+
 
-    /* METAS */
-    '<div class="tpl-section">'+
-      '<div class="tpl-section-title">🎯 Metas</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">'+
-      ['faturamento','ticketMedio','leads','clientes','roas'].map((k,i)=>{
-        const labels=['Faturamento','Ticket médio','Novos leads','Novos clientes','ROAS mín.'];
-        return '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">'+labels[i]+'</div>'+
-          '<input class="form-input" style="height:30px;font-size:12px" placeholder="—" value="'+esc((metas[k]||''))+'" '+
-          'oninput="if(!tplData.metas)tplData.metas={};tplData.metas.'+k+'=this.value"></div>';
-      }).join('')+
-      '</div>'+
-    '</div>'+
-
-    /* CRONOGRAMA — popup expansível */
-    '<div class="tpl-section">'+
-      '<div class="tpl-section-title" style="justify-content:space-between">📋 Cronograma'+
-        '<button type="button" class="btn-add-sub" onclick="openCronogramaModal()">✏️ Editar</button>'+
-      '</div>'+
-      '<div style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6;max-height:80px;overflow:hidden;position:relative">'+
-        (d.cronograma ? esc(d.cronograma).slice(0,300)+(d.cronograma.length>300?'...':'') : '<span style="color:var(--text-muted);font-style:italic">Nenhum cronograma definido</span>')+
-      '</div>'+
-    '</div>'+
-
     /* CHECKLISTS */
     '<div class="tpl-section">'+
       '<div class="tpl-section-title">✅ Checklist de execução</div>'+
       (membrosVisiveis.length ? clMembrosHtml :
         '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0">Selecione participantes acima para ver os checklists</div>')+
-    '</div>'+
-
-    /* ENCERRAMENTO */
-    '<div class="tpl-section">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
-        '<span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">🔒 Encerramento</span>'+
-        '<button type="button" class="btn-add-sub" onclick="tplClAdd(\'checklistEncerramento\',null,true)">+ Item</button>'+
-      '</div>'+
-      '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Tarefas automáticas de encerramento — atribuídas ao responsável da campanha ao concluir</div>'+
-      '<div id="tpl-cl-checklistEncerramento">'+encHtml+'</div>'+
     '</div>'
   );
 }
