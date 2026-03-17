@@ -1350,6 +1350,17 @@ function compressImage(file, cb) {
 /* BOOT */
 function bootApp() {
   loadData().then(() => {
+    // Auto-migrate: fix Em andamento campaigns without checklist tasks
+    let migrated = 0;
+    campaigns.forEach(c => {
+      if (c.status !== 'Em andamento') return;
+      const jaCriou = (c.subtasks||[]).some(s=>s._auto==='checklist');
+      if (jaCriou) return;
+      c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
+      applyStatusRules(c, 'Em planejamento', 'Em andamento');
+      migrated++;
+    });
+    if (migrated > 0) saveData();
     setView('kanban');
     updateStorageInfo();
     updateSidebarMembers();
@@ -2188,7 +2199,7 @@ function applyStatusRules(c, oldStatus, newStatus) {
   }
 
   // -- Em andamento → remove tarefa de briefing e distribui para membros --
-  if (newStatus === 'Em andamento' && oldStatus !== 'Em andamento') {
+  if (newStatus === 'Em andamento' && (oldStatus !== 'Em andamento' || oldStatus === null)) {
     // Remove briefing task
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
 
