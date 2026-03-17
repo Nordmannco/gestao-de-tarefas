@@ -275,6 +275,12 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   padding:12px 14px;cursor:pointer;transition:all var(--transition);
 }
 .campaign-card:hover{border-color:var(--c-campanha);box-shadow:0 2px 8px rgba(124,106,247,.1)}
+.campaign-card.selected{border-color:var(--c-campanha);background:var(--c-campanha-bg);box-shadow:0 0 0 2px rgba(124,106,247,.2)}
+#bulk-delete-bar{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--sidebar-bg);color:#fff;border-radius:20px;padding:8px 18px;display:flex;align-items:center;gap:12px;font-size:12px;z-index:500;opacity:0;pointer-events:none;transition:opacity .2s}
+#bulk-delete-bar.show{opacity:1;pointer-events:all}
+#bulk-delete-bar button{height:26px;padding:0 12px;border-radius:10px;border:none;font-size:11px;cursor:pointer;font-family:var(--font)}
+.btn-bulk-del{background:#ef4444;color:#fff}
+.btn-bulk-cancel{background:rgba(255,255,255,.1);color:#fff}
 .card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
 .card-name{font-size:13px;font-weight:500;color:var(--text-primary);line-height:1.3;flex:1}
 .type-tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap;flex-shrink:0}
@@ -726,6 +732,13 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
       <button class="btn-save" id="btn-save" onclick="saveCampaign()">Salvar campanha</button>
     </div>
   </div>
+</div>
+
+<!-- BULK DELETE BAR -->
+<div id="bulk-delete-bar">
+  <span id="bulk-count">0 selecionadas</span>
+  <button class="btn-bulk-del" onclick="bulkDelete()">🗑 Excluir</button>
+  <button class="btn-bulk-cancel" onclick="clearSelection()">Cancelar</button>
 </div>
 
 <!-- TOAST -->
@@ -1376,7 +1389,7 @@ function renderCampaignCard(c) {
   const owner = getMember(c.owner);
   const progColor = prog.pct===100?'var(--c-conteudo)':prog.pct>50?'var(--c-tarefa)':'var(--c-campanha)';
   const cc = c.comments?.length||0;
-  return '<div class="campaign-card" onclick="openCampaignDetail(\''+c.id+'\')">'+
+  return '<div class="campaign-card" id="card-'+c.id+'" onclick="cardClick(event,\''+c.id+'\')">'+
     '<div class="card-header"><span class="card-name">'+c.name+'</span>'+typeTag(c.type)+'</div>'+
     '<div class="card-meta"><div class="card-member">'+avatarHtml(owner,18)+'<span>'+(owner?owner.name:'')+'</span></div>'+
     '<span class="card-date">'+formatDate(c.endDate)+'</span></div>'+
@@ -1467,10 +1480,70 @@ function openCampaignDetail(id) {
   openPanel();
 }
 
+/* ── REGRAS AUTOMÁTICAS DE STATUS ── */
+function applyStatusRules(c, oldStatus, newStatus) {
+  if (!c) return;
+
+  // ── Em planejamento → cria tarefa "Planejar [nome]" para o responsável ──
+  if (newStatus === 'Em planejamento' && oldStatus !== 'Em planejamento') {
+    const jaTemPlanning = (c.subtasks||[]).some(s=>s._auto==='planning');
+    if (!jaTemPlanning) {
+      if (!c.subtasks) c.subtasks = [];
+      c.subtasks.push({
+        id: uid(),
+        title: 'Planejar — ' + c.name,
+        canal: 'Geral',
+        urgency: 'Importante',
+        owner: c.owner,
+        due: '',
+        status: 'Pendente',
+        dep: null, checklist: [],
+        _auto: 'planning',
+      });
+    }
+  }
+
+  // ── Em andamento → remove tarefa de planejamento e cria tarefas por checklist ──
+  if (newStatus === 'Em andamento' && oldStatus !== 'Em andamento') {
+    // Remove tarefa de planejamento automática
+    c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
+
+    // Só cria tarefas do checklist se for template Campanhas e não tiver criado antes
+    const jaCriou = (c.subtasks||[]).some(s=>s._auto==='checklist');
+    if (!jaCriou && c.templateType === 'campanhas' && c.templateData?.checklistsMembro) {
+      const clm = c.templateData.checklistsMembro;
+      Object.entries(clm).forEach(([nome, itens]) => {
+        const m = MEMBERS.find(x=>x.name===nome);
+        if (!m) return;
+        (itens||[]).forEach(it => {
+          c.subtasks.push({
+            id: uid(),
+            title: it.texto || nome + ' — item',
+            canal: 'Geral',
+            urgency: 'Normal',
+            owner: m.id,
+            due: '',
+            status: it.done ? 'Concluído' : 'Pendente',
+            dep: null, checklist: [],
+            _auto: 'checklist',
+          });
+        });
+      });
+    }
+  }
+}
+
 function c_updateStatus(id, status) {
   const c = getCampaign(id); if (!c) return;
-  c.status = status; saveData();
+  const oldStatus = c.status;
+  c.status = status;
+  applyStatusRules(c, oldStatus, status);
+  saveData();
+  // Re-abre o detalhe para refletir mudanças
+  openCampaignDetail(id);
   if (currentView==='kanban') renderKanban();
+  if (currentView==='personal') renderPersonal();
+  showToast('Status atualizado','#7c6af7');
 }
 
 function toggleSubtaskDetail(campId, subId) {
@@ -2411,9 +2484,14 @@ function saveCampaign() {
     templateData: currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null,
   });
   subForms=[]; currentTemplate=null; tplData={};
+  // Aplica regra de status antes de salvar
+  const newCamp = campaigns[campaigns.length-1];
+  applyStatusRules(newCamp, null, newCamp.status);
   saveData(); closePanel();
   showToast('Campanha criada','#3ecf8e');
-  if (currentView==='kanban') renderKanban();
+  renderKanban();
+  if (currentView==='personal') renderPersonal();
+  if (currentView==='overview') renderOverview();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2689,6 +2767,93 @@ function calSelectDay(d,y,m) {
   }).join('');
   renderCalendar();
 }
+
+/* ═══════════════════════════════════════════════════════
+   MULTI-SELECT & BULK DELETE
+═══════════════════════════════════════════════════════ */
+let selectedCards = new Set();
+let isSelecting = false;
+let selectStartId = null;
+
+function cardClick(e, id) {
+  // If meta/ctrl/shift held, toggle selection
+  if (e.metaKey || e.ctrlKey || e.shiftKey) {
+    e.stopPropagation();
+    toggleCardSelection(id);
+    return;
+  }
+  // If already in selection mode, toggle
+  if (selectedCards.size > 0) {
+    e.stopPropagation();
+    toggleCardSelection(id);
+    return;
+  }
+  // Normal click — open detail
+  openCampaignDetail(id);
+}
+
+function toggleCardSelection(id) {
+  if (selectedCards.has(id)) {
+    selectedCards.delete(id);
+  } else {
+    selectedCards.add(id);
+  }
+  updateCardSelectionUI();
+}
+
+function updateCardSelectionUI() {
+  // Update card classes
+  document.querySelectorAll('.campaign-card').forEach(el => {
+    const cid = el.id?.replace('card-','');
+    if (selectedCards.has(cid)) el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+  // Update bulk bar
+  const bar = document.getElementById('bulk-delete-bar');
+  const cnt = document.getElementById('bulk-count');
+  if (selectedCards.size > 0) {
+    bar.classList.add('show');
+    cnt.textContent = selectedCards.size + ' selecionada' + (selectedCards.size>1?'s':'');
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+function clearSelection() {
+  selectedCards.clear();
+  updateCardSelectionUI();
+}
+
+function bulkDelete() {
+  if (!selectedCards.size) return;
+  const n = selectedCards.size;
+  const noun = n > 1 ? 's' : '';
+  if (!confirm('Excluir ' + n + ' campanha' + noun + '? Não pode ser desfeito.')) return;
+  campaigns = campaigns.filter(c => !selectedCards.has(c.id));
+  selectedCards.clear();
+  saveData();
+  renderKanban();
+  updateCardSelectionUI();
+  showToast(n + ' campanha' + noun + ' excluída' + noun, '#ef4444');
+}
+
+// Keyboard: Delete key to bulk delete, Escape to clear
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCards.size > 0 && !e.target.matches('input,textarea,select')) {
+    e.preventDefault();
+    bulkDelete();
+  }
+  if (e.key === 'Escape' && selectedCards.size > 0) {
+    clearSelection();
+  }
+});
+
+// Click outside cards to clear selection
+document.addEventListener('click', e => {
+  if (selectedCards.size > 0 && !e.target.closest('.campaign-card') && !e.target.closest('#bulk-delete-bar')) {
+    clearSelection();
+  }
+});
 
 /* ═══════════════════════════════════════════════════════
    INIT
