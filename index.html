@@ -2606,7 +2606,7 @@ function campCheckItem(it, idx, path, colorDot) {
   // Canal select
   var sel = document.createElement('select');
   sel.style.cssText = 'font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:2px 4px;cursor:pointer;max-width:120px;flex-shrink:0';
-  var allCanais = CANAIS.concat(['+ Novo canal']);
+  var allCanais = ['Geral'].concat(CANAIS.filter(function(c){return c!=='Geral';})).concat(['+ Novo canal']);
   allCanais.forEach(function(c) {
     var o = document.createElement('option');
     o.value = c;
@@ -2646,21 +2646,24 @@ function campCheckItem(it, idx, path, colorDot) {
 function renderTplCampanhasForm() {
   const d = tplData;
 
-  /* -- inicializa defaults baseado nos participantes selecionados -- */
+  /* -- inicializa defaults -- */
   if (!d._defaultsApplied) {
     const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
       const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
     }).filter(Boolean);
     const membros = selectedNames.length ? selectedNames.filter(n=>CL_DEFAULTS[n]) : [];
     if (!d.checklistsMembro) d.checklistsMembro = {};
+    if (!d.notasMembro) d.notasMembro = {};
+    if (!d.encMembro) d.encMembro = {};
     membros.forEach(nome => {
       if (!d.checklistsMembro[nome] || !d.checklistsMembro[nome].length) {
         d.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
       }
+      // Init encerramento per member from CL_ENCERRAMENTO_DEFAULTS
+      if (!d.encMembro[nome] || !d.encMembro[nome].length) {
+        d.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
+      }
     });
-    if (!d.checklistEncerramento || !d.checklistEncerramento.length) {
-      d.checklistEncerramento = CL_ENCERRAMENTO_DEFAULTS.map(x=>({membro:x.membro,texto:x.item,done:false}));
-    }
     if (!d.datasChave || !d.datasChave.length) {
       d.datasChave = [
         {label:'Pré-lançamento Clube',date:'',time:''},
@@ -2680,8 +2683,7 @@ function renderTplCampanhasForm() {
     : [];
 
   const memberColors = {};
-  MEMBERS.forEach((m)=>{ memberColors[m.name] = m.color || '#888'; });
-  const checklistsMembro = d.checklistsMembro||{};
+  MEMBERS.forEach(m=>{ memberColors[m.name] = m.color||'#888'; });
 
   /* -- Datas-chave -- */
   const datasHtml = (d.datasChave||[]).map((x,i)=>
@@ -2693,108 +2695,109 @@ function renderTplCampanhasForm() {
     '</div>'
   ).join('');
 
-  /* -- Checklists por membro — Preparação + Encerramento juntos -- */
+  /* -- Checklists por membro -- */
   const clMembrosHtml = membrosVisiveis.map(nome=>{
-    const itens = checklistsMembro[nome]||[];
+    const itens = (d.checklistsMembro||{})[nome]||[];
+    const encItens = (d.encMembro||{})[nome]||[];
+    const nota = (d.notasMembro||{})[nome]||'';
     const color = memberColors[nome]||'#888';
-    const path = 'checklistsMembro.'+nome;
+    const pathExec = 'checklistsMembro.'+nome;
+    const pathEnc = 'encMembro.'+nome;
     const inputId = 'tpl-cl-new-'+nome.replace(/\s/g,'_');
+    const inputEncId = 'tpl-enc-new-'+nome.replace(/\s/g,'_');
 
-    // Encerramento items for this member
-    const encItens = (d.checklistEncerramento||[]).filter(x=>x.membro===nome);
+    // Briefing box — ALL members get a notes field
+    const briefingBox =
+      '<div style="margin-bottom:12px">'+
+        '<textarea style="width:100%;min-height:52px;border:0.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" '+
+          'placeholder="Informações para '+nome+': referências, links, observações..." '+
+          'oninput="if(!tplData.notasMembro)tplData.notasMembro={};tplData.notasMembro[\''+nome+'\']=this.value">'+esc(nota)+'</textarea>'+
+      '</div>';
 
-    // Giovana briefing inside her block
-    let briefingHtml = '';
-    if (nome === 'Giovana') {
-      const gio = d.giovanaBriefing||{};
-      briefingHtml =
-        '<div style="background:var(--bg-card);border-radius:6px;padding:10px;margin-bottom:10px;border:0.5px solid var(--border)">'+
-        '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Briefing das artes</div>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        ['pretitulo','titulo','sub','cta','entrelinhas'].map((k,i)=>{
-          const labels=['Pré-título','Título','Sub','CTA sugerido','Entrelinhas'];
-          return '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">'+labels[i]+'</div>'+
-            '<input class="form-input" style="height:28px;font-size:12px" placeholder="—" value="'+esc((gio[k]||''))+'" '+
-            'oninput="if(!tplData.giovanaBriefing)tplData.giovanaBriefing={};tplData.giovanaBriefing.'+k+'=this.value"></div>';
-        }).join('')+
-        '</div></div>';
-    }
+    // Exec checklist
+    const itensHtml = itens.map((it,i)=>campCheckItem(it,i,pathExec,color)).join('');
 
-    const itensHtml = itens.map((it,i)=>campCheckItem(it,i,path,color)).join('');
+    // Encerramento checklist — same structure as exec, fully editable
+    const encHtml = encItens.map((it,i)=>{
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border-light)';
+      var cb = document.createElement('div');
+      cb.className = 'tpl-cl-cb'+(it.done?' checked':'');
+      cb.style.flexShrink='0';
+      if(it.done) cb.innerHTML='<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
+      cb.onclick=(function(p,idx){return function(){tplClToggle(p,idx);};})(pathEnc,i);
+      var inp = document.createElement('input');
+      inp.style.cssText='flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;'+(it.done?'text-decoration:line-through;opacity:.5':'');
+      inp.value=it.texto||''; inp.placeholder='Tarefa de encerramento...';
+      inp.oninput=(function(p,idx){return function(){tplClText(p,idx,this.value);};})(pathEnc,i);
+      var rm = document.createElement('button');
+      rm.className='tpl-remove-btn'; rm.style.opacity='.4'; rm.textContent='×';
+      rm.onclick=(function(p,idx){return function(){tplClRemove(p,idx);};})(pathEnc,i);
+      wrap.appendChild(cb); wrap.appendChild(inp); wrap.appendChild(rm);
+      return wrap.outerHTML;
+    }).join('');
 
-    // Encerramento section for this member
-    const encHtmlMembro = encItens.length ? (
-      '<div style="margin-top:10px;padding-top:8px;border-top:0.5px dashed var(--border)">'+
-      '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Encerramento</div>'+
-      encItens.map(it=>{
-        const globalIdx = (d.checklistEncerramento||[]).indexOf(it);
-        return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'+
-          '<div class="tpl-cl-cb'+(it.done?' checked':'')+'" onclick="tplClToggle(\'checklistEncerramento\','+globalIdx+')" style="flex-shrink:0">'+
-            (it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
-          '</div>'+
-          '<span style="font-size:12px;color:var(--text-secondary);flex:1">'+esc(it.texto||'')+'</span>'+
-        '</div>';
-      }).join('')+
-      '</div>'
-    ) : '';
-
-    return '<div style="margin-bottom:16px">'+
+    return '<div style="margin-bottom:20px">'+
+      // Member header
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid '+color+'40">'+
         '<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'+
-        '<span style="font-size:11px;font-weight:600;color:var(--text-primary)">'+nome+'</span>'+
+        '<span style="font-size:12px;font-weight:600;color:var(--text-primary)">'+nome+'</span>'+
         '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">'+itens.length+' tarefas</span>'+
       '</div>'+
-      briefingHtml+
+      // Notes box
+      briefingBox+
+      // Execução label
       '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Execução</div>'+
+      // Exec items
       '<div>'+itensHtml+
-        '<div style="display:flex;gap:6px;margin-top:6px">'+
+        '<div style="display:flex;gap:6px;margin-top:8px">'+
           '<input class="form-input" id="'+inputId+'" placeholder="Nova tarefa..." style="height:28px;font-size:11px" '+
-            'onkeydown="if(event.key===\'Enter\'){tplClAdd(\''+path+'\',this);event.preventDefault()}">'+
-          '<button class="btn-add-sub" style="height:28px;font-size:11px;flex-shrink:0" onclick="tplClAdd(\''+path+'\',document.getElementById(\''+inputId+'\'))">+</button>'+
+            'onkeydown="if(event.key===\'Enter\'){tplClAdd(\''+pathExec+'\',this);event.preventDefault()}">'+
+          '<button class="btn-add-sub" style="height:28px;font-size:11px;flex-shrink:0" onclick="tplClAdd(\''+pathExec+'\',document.getElementById(\''+inputId+'\'))">+</button>'+
         '</div>'+
       '</div>'+
-      encHtmlMembro+
+      // Encerramento section
+      '<div style="margin-top:14px;padding-top:10px;border-top:0.5px dashed var(--border-light)">'+
+        '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Encerramento</div>'+
+        '<div>'+encHtml+
+          '<div style="display:flex;gap:6px;margin-top:8px">'+
+            '<input class="form-input" id="'+inputEncId+'" placeholder="Nova tarefa de encerramento..." style="height:28px;font-size:11px" '+
+              'onkeydown="if(event.key===\'Enter\'){tplClAdd(\''+pathEnc+'\',this);event.preventDefault()}">'+
+            '<button class="btn-add-sub" style="height:28px;font-size:11px;flex-shrink:0" onclick="tplClAdd(\''+pathEnc+'\',document.getElementById(\''+inputEncId+'\'))">+</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
     '</div>';
   }).join('');
 
-  /* -- Resumo estratégico (summary shown inline) -- */
+  /* -- Resumo / Cronograma previews -- */
   const resumoPreview = d.resumoEstrategico||d.objetivos||d.ofertas
     ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-height:60px;overflow:hidden">'+
-        esc((d.objetivos?'Objetivo: '+d.objetivos+'\n':'')+(d.resumoEstrategico?d.resumoEstrategico+'\n':'')+(d.ofertas?'Oferta: '+d.ofertas:'')).slice(0,200)+
+        esc([(d.objetivos?'Objetivo: '+d.objetivos:''),(d.resumoEstrategico||''),(d.ofertas?'Oferta: '+d.ofertas:'')].filter(Boolean).join('\n')).slice(0,200)+
       '</div>'
-    : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum resumo definido</span>';
+    : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum resumo definido — clique em Editar</span>';
 
-  /* -- Cronograma preview -- */
   const cronoPreview = d.cronograma
     ? '<div style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6;max-height:80px;overflow:hidden">'+esc(d.cronograma).slice(0,300)+(d.cronograma.length>300?'...':'')+'</div>'
-    : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum cronograma definido</span>';
+    : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum cronograma definido — clique em Editar</span>';
 
   return (
-    /* RESUMO ESTRATÉGICO */
     '<div class="tpl-section">'+
       '<div class="tpl-section-title" style="justify-content:space-between">⚡ Resumo estratégico'+
         '<button type="button" class="btn-add-sub" onclick="openResumoModal()">✏️ Editar</button>'+
-      '</div>'+
-      resumoPreview+
+      '</div>'+resumoPreview+
     '</div>'+
-
-    /* CRONOGRAMA */
     '<div class="tpl-section">'+
       '<div class="tpl-section-title" style="justify-content:space-between">📋 Cronograma'+
         '<button type="button" class="btn-add-sub" onclick="openCronogramaModal()">✏️ Editar</button>'+
-      '</div>'+
-      cronoPreview+
+      '</div>'+cronoPreview+
     '</div>'+
-
-    /* DATAS */
     '<div class="tpl-section">'+
       '<div class="tpl-section-title" style="justify-content:space-between">📅 Datas-chave '+
         '<button type="button" class="btn-add-sub" onclick="tplDynAdd(\'datasChave\',{label:\'\',date:\'\',time:\'\'})">+ Data</button>'+
       '</div>'+
       '<div id="tpl-dyn-datasChave">'+datasHtml+'</div>'+
     '</div>'+
-
-    /* CHECKLISTS */
     '<div class="tpl-section">'+
       '<div class="tpl-section-title">✅ Checklist de execução</div>'+
       (membrosVisiveis.length ? clMembrosHtml :
@@ -2994,12 +2997,17 @@ function tplClRemove(path, idx) {
   if (arr) arr.splice(idx,1);
   renderTplFields();
 }
-function tplClAdd(path) {
+function tplClAdd(path, inputEl, forceEmpty) {
+  const val = inputEl ? inputEl.value.trim() : '';
   const parts = path.split('.');
   let obj = tplData;
-  for (let k=0;k<parts.length-1;k++) obj=obj[parts[k]];
-  const arr = obj[parts[parts.length-1]];
-  if (arr) { arr.push({texto:'',canal:'Geral',done:false}); renderTplFields(); }
+  for (let k=0;k<parts.length-1;k++) { if(!obj[parts[k]])obj[parts[k]]={};obj=obj[parts[k]]; }
+  const key = parts[parts.length-1];
+  if (!obj[key]) obj[key]=[];
+  const isEnc = parts[0]==='encMembro';
+  obj[key].push(isEnc ? {texto:forceEmpty?'':val,done:false} : {texto:forceEmpty?'':val,canal:'Geral',done:false});
+  if (inputEl) inputEl.value='';
+  renderTplFields();
 }
 
 function tplSlideAdd() {
@@ -3092,27 +3100,35 @@ function syncTemplateParticipants() {
 }
 
 function syncCampanhasChecklist() {
-  // Pega participantes selecionados
   const selected = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>{
     const m = MEMBERS.find(x=>x.id===el.dataset.val);
     return m?.name;
   }).filter(Boolean);
 
-  // Para cada membro nos defaults, verifica se está selecionado
   const membrosComDefault = Object.keys(CL_DEFAULTS);
+  if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
+  if (!tplData.encMembro) tplData.encMembro = {};
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+
   membrosComDefault.forEach(nome => {
     const isSelected = selected.includes(nome);
-    if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
-    if (isSelected && (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length)) {
-      // Adiciona checklist padrão
-      tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
-    } else if (!isSelected && tplData.checklistsMembro[nome]) {
-      // Remove checklist
-      delete tplData.checklistsMembro[nome];
+    if (isSelected) {
+      // Init exec checklist
+      if (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length) {
+        tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
+      }
+      // Init encerramento per member
+      if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
+        tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
+      }
+    } else {
+      // Remove when deselected
+      if (tplData.checklistsMembro[nome]) delete tplData.checklistsMembro[nome];
+      if (tplData.encMembro[nome]) delete tplData.encMembro[nome];
+      if (tplData.notasMembro[nome]) delete tplData.notasMembro[nome];
     }
   });
 
-  // Re-renderiza os campos do template se visível
   const container = document.getElementById('tpl-fields-container');
   if (container && currentTemplate==='campanhas') renderTplFields();
 }
