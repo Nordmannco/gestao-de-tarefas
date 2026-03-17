@@ -983,10 +983,23 @@ function parseCronograma(text) {
         if (colonMatch) { name = colonMatch[2].trim(); }
       }
 
+      // Determine templateType from canal
+      let templateType = null;
+      const canalLower = canal.toLowerCase();
+      if (canalLower === 'e-mail' || canalLower === 'email') {
+        templateType = 'email';
+      } else if (['feed instagram','stories ig','instagram reels','tiktok','youtube','pinterest',
+                  'whatsapp vip','whatsapp lista','grupo whatsapp'].includes(canalLower)) {
+        templateType = 'publicacoes';
+      } else {
+        templateType = 'demanda';
+      }
+
       tasks.push({
         name: name || rest,
         type: type,
         canal: canal,
+        templateType: templateType,
         date: currentDate,
         time: time,
         dayTitle: currentTitle,
@@ -1060,7 +1073,7 @@ function saveCronogramaModal() {
     if (parentCamp) {
       let created = 0;
       tasks.forEach(t => {
-        campaigns.push({
+        const newCamp = {
           id: uid(),
           name: t.name,
           type: t.type,
@@ -1075,14 +1088,16 @@ function saveCronogramaModal() {
           description: '📋 '+t.dayTitle+(t.time?' — '+t.time:''),
           subtasks: [],
           comments: [],
-          templateType: t.type==='Campanha'?'email': t.type==='Conteúdo'?'publicacoes':null,
+          templateType: t.templateType||null,
           templateData: null,
+          _templateLocked: true, // prevent template picker from showing
           parentCampaignId: editingCampId,
-        });
+        };
+        campaigns.push(newCamp);
+        applyStatusRules(newCamp, null, 'Em planejamento');
         created++;
       });
       if (created > 0) {
-        applyStatusRules(campaigns[campaigns.length-1], null, 'Em planejamento');
         saveData();
         renderKanban();
         showToast(created+' tarefa'+(created>1?'s':'')+' criada'+(created>1?'s':'')+' no Kanban', '#3ecf8e');
@@ -2639,8 +2654,11 @@ function renderCampaignForm(existingData) {
     '<div class="form-group" id="parent-camp-group"><label class="form-label">Vincular à campanha <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opcional)</span></label>'+
     '<select class="form-select" id="f-parent-campaign">'+parentOpts+'</select></div>' : '';
 
+  // If template is locked (created from cronograma), hide the picker
+  const _tplLocked = existingData?._templateLocked === true;
+
   document.getElementById('panel-body').innerHTML =
-    '<div style="margin-bottom:4px"><div class="tpl-picker">'+tplCards+'</div></div>'+
+    (_tplLocked ? '' : '<div style="margin-bottom:4px"><div class="tpl-picker">'+tplCards+'</div></div>')+
     '<div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-name" placeholder="Nome da campanha ou tarefa" value="'+(existingData?.name||'')+'"></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
       '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){return '<option'+(existingData?.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
@@ -3553,10 +3571,38 @@ function renderPersonal() {
     const urgOpts = URGENCIAS.map(u =>
       '<option value="'+u+'"'+(u===s.urgency?' selected':'')+'>'+u+'</option>'
     ).join('');
+    // Canal color
+    const canalColors = {
+      'E-mail': {bg:'#dbeafe',color:'#1e40af'},
+      'Feed Instagram': {bg:'#fce7f3',color:'#9d174d'},
+      'Stories IG': {bg:'#fce7f3',color:'#9d174d'},
+      'Instagram Reels': {bg:'#fce7f3',color:'#9d174d'},
+      'TikTok': {bg:'#e0e7ff',color:'#3730a3'},
+      'YouTube': {bg:'#fee2e2',color:'#991b1b'},
+      'Pinterest': {bg:'#fee2e2',color:'#991b1b'},
+      'WhatsApp VIP': {bg:'#d1fae5',color:'#065f46'},
+      'WhatsApp lista': {bg:'#d1fae5',color:'#065f46'},
+      'Grupo WhatsApp': {bg:'#d1fae5',color:'#065f46'},
+      'Meta Ads': {bg:'#ede9fe',color:'#5b21b6'},
+      'Google Ads': {bg:'#fef3c7',color:'#92400e'},
+      'Site': {bg:'#f0fdf4',color:'#166534'},
+      'SMS': {bg:'#f3f4f6',color:'#374151'},
+    };
+    const cc = s.canal && canalColors[s.canal];
+    const canalTag = s.canal && s.canal !== 'Geral'
+      ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+s.canal+'</span>'
+      : '';
+    // Template type tag
+    const tplTag = c.templateType
+      ? '<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+
+          (c.templateType==='email'?'Email MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':'Demanda')+
+        '</span>'
+      : '';
     const metaLine = [
       '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>',
       '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>',
-      s.canal ? '<span class="sub-tag">'+s.canal+'</span>' : '',
+      canalTag,
+      tplTag,
       s.due ? '<span style="font-size:11px;color:var(--text-muted)">\u23F0 '+formatDue(s.due)+'</span>' : '',
       late ? '<span class="late-badge">\u26A0 Atrasada</span>' : '',
     ].filter(Boolean).join('');
