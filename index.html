@@ -2654,11 +2654,32 @@ function renderCampaignForm(existingData) {
     '<div class="form-group" id="parent-camp-group"><label class="form-label">Vincular à campanha <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opcional)</span></label>'+
     '<select class="form-select" id="f-parent-campaign">'+parentOpts+'</select></div>' : '';
 
-  // If template is locked (created from cronograma), hide the picker
+  // Template display:
+  // - No template selected: show full picker
+  // - Has template but not locked: show picker with current selected
+  // - Has template and locked (_templateLocked): show only a tag, no picker
   const _tplLocked = existingData?._templateLocked === true;
+  const _existingTpl = existingData?.templateType;
+
+  // Build template display
+  let tplDisplay = '';
+  if (_tplLocked && _existingTpl) {
+    // Locked: show only a fixed tag
+    const tplInfo = _allTpls.find(t=>t.id===_existingTpl) || TEMPLATES.find(t=>t.id===_existingTpl);
+    tplDisplay = tplInfo
+      ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--c-campanha-bg);border:0.5px solid var(--c-campanha);border-radius:8px">'+
+          '<span style="font-size:14px">'+tplInfo.icon+'</span>'+
+          '<span style="font-size:12px;font-weight:500;color:var(--c-campanha)">'+tplInfo.name+'</span>'+
+          '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">Template fixo</span>'+
+        '</div>'
+      : '';
+  } else {
+    // Show picker (allows change)
+    tplDisplay = '<div style="margin-bottom:4px"><div class="tpl-picker">'+tplCards+'</div></div>';
+  }
 
   document.getElementById('panel-body').innerHTML =
-    (_tplLocked ? '' : '<div style="margin-bottom:4px"><div class="tpl-picker">'+tplCards+'</div></div>')+
+    tplDisplay+
     '<div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-name" placeholder="Nome da campanha ou tarefa" value="'+(existingData?.name||'')+'"></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
       '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){return '<option'+(existingData?.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
@@ -3588,9 +3609,12 @@ function renderPersonal() {
       'Site': {bg:'#f0fdf4',color:'#166534'},
       'SMS': {bg:'#f3f4f6',color:'#374151'},
     };
-    const cc = s.canal && canalColors[s.canal];
-    const canalTag = s.canal && s.canal !== 'Geral'
-      ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+s.canal+'</span>'
+    // Use subtask canal, fallback to campaign's first canal
+    const effectiveCanal = (s.canal && s.canal !== 'Geral') ? s.canal
+      : (c.canais && c.canais.length && c.canais[0] !== 'Geral') ? c.canais[0] : null;
+    const cc = effectiveCanal && canalColors[effectiveCanal];
+    const canalTag = effectiveCanal
+      ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+effectiveCanal+'</span>'
       : '';
     // Template type tag
     const tplTag = c.templateType
