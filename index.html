@@ -734,6 +734,24 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   </div>
 </div>
 
+<!-- CRONOGRAMA MODAL -->
+<div id="cronograma-backdrop" onclick="if(event.target===this)closeCronogramaModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:12px;width:min(700px,95vw);max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border)">
+      <span style="font-size:14px;font-weight:600">📋 Cronograma da campanha</span>
+      <button onclick="closeCronogramaModal()" style="width:28px;height:28px;border:none;background:var(--bg-surface);border-radius:6px;cursor:pointer;font-size:16px;color:var(--text-muted)">×</button>
+    </div>
+    <div style="padding:16px 20px;flex:1;overflow-y:auto">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Detalhe hora a hora o que acontece na campanha. Ex: 10:00 – Post feed | 14:00 – E-mail disparado</div>
+      <textarea id="cronograma-textarea" style="width:100%;min-height:300px;border:0.5px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-family:var(--font-mono);line-height:1.7;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="10:00 – Post feed + stories&#10;10:30 – Manychat ativado&#10;12:00 – E-mail aviso disparado&#10;20:00 – E-mail últimas horas..."></textarea>
+    </div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="closeCronogramaModal()" style="height:34px;padding:0 16px;border:0.5px solid var(--border);border-radius:6px;background:transparent;font-size:13px;cursor:pointer;color:var(--text-secondary)">Cancelar</button>
+      <button onclick="saveCronogramaModal()" style="height:34px;padding:0 16px;border:none;border-radius:6px;background:var(--c-campanha);color:#fff;font-size:13px;cursor:pointer;font-weight:500">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- OVERLAY + SLIDE PANEL -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="slide-panel" id="slide-panel">
@@ -828,6 +846,25 @@ window.currentUser = null;
 const SB_URL = 'https://qnwmhncfbzmukrqypkuc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFud21obmNmYnptdWtycXlwa3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MDU1MzksImV4cCI6MjA4OTI4MTUzOX0.DL9KcXEdwCf42BOH7GP7PDOAbJG1nznl_S8TbPSu1rA';
 let _db = null;
+
+function openCronogramaModal() {
+  var backdrop = document.getElementById('cronograma-backdrop');
+  var ta = document.getElementById('cronograma-textarea');
+  if (!backdrop || !ta) return;
+  ta.value = tplData.cronograma || '';
+  backdrop.style.display = 'flex';
+  setTimeout(function(){ ta.focus(); }, 100);
+}
+function closeCronogramaModal() {
+  var backdrop = document.getElementById('cronograma-backdrop');
+  if (backdrop) backdrop.style.display = 'none';
+}
+function saveCronogramaModal() {
+  var ta = document.getElementById('cronograma-textarea');
+  if (ta) tplData.cronograma = ta.value;
+  closeCronogramaModal();
+  renderTplFields();
+}
 
 function initDB() {
   try {
@@ -1883,6 +1920,25 @@ function applyStatusRules(c, oldStatus, newStatus) {
     }
   }
 
+  // -- Concluído → cria tarefas de encerramento para os membros ──
+  if (newStatus === 'Concluído' && oldStatus !== 'Concluído') {
+    const jaTemEnc = (c.subtasks||[]).some(s=>s._auto==='encerramento');
+    if (!jaTemEnc && c.templateData?.checklistEncerramento?.length) {
+      c.templateData.checklistEncerramento.forEach(it => {
+        if (!it.texto?.trim()) return;
+        const nomeMembro = it.membro && it.membro !== '— Geral —' ? it.membro : null;
+        const m = nomeMembro ? MEMBERS.find(x=>x.name===nomeMembro) : null;
+        c.subtasks.push({
+          id: uid(), title: it.texto,
+          canal: 'Geral', urgency: 'Importante',
+          owner: m?.id || c.owner, due: '',
+          status: 'Pendente', dep: null, checklist: [],
+          _auto: 'encerramento',
+        });
+      });
+    }
+  }
+
   // -- Em andamento → remove tarefa de briefing e distribui para membros --
   if (newStatus === 'Em andamento' && oldStatus !== 'Em andamento') {
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
@@ -2338,33 +2394,36 @@ function renderCampaignForm(existingData) {
   _customTpls.filter(c => !c.isOverride).forEach(c => _allTpls.push(c));
   const tplCards = _allTpls.map(function(t) {
     var active = currentTemplate===t.id ? ' active' : '';
-    var eid = t.id.replace(/'/g, '');
-    return '<button type="button" class="tpl-card'+active+'" onclick="selectTemplate(\''+eid+'\')">'+
-      '<div class="tpl-card-icon">'+t.icon+'</div>'+
-      '<div class="tpl-card-name">'+t.name+'</div>'+
-    '</button>';
+    var eid = t.id.replace(/[^a-z0-9_]/gi, '');
+    return '<button type="button" class="tpl-card'+active+'" onclick="selectTemplate(\''+eid+'\')">'+'<div class="tpl-card-icon">'+t.icon+'</div>'+'<div class="tpl-card-name">'+t.name+'</div>'+'</button>';
   }).join('');
+
+  // Campanha mãe — só mostra para tipos que não são Campanha
+  const showParent = existingData?.type !== 'Campanha' && TYPES.indexOf(existingData?.type||'') !== 0;
+  const parentOpts = '<option value="">— Nenhuma —</option>'+
+    campaigns.filter(function(c){return c.id!==editingCampId && c.type==='Campanha';}).map(function(c){
+      return '<option value="'+c.id+'"'+(existingData?.parentCampaignId===c.id?' selected':'')+'>'+esc(c.name)+'</option>';
+    }).join('');
+  const parentHtml = showParent ?
+    '<div class="form-group" id="parent-camp-group"><label class="form-label">Vincular à campanha <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opcional)</span></label>'+
+    '<select class="form-select" id="f-parent-campaign">'+parentOpts+'</select></div>' : '';
 
   document.getElementById('panel-body').innerHTML =
     '<div style="margin-bottom:4px"><div class="tpl-picker">'+tplCards+'</div></div>'+
     '<div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-name" placeholder="Nome da campanha ou tarefa" value="'+(existingData?.name||'')+'"></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
-      '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(t=>'<option'+(existingData?.type===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'+
-      '<div class="form-group"><label class="form-label">Status</label><div class="select-wrap"><select class="form-select" id="f-status">'+STATUSES.map(s=>'<option'+(existingData?.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select></div></div>'+
+      '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){return '<option'+(existingData?.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
+      '<div class="form-group"><label class="form-label">Status</label><div class="select-wrap"><select class="form-select" id="f-status">'+STATUSES.map(function(s){return '<option'+(existingData?.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div></div>'+
       '<div class="form-group"><label class="form-label">Início</label><input class="form-input" type="date" id="f-start" value="'+(existingData?.startDate||'')+'"></div>'+
       '<div class="form-group"><label class="form-label">Entrega</label><div style="display:grid;grid-template-columns:1fr auto;gap:6px"><input class="form-input" type="date" id="f-end" value="'+(existingData?.endDate||'')+'"><input class="form-input" type="time" id="f-end-time" style="width:82px" value="'+(existingData?.endTime||'')+'"></div></div>'+
     '</div>'+
     '<div class="form-group"><label class="form-label">Responsável</label><div class="select-wrap"><select class="form-select" id="f-owner">'+
-      MEMBERS.map(m=>'<option value="'+m.id+'"'+(m.id===(existingData?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>').join('')+
+      MEMBERS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(existingData?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>';}).join('')+
     '</select></div></div>'+
     '<div class="form-group"><label class="form-label">Participantes</label><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
     '<div class="form-group"><label class="form-label">Canais</label><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
     '<div style="margin-top:6px;display:flex;gap:6px"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:28px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:28px">+ Adicionar</button></div></div>'+
-    '<div class="form-group"><label class="form-label">Campanha mãe <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opcional)</span></label>'+
-      '<select class="form-select" id="f-parent-campaign">'+
-        '<option value="">— Nenhuma —</option>'+
-        campaigns.filter(c=>c.id!==editingCampId).map(c=>'<option value="'+c.id+'"'+(existingData?.parentCampaignId===c.id?' selected':'')+'>'+esc(c.name)+'</option>').join('')+
-      '</select></div>'+
+    parentHtml+
     '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
     '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
@@ -2464,49 +2523,49 @@ const CL_ENCERRAMENTO_DEFAULTS = [
   { membro: 'Bia', item: 'Atualizar preços normais' },
 ];
 
-function campCheckItem(it, i, path, colorDot) {
+function campCheckItem(it, idx, path, colorDot) {
   var wrap = document.createElement('div');
   wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--border-light)';
-  // Checkbox
   var cb = document.createElement('div');
   cb.className = 'tpl-cl-cb' + (it.done?' checked':'');
   cb.style.flexShrink = '0';
   if (it.done) cb.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
-  cb.onclick = (function(p,idx){return function(){tplClToggle(p,idx);};})(path,i);
-  // Text input
+  cb.onclick = (function(p,i){return function(){tplClToggle(p,i);};})(path,idx);
   var inp = document.createElement('input');
   inp.style.cssText = 'flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;' + (it.done?'text-decoration:line-through;opacity:.5':'');
-  inp.value = it.texto || '';
+  inp.value = it.texto||'';
   inp.placeholder = 'Item...';
-  inp.oninput = (function(p,idx){return function(){tplClText(p,idx,this.value);};})(path,i);
-  // Canal select
-  var sel = document.createElement('select');
-  sel.style.cssText = 'font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:1px 4px;cursor:pointer;max-width:110px';
-  CANAIS.forEach(function(c){ var o=document.createElement('option');o.value=c;o.textContent=c;if(c===(it.canal||'Geral'))o.selected=true;sel.appendChild(o); });
-  sel.onchange = (function(p,idx){return function(){tplClCanal(p,idx,this.value);};})(path,i);
-  // Remove button
+  inp.oninput = (function(p,i){return function(){tplClText(p,i,this.value);};})(path,idx);
   var rm = document.createElement('button');
   rm.className = 'tpl-remove-btn';
   rm.style.opacity = '.4';
   rm.textContent = '×';
-  rm.onclick = (function(p,idx){return function(){tplClRemove(p,idx);};})(path,i);
-  wrap.appendChild(cb);
-  wrap.appendChild(inp);
-  wrap.appendChild(sel);
-  wrap.appendChild(rm);
+  rm.onclick = (function(p,i){return function(){tplClRemove(p,i);};})(path,idx);
+  if (it.canal && it.canal !== 'Geral') {
+    var tag = document.createElement('span');
+    tag.style.cssText = 'font-size:9px;padding:1px 6px;border-radius:4px;background:var(--bg-surface);border:0.5px solid var(--border);color:var(--text-muted);white-space:nowrap;flex-shrink:0';
+    tag.textContent = it.canal;
+    wrap.appendChild(cb);
+    wrap.appendChild(inp);
+    wrap.appendChild(tag);
+    wrap.appendChild(rm);
+  } else {
+    wrap.appendChild(cb);
+    wrap.appendChild(inp);
+    wrap.appendChild(rm);
+  }
   return wrap.outerHTML;
 }
 
 function renderTplCampanhasForm() {
   const d = tplData;
 
-  /* -- inicializa defaults se primeira vez -- */
+  /* -- inicializa defaults baseado nos participantes selecionados -- */
   if (!d._defaultsApplied) {
-    // Use participants selected in form, fallback to all defaults
     const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
       const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
     }).filter(Boolean);
-    const membros = selectedNames.length ? selectedNames.filter(n=>CL_DEFAULTS[n]) : Object.keys(CL_DEFAULTS);
+    const membros = selectedNames.length ? selectedNames.filter(n=>CL_DEFAULTS[n]) : [];
     if (!d.checklistsMembro) d.checklistsMembro = {};
     membros.forEach(nome => {
       if (!d.checklistsMembro[nome] || !d.checklistsMembro[nome].length) {
@@ -2514,7 +2573,7 @@ function renderTplCampanhasForm() {
       }
     });
     if (!d.checklistEncerramento || !d.checklistEncerramento.length) {
-      d.checklistEncerramento = CL_ENCERRAMENTO_DEFAULTS.map(x=>({texto:'['+x.membro+'] '+x.item,done:false}));
+      d.checklistEncerramento = CL_ENCERRAMENTO_DEFAULTS.map(x=>({membro:x.membro,texto:x.item,done:false}));
     }
     if (!d.datasChave || !d.datasChave.length) {
       d.datasChave = [
@@ -2526,10 +2585,20 @@ function renderTplCampanhasForm() {
     d._defaultsApplied = true;
   }
 
-  const metas = d.metas||{};
+  /* -- Participantes selecionados com CL_DEFAULTS -- */
+  const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
+    const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
+  }).filter(Boolean);
+  // Somente membros SELECIONADOS e que têm defaults aparecem no checklist
+  // Só mostra membros EFETIVAMENTE SELECIONADOS com defaults — remove ao desmarcar
+  const membrosVisiveis = selectedNames.length
+    ? selectedNames.filter(n=>CL_DEFAULTS[n] || d.checklistsMembro?.[n]?.length)
+    : [];
+
+  const memberColors = {};
+  MEMBERS.forEach((m,idx)=>{ memberColors[m.name] = m.color || '#888'; });
+
   const checklistsMembro = d.checklistsMembro||{};
-  const membrosFixos = ['Eric','Giovana','Bia','Tiago'];
-  const memberColors = {Eric:'#7c6af7',Giovana:'#8b5cf6',Bia:'#06b6d4',Tiago:'#f59e0b'};
 
   /* -- Datas-chave -- */
   const datasHtml = (d.datasChave||[]).map((x,i)=>
@@ -2541,34 +2610,69 @@ function renderTplCampanhasForm() {
     '</div>'
   ).join('');
 
-  /* -- Checklists membro -- */
-  const clMembrosHtml = membrosFixos.map(nome=>{
+  /* -- Checklists por membro — só quem está selecionado -- */
+  const clMembrosHtml = membrosVisiveis.map(nome=>{
     const itens = checklistsMembro[nome]||[];
     const color = memberColors[nome]||'#888';
     const path = 'checklistsMembro.'+nome;
+    // Briefing de Giovana fica DENTRO do bloco dela
+    let extraHtml = '';
+    if (nome === 'Giovana') {
+      const gio = d.giovanaBriefing||{};
+      extraHtml =
+        '<div style="background:var(--bg-surface);border-radius:6px;padding:10px;margin-bottom:10px;border:0.5px solid var(--border)">'+
+        '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Briefing das artes</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        ['pretitulo','titulo','sub','cta','entrelinhas'].map((k,i)=>{
+          const labels=['Pré-título','Título','Sub','CTA sugerido','Entrelinhas'];
+          return '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">'+labels[i]+'</div>'+
+            '<input class="form-input" style="height:28px;font-size:12px" placeholder="—" value="'+esc((gio[k]||''))+'" '+
+            'oninput="if(!tplData.giovanaBriefing)tplData.giovanaBriefing={};tplData.giovanaBriefing.'+k+'=this.value"></div>';
+        }).join('')+
+        '</div></div>';
+    }
     const itensHtml = itens.map((it,i)=>campCheckItem(it,i,path,color)).join('');
     const inputId = 'tpl-cl-new-'+nome.replace(/\s/g,'_');
-    return '<div style="margin-bottom:12px">'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
+    return '<div style="margin-bottom:14px;padding:10px;background:var(--bg-surface);border-radius:6px;border:0.5px solid var(--border)">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'+
         '<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'+
         '<span style="font-size:11px;font-weight:600;color:var(--text-primary)">'+nome+'</span>'+
+        '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">'+itens.length+' tarefas</span>'+
       '</div>'+
-      '<div style="padding-left:4px">'+itensHtml+
+      extraHtml+
+      '<div>'+itensHtml+
         '<div style="display:flex;gap:6px;margin-top:6px">'+
-          '<input class="form-input" id="'+inputId+'" placeholder="Novo item..." style="height:28px;font-size:11px" '+
-            'onkeydown="if(event.key===\'Enter\'){tplClAdd(\''+path+'\',this);event.preventDefault()}">'+
+          '<input class="form-input" id="'+inputId+'" placeholder="Nova tarefa..." style="height:28px;font-size:11px" '+
+            'onkeydown="if(event.key==\'Enter\'){tplClAdd(\''+path+'\',this);event.preventDefault()}">'+
           '<button class="btn-add-sub" style="height:28px;font-size:11px;flex-shrink:0" onclick="tplClAdd(\''+path+'\',document.getElementById(\''+inputId+'\'))">+</button>'+
         '</div>'+
       '</div>'+
     '</div>';
   }).join('');
 
-  /* -- Checklist encerramento -- */
+  /* -- Checklist encerramento — com membro responsável -- */
   const clEnc = d.checklistEncerramento||[];
-  const clEncHtml = clEnc.map((it,i)=>campCheckItem(it,i,'checklistEncerramento','#888')).join('');
+  const encHtml = (function(){
+    var path = 'checklistEncerramento';
+    var allNames = ['— Geral —'].concat(MEMBERS.map(function(m){return m.name;}));
+    return clEnc.map(function(it,i){
+      var memOpts = allNames.map(function(n){return '<option value="'+n+'"'+(n===(it.membro||'— Geral —')?' selected':'')+'>'+n+'</option>';}).join('');
+      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--border-light)">'+
+        '<div class="tpl-cl-cb'+(it.done?' checked':'')+'" onclick="tplClToggle(\''+path+'\','+i+')" style="flex-shrink:0">'+
+          (it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
+        '</div>'+
+        '<input style="flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;'+(it.done?'text-decoration:line-through;opacity:.5':'')+' " '+
+          'value="'+esc(it.texto||'')+'" placeholder="Item de encerramento..." '+
+          'oninput="tplClText(\''+path+'\','+i+',this.value)">'+
+        '<select style="font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:1px 4px;max-width:100px" '+
+          'onchange="tplData.checklistEncerramento['+i+'].membro=this.value">'+memOpts+'</select>'+
+        '<button class="tpl-remove-btn" style="opacity:.4" onclick="tplClRemove(\''+path+'\','+i+')">×</button>'+
+      '</div>';
+    }).join('');
+  })();
 
-  /* -- Giovana briefing extra -- */
-  const gio = d.giovanaBriefing||{};
+  /* -- Metas -- */
+  const metas = d.metas||{};
 
   return (
     /* BRIEFING */
@@ -2603,33 +2707,21 @@ function renderTplCampanhasForm() {
       '</div>'+
     '</div>'+
 
-    /* CRONOGRAMA */
+    /* CRONOGRAMA — popup expansível */
     '<div class="tpl-section">'+
-      '<div class="tpl-section-title">📋 Cronograma</div>'+
-      '<textarea class="form-textarea" style="font-family:var(--font-mono);font-size:12px;min-height:100px" '+
-        'oninput="tplData.cronograma=this.value;autoResize(this)" placeholder="Ex: 10:00 – Post Instagram com Manychat&#10;15:00 – E-mail direcionando para o grupo...">'+(d.cronograma||'')+'</textarea>'+
-    '</div>'+
-
-    /* BRIEFING GIOVANA */
-    '<div class="tpl-section">'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">'+
-        '<div style="width:8px;height:8px;border-radius:50%;background:#8b5cf6"></div>'+
-        '<span style="font-size:11px;font-weight:600;color:var(--text-primary)">Giovana — Briefing das artes</span>'+
+      '<div class="tpl-section-title" style="justify-content:space-between">📋 Cronograma'+
+        '<button type="button" class="btn-add-sub" onclick="openCronogramaModal()">✏️ Editar</button>'+
       '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        ['pretitulo','titulo','sub','cta','entrelinhas'].map((k,i)=>{
-          const labels=['Pré-título','Título','Sub','CTA sugerido','Entrelinhas'];
-          return '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">'+labels[i]+'</div>'+
-            '<input class="form-input" style="height:30px;font-size:12px" placeholder="—" value="'+esc((gio[k]||''))+'" '+
-            'oninput="if(!tplData.giovanaBriefing)tplData.giovanaBriefing={};tplData.giovanaBriefing.'+k+'=this.value"></div>';
-        }).join('')+
+      '<div style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6;max-height:80px;overflow:hidden;position:relative">'+
+        (d.cronograma ? esc(d.cronograma).slice(0,300)+(d.cronograma.length>300?'...':'') : '<span style="color:var(--text-muted);font-style:italic">Nenhum cronograma definido</span>')+
       '</div>'+
     '</div>'+
 
     /* CHECKLISTS */
     '<div class="tpl-section">'+
       '<div class="tpl-section-title">✅ Checklist de execução</div>'+
-      clMembrosHtml+
+      (membrosVisiveis.length ? clMembrosHtml :
+        '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0">Selecione participantes acima para ver os checklists</div>')+
     '</div>'+
 
     /* ENCERRAMENTO */
@@ -2638,7 +2730,8 @@ function renderTplCampanhasForm() {
         '<span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">🔒 Encerramento</span>'+
         '<button type="button" class="btn-add-sub" onclick="tplClAdd(\'checklistEncerramento\',null,true)">+ Item</button>'+
       '</div>'+
-      '<div id="tpl-cl-checklistEncerramento">'+clEncHtml+'</div>'+
+      '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Tarefas automáticas de encerramento — atribuídas ao responsável da campanha ao concluir</div>'+
+      '<div id="tpl-cl-checklistEncerramento">'+encHtml+'</div>'+
     '</div>'
   );
 }
