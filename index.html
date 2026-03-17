@@ -1079,7 +1079,9 @@ function saveCronogramaModal() {
           type: t.type,
           status: 'Em planejamento',
           owner: parentCamp.owner,
-          participants: [parentCamp.owner],
+          participants: parentCamp.participants && parentCamp.participants.length
+            ? [...parentCamp.participants]
+            : [parentCamp.owner],
           canais: [t.canal],
           startDate: t.date||'',
           endDate: t.date||'',
@@ -2187,68 +2189,65 @@ function applyStatusRules(c, oldStatus, newStatus) {
 
   // -- Em andamento → remove tarefa de briefing e distribui para membros --
   if (newStatus === 'Em andamento' && oldStatus !== 'Em andamento') {
+    // Remove briefing task
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
 
     const jaCriou = (c.subtasks||[]).some(s=>s._auto==='checklist');
-    if (!jaCriou) { // distribui para qualquer campanha, com ou sem template
-      // Check for custom override checklist first
+    if (!jaCriou) {
+      const participantes = (c.participants && c.participants.length) ? c.participants : [c.owner];
+
+      // Priority 1: custom override checklist for this template
       const customTpls = getCustomTemplates();
       const customTpl = customTpls.find(t => t.id === c.templateType);
       const customChecklist = customTpl?.checklist || [];
 
+      // Priority 2: template data checklistsMembro (campanhas template)
+      const clm = c.templateData?.checklistsMembro;
+
+      // Priority 3: encMembro (per-member encerramento tasks in template)
+      const encMembro = c.templateData?.encMembro;
+
       if (customChecklist.length > 0) {
-        // Use custom template checklist — assign to campaign owner
-        customChecklist.forEach(item => {
-          c.subtasks.push({
-            id: uid(), title: item,
-            canal: 'Geral', urgency: 'Normal',
-            owner: c.owner, due: '',
-            status: 'Pendente', dep: null, checklist: [],
-            _auto: 'checklist',
+        // Custom checklist — distribute to all participants
+        participantes.forEach(memberId => {
+          if (!memberId) return;
+          customChecklist.forEach(item => {
+            c.subtasks.push({
+              id: uid(), title: typeof item === 'string' ? item : item.title||item,
+              canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
+              owner: memberId, due: '',
+              status: 'Pendente', dep: null, checklist: [],
+              _auto: 'checklist',
+            });
           });
         });
-      } else if (c.templateData?.checklistsMembro) {
-        // Use template data checklist per member (campanhas template)
-        const clm = c.templateData.checklistsMembro;
+
+      } else if (clm && Object.keys(clm).length > 0) {
+        // Campanhas template — per-member checklist
         Object.entries(clm).forEach(([nome, itens]) => {
-          // Try exact match first, then case-insensitive
           const m = MEMBERS.find(x=>x.name===nome) ||
                     MEMBERS.find(x=>x.name.toLowerCase()===nome.toLowerCase());
-          if (!m) {
-            // Member not found — create task assigned to campaign owner
-            (itens||[]).forEach(it => {
-              c.subtasks.push({
-                id: uid(), title: it.texto || nome + ' — item',
-                canal: 'Geral', urgency: 'Normal',
-                owner: c.owner, due: '',
-                status: 'Pendente', dep: null, checklist: [],
-                _auto: 'checklist',
-              });
-            });
-            return;
-          }
+          const ownerId = m?.id || c.owner;
           (itens||[]).forEach(it => {
+            if (!it.texto?.trim()) return;
             c.subtasks.push({
-              id: uid(), title: it.texto || nome + ' — item',
+              id: uid(), title: it.texto,
               canal: it.canal || 'Geral', urgency: 'Normal',
-              owner: m.id, due: '',
+              owner: ownerId, due: '',
               status: it.done ? 'Concluído' : 'Pendente',
               dep: null, checklist: [],
               _auto: 'checklist',
             });
           });
         });
-      } else {
-        // Sem checklist definido — usa CL_DEFAULTS para membros que participam
-        // ou cria tarefa genérica para cada participante
-        const participantes = c.participants || [c.owner];
-        let criouAlguma = false;
 
+      } else {
+        // No template data — use CL_DEFAULTS per participant
+        let criouAlguma = false;
         participantes.forEach(memberId => {
           if (!memberId) return;
           const m = MEMBERS.find(x => x.id === memberId);
           if (!m) return;
-          // Check if CL_DEFAULTS has tasks for this member name
           const defaultItems = CL_DEFAULTS[m.name] || [];
           if (defaultItems.length > 0) {
             defaultItems.forEach(item => {
@@ -2264,14 +2263,13 @@ function applyStatusRules(c, oldStatus, newStatus) {
             criouAlguma = true;
           }
         });
-
-        // If no CL_DEFAULTS matched, create one generic task per participant
         if (!criouAlguma) {
+          // Last resort: one generic task per participant
           participantes.forEach(memberId => {
             if (!memberId) return;
             c.subtasks.push({
               id: uid(), title: 'Executar: ' + c.name,
-              canal: 'Geral', urgency: 'Normal',
+              canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
               owner: memberId, due: '',
               status: 'Pendente', dep: null, checklist: [],
               _auto: 'checklist',
@@ -2592,14 +2590,17 @@ function updateCampaign(id) {
   c.description = document.getElementById('f-desc')?.value?.trim()||'';
   c.templateType = currentTemplate||null;
   c.templateData = currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null;
-  const oldStatus = c.status; // status before update
+  // Read oldStatus BEFORE any changes
+  const oldStatus = c.status;
+  const newStatus = document.getElementById('f-status').value;
   c.subtasks = [...autoSubs, ...manualSubs];
   subForms=[]; currentTemplate=null; tplData={};
   // Apply status rules if status changed
-  const newStatus = document.getElementById('f-status').value;
   if (newStatus !== oldStatus) {
     c.status = newStatus;
     applyStatusRules(c, oldStatus, newStatus);
+  } else {
+    c.status = newStatus;
   }
   saveData();
   renderKanban();
@@ -3461,13 +3462,13 @@ function saveCampaign() {
   const newCamp = campaigns[campaigns.length-1];
   applyStatusRules(newCamp, null, newCamp.status);
   saveData();
-  // Renderiza ANTES de fechar para evitar flicker
   renderKanban();
-  if (currentView==='personal') renderPersonal();
+  renderPersonal();
   if (currentView==='overview') renderOverview();
   closePanel();
   showToast('Campanha criada','#3ecf8e');
 }
+
 
 /* PERSONAL PANEL */
 function renderPersonalFilters() {
@@ -3850,7 +3851,7 @@ function dropCard(e, status) {
   applyStatusRules(c, oldStatus, status);
   saveData();
   renderKanban();
-  if (currentView==='personal') renderPersonal();
+  renderPersonal();
   showToast(c.name + ' → ' + status, '#7c6af7');
 }
 
