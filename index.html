@@ -846,24 +846,31 @@ async function loadMembers() {
   if (_db) {
     try {
       const res = await _db.from('nordmann_data').select('payload').eq('key','members').single();
-      if (!res.error && res.data && res.data.payload) {
+      if (res.error) {
+        console.warn('[Nordmann] loadMembers Supabase error:', res.error.message);
+      } else if (res.data && res.data.payload) {
         const r = JSON.parse(res.data.payload);
         if (Array.isArray(r) && r.length > 0) {
           MEMBERS = r;
           localStorage.setItem(MEMBERS_KEY, JSON.stringify(r));
+          console.log('[Nordmann] Membros carregados do Supabase:', r.length);
         }
       }
-    } catch(e) {}
+    } catch(e) { console.warn('[Nordmann] loadMembers error:', e); }
   }
 }
 
-function saveMembers() {
+async function saveMembers() {
   localStorage.setItem(MEMBERS_KEY, JSON.stringify(MEMBERS));
   if (_db) {
-    _db.from('nordmann_data').upsert(
-      {key:'members', payload:JSON.stringify(MEMBERS), updated_at:new Date().toISOString()},
-      {onConflict:'key'}
-    ); // fire and forget — members change rarely
+    try {
+      const {error} = await _db.from('nordmann_data').upsert(
+        {key:'members', payload:JSON.stringify(MEMBERS), updated_at:new Date().toISOString()},
+        {onConflict:'key'}
+      );
+      if (error) console.warn('[Nordmann] Erro ao salvar membros:', error.message);
+      else console.log('[Nordmann] Membros salvos no Supabase:', MEMBERS.length);
+    } catch(e) { console.warn('[Nordmann] saveMembers error:', e); }
   }
 }
 
@@ -1880,8 +1887,22 @@ function applyStatusRules(c, oldStatus, newStatus) {
         // Use template data checklist per member (campanhas template)
         const clm = c.templateData.checklistsMembro;
         Object.entries(clm).forEach(([nome, itens]) => {
-          const m = MEMBERS.find(x=>x.name===nome);
-          if (!m) return;
+          // Try exact match first, then case-insensitive
+          const m = MEMBERS.find(x=>x.name===nome) ||
+                    MEMBERS.find(x=>x.name.toLowerCase()===nome.toLowerCase());
+          if (!m) {
+            // Member not found — create task assigned to campaign owner
+            (itens||[]).forEach(it => {
+              c.subtasks.push({
+                id: uid(), title: it.texto || nome + ' — item',
+                canal: 'Geral', urgency: 'Normal',
+                owner: c.owner, due: '',
+                status: 'Pendente', dep: null, checklist: [],
+                _auto: 'checklist',
+              });
+            });
+            return;
+          }
           (itens||[]).forEach(it => {
             c.subtasks.push({
               id: uid(), title: it.texto || nome + ' — item',
@@ -1894,17 +1915,44 @@ function applyStatusRules(c, oldStatus, newStatus) {
           });
         });
       } else {
-        // Sem template — cria uma tarefa genérica para cada participante
-        (c.participants || [c.owner]).forEach(memberId => {
+        // Sem checklist definido — usa CL_DEFAULTS para membros que participam
+        // ou cria tarefa genérica para cada participante
+        const participantes = c.participants || [c.owner];
+        let criouAlguma = false;
+
+        participantes.forEach(memberId => {
           if (!memberId) return;
-          c.subtasks.push({
-            id: uid(), title: 'Executar: ' + c.name,
-            canal: 'Geral', urgency: 'Normal',
-            owner: memberId, due: '',
-            status: 'Pendente', dep: null, checklist: [],
-            _auto: 'checklist',
-          });
+          const m = MEMBERS.find(x => x.id === memberId);
+          if (!m) return;
+          // Check if CL_DEFAULTS has tasks for this member name
+          const defaultItems = CL_DEFAULTS[m.name] || [];
+          if (defaultItems.length > 0) {
+            defaultItems.forEach(item => {
+              c.subtasks.push({
+                id: uid(), title: item,
+                canal: 'Geral', urgency: 'Normal',
+                owner: memberId, due: '',
+                status: 'Pendente', dep: null, checklist: [],
+                _auto: 'checklist',
+              });
+            });
+            criouAlguma = true;
+          }
         });
+
+        // If no CL_DEFAULTS matched, create one generic task per participant
+        if (!criouAlguma) {
+          participantes.forEach(memberId => {
+            if (!memberId) return;
+            c.subtasks.push({
+              id: uid(), title: 'Executar: ' + c.name,
+              canal: 'Geral', urgency: 'Normal',
+              owner: memberId, due: '',
+              status: 'Pendente', dep: null, checklist: [],
+              _auto: 'checklist',
+            });
+          });
+        }
       }
     }
   }
@@ -3362,8 +3410,19 @@ document.addEventListener('click', e => {
 
 /* INIT */
 (async function() {
+  // Wait for Supabase SDK to be ready (it loads via script tag)
+  let sdkWait = 0;
+  while (!window.supabase && sdkWait < 20) {
+    await new Promise(r => setTimeout(r, 100));
+    sdkWait++;
+  }
+
   initDB();
   await loadMembers();
+
+  // Debug: log member count to console
+  console.log('[Nordmann] Membros carregados:', MEMBERS.length, _db ? '(Supabase ativo)' : '(só localStorage)');
+
   const savedSession = localStorage.getItem(SESSION_KEY);
   if (savedSession) {
     const m = getMember(savedSession);
