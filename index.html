@@ -2495,13 +2495,25 @@ function selectTemplate(id) {
   if (currentTemplate === id) { currentTemplate = null; tplData = {}; }
   else { currentTemplate = id; tplData = {}; }
   document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('active'));
+
+  // Hide/show canais e vincular baseado no template
+  const canalGroup = document.querySelector('#multi-canais')?.closest('.form-group');
+  const canalAdd = document.querySelector('#f-canal-novo')?.closest('div[style*="margin-top:6px"]');
+  const parentGroup = document.getElementById('parent-camp-group');
+  const isCamp = currentTemplate === 'campanhas';
+  if (canalGroup) canalGroup.style.display = isCamp ? 'none' : '';
+  if (canalAdd) canalAdd.style.display = isCamp ? 'none' : '';
+  if (parentGroup) parentGroup.style.display = isCamp ? 'none' : '';
+
   if (currentTemplate) {
     document.querySelector('.tpl-card[onclick="selectTemplate(\''+currentTemplate+'\')"')?.classList.add('active');
-    // Sincroniza participantes já selecionados ao ativar template
     if (document.querySelector('#multi-participants')) syncTemplateParticipants();
     renderTplFields();
   } else {
     document.getElementById('tpl-fields-container').innerHTML='';
+    if (canalGroup) canalGroup.style.display = '';
+    if (canalAdd) canalAdd.style.display = '';
+    if (parentGroup) parentGroup.style.display = '';
   }
 }
 
@@ -2575,35 +2587,59 @@ const CL_ENCERRAMENTO_DEFAULTS = [
 
 function campCheckItem(it, idx, path, colorDot) {
   var wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--border-light)';
+  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border-light)';
+
+  // Checkbox
   var cb = document.createElement('div');
   cb.className = 'tpl-cl-cb' + (it.done?' checked':'');
   cb.style.flexShrink = '0';
   if (it.done) cb.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
   cb.onclick = (function(p,i){return function(){tplClToggle(p,i);};})(path,idx);
+
+  // Text input
   var inp = document.createElement('input');
   inp.style.cssText = 'flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;' + (it.done?'text-decoration:line-through;opacity:.5':'');
   inp.value = it.texto||'';
-  inp.placeholder = 'Item...';
+  inp.placeholder = 'Tarefa...';
   inp.oninput = (function(p,i){return function(){tplClText(p,i,this.value);};})(path,idx);
+
+  // Canal select
+  var sel = document.createElement('select');
+  sel.style.cssText = 'font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:2px 4px;cursor:pointer;max-width:120px;flex-shrink:0';
+  var allCanais = CANAIS.concat(['+ Novo canal']);
+  allCanais.forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c;
+    o.textContent = c;
+    if (c === (it.canal||'Geral')) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.onchange = (function(p,i,s){return function(){
+    if (this.value === '+ Novo canal') {
+      var novo = prompt('Nome do canal:');
+      if (novo && novo.trim()) {
+        var o = document.createElement('option');
+        o.value = novo.trim(); o.textContent = novo.trim(); o.selected = true;
+        s.insertBefore(o, s.lastChild);
+        tplClCanal(p,i,novo.trim());
+      }
+      this.value = it.canal||'Geral';
+      return;
+    }
+    tplClCanal(p,i,this.value);
+  };})(path,idx,sel);
+
+  // Remove button
   var rm = document.createElement('button');
   rm.className = 'tpl-remove-btn';
   rm.style.opacity = '.4';
   rm.textContent = '×';
   rm.onclick = (function(p,i){return function(){tplClRemove(p,i);};})(path,idx);
-  if (it.canal && it.canal !== 'Geral') {
-    var tag = document.createElement('span');
-    tag.style.cssText = 'font-size:9px;padding:1px 6px;border-radius:4px;background:var(--bg-surface);border:0.5px solid var(--border);color:var(--text-muted);white-space:nowrap;flex-shrink:0';
-    tag.textContent = it.canal;
-    wrap.appendChild(cb);
-    wrap.appendChild(inp);
-    wrap.appendChild(tag);
-    wrap.appendChild(rm);
-  } else {
-    wrap.appendChild(cb);
-    wrap.appendChild(inp);
-    wrap.appendChild(rm);
-  }
+
+  wrap.appendChild(cb);
+  wrap.appendChild(inp);
+  wrap.appendChild(sel);
+  wrap.appendChild(rm);
   return wrap.outerHTML;
 }
 
@@ -2689,7 +2725,7 @@ function renderTplCampanhasForm() {
     // Encerramento section for this member
     const encHtmlMembro = encItens.length ? (
       '<div style="margin-top:10px;padding-top:8px;border-top:0.5px dashed var(--border)">'+
-      '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">🔒 Encerramento</div>'+
+      '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Encerramento</div>'+
       encItens.map(it=>{
         const globalIdx = (d.checklistEncerramento||[]).indexOf(it);
         return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'+
@@ -2702,14 +2738,14 @@ function renderTplCampanhasForm() {
       '</div>'
     ) : '';
 
-    return '<div style="margin-bottom:10px;padding:10px;background:var(--bg-surface);border-radius:6px;border:0.5px solid var(--border)">'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'+
+    return '<div style="margin-bottom:16px">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid '+color+'40">'+
         '<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'+
         '<span style="font-size:11px;font-weight:600;color:var(--text-primary)">'+nome+'</span>'+
         '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">'+itens.length+' tarefas</span>'+
       '</div>'+
       briefingHtml+
-      '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">✅ Execução</div>'+
+      '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Execução</div>'+
       '<div>'+itensHtml+
         '<div style="display:flex;gap:6px;margin-top:6px">'+
           '<input class="form-input" id="'+inputId+'" placeholder="Nova tarefa..." style="height:28px;font-size:11px" '+
