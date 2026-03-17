@@ -763,18 +763,34 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 </div>
 
 <div id="cronograma-backdrop" onclick="if(event.target===this)closeCronogramaModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
-  <div style="background:var(--bg-card);border-radius:12px;width:min(700px,95vw);max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div style="background:var(--bg-card);border-radius:12px;width:min(740px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border)">
       <span style="font-size:14px;font-weight:600">📋 Cronograma da campanha</span>
       <button onclick="closeCronogramaModal()" style="width:28px;height:28px;border:none;background:var(--bg-surface);border-radius:6px;cursor:pointer;font-size:16px;color:var(--text-muted)">×</button>
     </div>
-    <div style="padding:16px 20px;flex:1;overflow-y:auto">
-      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Detalhe hora a hora o que acontece na campanha. Ex: 10:00 – Post feed | 14:00 – E-mail disparado</div>
-      <textarea id="cronograma-textarea" style="width:100%;min-height:300px;border:0.5px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-family:var(--font-mono);line-height:1.7;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="10:00 – Post feed + stories&#10;10:30 – Manychat ativado&#10;12:00 – E-mail aviso disparado&#10;20:00 – E-mail últimas horas..."></textarea>
+    <div style="padding:14px 20px;flex:1;overflow-y:auto;display:flex;gap:16px">
+      <!-- Left: editor -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.5">
+          Use o formato abaixo para criar tarefas automaticamente ao salvar:<br>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px;border-radius:4px">17.03.2026 - Início da divulgação</code><br>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px;border-radius:4px">* 10:00 - Email mkt: Se prepare</code><br>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px;border-radius:4px">* 10:00 - Grupo whats: Vem aí</code>
+        </div>
+        <textarea id="cronograma-textarea" style="flex:1;width:100%;min-height:280px;border:0.5px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-family:var(--font-mono);line-height:1.8;resize:none;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="17.03.2026 - Início da divulgação&#10;* 10:00 - Email mkt: Se prepare&#10;* 10:00 - Grupo whats: Vem aí&#10;&#10;18.03.2026 - Lançamento oficial&#10;* 09:00 - Post feed: Começou!&#10;* 19:00 - Email: Últimas horas"></textarea>
+      </div>
+      <!-- Right: preview of tasks to be created -->
+      <div style="width:220px;flex-shrink:0">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Tarefas que serão criadas</div>
+        <div id="crono-preview" style="font-size:11px;color:var(--text-secondary);line-height:1.7;max-height:320px;overflow-y:auto"></div>
+      </div>
     </div>
-    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
-      <button onclick="closeCronogramaModal()" style="height:34px;padding:0 16px;border:0.5px solid var(--border);border-radius:6px;background:transparent;font-size:13px;cursor:pointer;color:var(--text-secondary)">Cancelar</button>
-      <button onclick="saveCronogramaModal()" style="height:34px;padding:0 16px;border:none;border-radius:6px;background:var(--c-campanha);color:#fff;font-size:13px;cursor:pointer;font-weight:500">Salvar</button>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="font-size:11px;color:var(--text-muted)" id="crono-count"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeCronogramaModal()" style="height:34px;padding:0 16px;border:0.5px solid var(--border);border-radius:6px;background:transparent;font-size:13px;cursor:pointer;color:var(--text-secondary)">Cancelar</button>
+        <button onclick="saveCronogramaModal()" style="height:34px;padding:0 16px;border:none;border-radius:6px;background:var(--c-campanha);color:#fff;font-size:13px;cursor:pointer;font-weight:500">Salvar e criar tarefas</button>
+      </div>
     </div>
   </div>
 </div>
@@ -895,21 +911,188 @@ function saveResumoModal() {
   renderTplFields();
 }
 
+
+
+function parseCronograma(text) {
+  // Parse structured cronograma into task list
+  // Format:
+  //   DD.MM.YYYY - Título do dia (or just a title line)
+  //   * HH:MM - Tipo: Descrição
+  const lines = text.split('\n');
+  const tasks = [];
+  let currentDate = '';
+  let currentTitle = '';
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    // Date line: DD.MM.YYYY - Título or just Título
+    const dateMatch = trimmed.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{4})\s*[-–]\s*(.+)$/);
+    if (dateMatch) {
+      currentDate = dateMatch[3]+'-'+dateMatch[2].padStart(2,'0')+'-'+dateMatch[1].padStart(2,'0');
+      currentTitle = dateMatch[4].trim();
+      return;
+    }
+
+    // Task line: * HH:MM - Tipo: Descrição
+    const taskMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*(.+)$/);
+    if (taskMatch) {
+      const time = taskMatch[1];
+      const rest = taskMatch[2].trim();
+
+      // Detect type from prefix
+      const restLower = rest.toLowerCase();
+      let type = 'Conteúdo'; // default
+      let canal = 'Geral';
+      let name = rest;
+
+      if (restLower.startsWith('email mkt:') || restLower.startsWith('e-mail mkt:') || restLower.startsWith('email:') || restLower.startsWith('e-mail:')) {
+        type = 'Campanha'; canal = 'E-mail';
+        name = rest.replace(/^e?-?mail\s*m?k?t?\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('post feed:') || restLower.startsWith('feed:')) {
+        type = 'Conteúdo'; canal = 'Feed Instagram';
+        name = rest.replace(/^(post\s*)?feed\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('stories:') || restLower.startsWith('story:')) {
+        type = 'Conteúdo'; canal = 'Stories IG';
+        name = rest.replace(/^stor(ies|y)\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('reels:') || restLower.startsWith('reel:')) {
+        type = 'Conteúdo'; canal = 'Instagram Reels';
+        name = rest.replace(/^reels?\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('tiktok:')) {
+        type = 'Conteúdo'; canal = 'TikTok';
+        name = rest.replace(/^tiktok\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('whatsapp vip:') || restLower.startsWith('vip:')) {
+        type = 'Conteúdo'; canal = 'WhatsApp VIP';
+        name = rest.replace(/^(whatsapp\s*)?vip\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('grupo whats:') || restLower.startsWith('grupo:') || restLower.startsWith('whatsapp:')) {
+        type = 'Conteúdo'; canal = 'Grupo WhatsApp';
+        name = rest.replace(/^(grupo\s*whats(app)?\s*|grupo\s*|whatsapp\s*):\s*/i, '').trim();
+      } else if (restLower.startsWith('meta ads:') || restLower.startsWith('anuncio:') || restLower.startsWith('anúncio:')) {
+        type = 'Campanha'; canal = 'Meta Ads';
+        name = rest.replace(/^(meta\s*ads|an[uú]ncios?)\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('site:')) {
+        type = 'Tarefa'; canal = 'Site';
+        name = rest.replace(/^site\s*:\s*/i, '').trim();
+      } else if (restLower.startsWith('demanda:') || restLower.startsWith('tarefa:')) {
+        type = 'Tarefa'; canal = 'Geral';
+        name = rest.replace(/^(demanda|tarefa)\s*:\s*/i, '').trim();
+      } else {
+        // Try to extract colon-separated type
+        const colonMatch = rest.match(/^([^:]{3,20}):\s*(.+)$/);
+        if (colonMatch) { name = colonMatch[2].trim(); }
+      }
+
+      tasks.push({
+        name: name || rest,
+        type: type,
+        canal: canal,
+        date: currentDate,
+        time: time,
+        dayTitle: currentTitle,
+      });
+    }
+  });
+
+  return tasks;
+}
+
+function updateCronoPreview() {
+  const text = document.getElementById('cronograma-textarea')?.value || '';
+  const tasks = parseCronograma(text);
+  const preview = document.getElementById('crono-preview');
+  const count = document.getElementById('crono-count');
+  if (!preview) return;
+
+  if (!tasks.length) {
+    preview.innerHTML = '<span style="color:var(--text-muted);font-style:italic">Nenhuma tarefa detectada</span>';
+    if (count) count.textContent = '';
+    return;
+  }
+
+  let html = '';
+  let lastDate = '';
+  tasks.forEach(t => {
+    if (t.date !== lastDate) {
+      lastDate = t.date;
+      if (t.dayTitle) {
+        html += '<div style="font-weight:600;font-size:10px;color:var(--text-primary);margin-top:8px;margin-bottom:4px">'+esc(t.dayTitle)+'</div>';
+      }
+    }
+    const typeColor = t.type==='Campanha'?'var(--c-campanha)':t.type==='Conteúdo'?'var(--c-conteudo)':'var(--c-tarefa)';
+    html += '<div style="display:flex;gap:6px;align-items:baseline;padding:2px 0">'+
+      '<span style="font-size:9px;font-weight:600;color:'+typeColor+';flex-shrink:0">'+t.time+'</span>'+
+      '<span style="font-size:11px;color:var(--text-secondary)">'+esc(t.name)+'</span>'+
+    '</div>';
+  });
+
+  preview.innerHTML = html;
+  if (count) count.textContent = tasks.length + ' tarefa' + (tasks.length>1?'s':'') + ' serão criadas';
+}
+
 function openCronogramaModal() {
   var backdrop = document.getElementById('cronograma-backdrop');
   var ta = document.getElementById('cronograma-textarea');
   if (!backdrop || !ta) return;
   ta.value = tplData.cronograma || '';
   backdrop.style.display = 'flex';
+  updateCronoPreview();
+  ta.addEventListener('input', updateCronoPreview);
   setTimeout(function(){ ta.focus(); }, 100);
 }
+
 function closeCronogramaModal() {
   var backdrop = document.getElementById('cronograma-backdrop');
   if (backdrop) backdrop.style.display = 'none';
+  var ta = document.getElementById('cronograma-textarea');
+  if (ta) ta.removeEventListener('input', updateCronoPreview);
 }
+
 function saveCronogramaModal() {
   var ta = document.getElementById('cronograma-textarea');
-  if (ta) tplData.cronograma = ta.value;
+  if (!ta) return;
+  tplData.cronograma = ta.value;
+
+  // Parse and create child campaigns if we have a parent campaign context
+  const tasks = parseCronograma(ta.value);
+  if (tasks.length > 0 && editingCampId) {
+    const parentCamp = getCampaign(editingCampId);
+    if (parentCamp) {
+      let created = 0;
+      tasks.forEach(t => {
+        campaigns.push({
+          id: uid(),
+          name: t.name,
+          type: t.type,
+          status: 'Em planejamento',
+          owner: parentCamp.owner,
+          participants: [parentCamp.owner],
+          canais: [t.canal],
+          startDate: t.date||'',
+          endDate: t.date||'',
+          endTime: t.time||'',
+          driveLink: '',
+          description: '📋 '+t.dayTitle+(t.time?' — '+t.time:''),
+          subtasks: [],
+          comments: [],
+          templateType: t.type==='Campanha'?'email': t.type==='Conteúdo'?'publicacoes':null,
+          templateData: null,
+          parentCampaignId: editingCampId,
+        });
+        created++;
+      });
+      if (created > 0) {
+        applyStatusRules(campaigns[campaigns.length-1], null, 'Em planejamento');
+        saveData();
+        renderKanban();
+        showToast(created+' tarefa'+(created>1?'s':'')+' criada'+(created>1?'s':'')+' no Kanban', '#3ecf8e');
+      }
+    }
+  } else if (tasks.length > 0 && !editingCampId) {
+    // Creating new campaign — tasks will be created when campaign is saved
+    tplData.cronogramaTasks = tasks;
+  }
+
   closeCronogramaModal();
   renderTplFields();
 }
@@ -2709,7 +2892,7 @@ function renderTplCampanhasForm() {
     // Briefing box — ALL members get a notes field
     const briefingBox =
       '<div style="margin-bottom:12px">'+
-        '<textarea style="width:100%;min-height:52px;border:0.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" '+
+        '<textarea style="width:100%;min-height:52px;border:0.5px solid var(--border-light);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:transparent;color:var(--text-primary);outline:none;box-sizing:border-box" '+
           'placeholder="Informações para '+nome+': referências, links, observações..." '+
           'oninput="if(!tplData.notasMembro)tplData.notasMembro={};tplData.notasMembro[\''+nome+'\']=this.value">'+esc(nota)+'</textarea>'+
       '</div>';
