@@ -1817,6 +1817,7 @@ function openCampaignDetail(id) {
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">PARTICIPANTES</div><div style="display:flex;gap:3px">'+participants+'</div></div>'+
       '</div>'+
       (c.driveLink?'<a href="'+c.driveLink+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--c-campanha);text-decoration:none;padding:5px 10px;border:0.5px solid var(--c-campanha);border-radius:var(--radius);background:var(--c-campanha-bg);margin-bottom:12px">🔗 Pasta no Drive</a>':'')+
+      (c.parentCampaignId ? (function(){const p=getCampaign(c.parentCampaignId);return p?'<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span>📎 Parte de:</span><button onclick="openCampaignDetail(\''+p.id+'\')" style="font-size:11px;color:var(--c-campanha);background:var(--c-campanha-bg);border:0.5px solid var(--c-campanha);border-radius:4px;padding:2px 8px;cursor:pointer">'+p.name+'</button></div>':''})() : '')+
       '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px"><span>Progresso</span><span>'+prog.done+'/'+prog.total+' — '+prog.pct+'%</span></div>'+
         '<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:'+prog.pct+'%;background:'+progColor+'"></div></div></div>'+
       (c.description?'<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;background:var(--bg-surface);padding:10px 12px;border-radius:var(--radius)">'+c.description+'</div>':'')+
@@ -1824,6 +1825,16 @@ function openCampaignDetail(id) {
     (c.templateType ? renderTemplateDetail(c) : '')+
     '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubtaskToDetail(\''+id+'\')">+ Adicionar</button></div>'+
     '<div id="detail-subtasks">'+subtasksHtml+'</div>'+
+    (function(){
+      const filhos = campaigns.filter(x=>x.parentCampaignId===id);
+      if (!filhos.length) return '';
+      return '<div class="form-section-title" style="margin-top:8px">📎 Tarefas vinculadas ('+filhos.length+')</div>'+
+        '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">'+
+        filhos.map(function(f){
+          var sc=STATUS_COLOR[f.status]||{color:'#888',bg:'rgba(136,136,136,.08)'};
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:0.5px solid var(--border);border-radius:6px;cursor:pointer;background:var(--bg-card)" onclick="openCampaignDetail(\''+f.id+'\')">'+'<span style="font-size:12px;font-weight:500">'+f.name+'</span>'+'<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+sc.color+';background:'+sc.bg+'">'+f.status+'</span>'+'</div>';
+        }).join('')+'</div>';
+    })()+
     '<div class="comment-section">'+
       '<div class="comment-header">💬 Comentários'+(c.comments?.length?' ('+c.comments.length+')':'')+'</div>'+
       '<div class="comment-list" id="detail-comments-'+id+'">'+commentsHtml+'</div>'+
@@ -1906,7 +1917,7 @@ function applyStatusRules(c, oldStatus, newStatus) {
           (itens||[]).forEach(it => {
             c.subtasks.push({
               id: uid(), title: it.texto || nome + ' — item',
-              canal: 'Geral', urgency: 'Normal',
+              canal: it.canal || 'Geral', urgency: 'Normal',
               owner: m.id, due: '',
               status: it.done ? 'Concluído' : 'Pendente',
               dep: null, checklist: [],
@@ -1928,9 +1939,10 @@ function applyStatusRules(c, oldStatus, newStatus) {
           const defaultItems = CL_DEFAULTS[m.name] || [];
           if (defaultItems.length > 0) {
             defaultItems.forEach(item => {
+              const t = typeof item === 'string' ? {title:item, canal:'Geral'} : item;
               c.subtasks.push({
-                id: uid(), title: item,
-                canal: 'Geral', urgency: 'Normal',
+                id: uid(), title: t.title,
+                canal: t.canal || 'Geral', urgency: 'Normal',
                 owner: memberId, due: '',
                 status: 'Pendente', dep: null, checklist: [],
                 _auto: 'checklist',
@@ -2263,6 +2275,7 @@ function updateCampaign(id) {
   c.participants = participants.length ? participants : [c.owner];
   c.canais = canais;
   c.driveLink = document.getElementById('f-drive')?.value?.trim()||'';
+  c.parentCampaignId = document.getElementById('f-parent-campaign')?.value||null;
   c.description = document.getElementById('f-desc')?.value?.trim()||'';
   c.templateType = currentTemplate||null;
   c.templateData = currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null;
@@ -2336,6 +2349,11 @@ function renderCampaignForm(existingData) {
     '<div class="form-group"><label class="form-label">Participantes</label><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
     '<div class="form-group"><label class="form-label">Canais</label><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
     '<div style="margin-top:6px;display:flex;gap:6px"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:28px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:28px">+ Adicionar</button></div></div>'+
+    '<div class="form-group"><label class="form-label">Campanha mãe <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opcional)</span></label>'+
+      '<select class="form-select" id="f-parent-campaign">'+
+        '<option value="">— Nenhuma —</option>'+
+        campaigns.filter(c=>c.id!==editingCampId).map(c=>'<option value="'+c.id+'"'+(existingData?.parentCampaignId===c.id?' selected':'')+'>'+esc(c.name)+'</option>').join('')+
+      '</select></div>'+
     '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
     '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
@@ -2380,43 +2398,43 @@ function renderTplFields() {
 /* -- DEFAULTS de checklist para template Campanhas -- */
 const CL_DEFAULTS = {
   'Eric': [
-    'Estratégia da campanha',
-    'Planejamento de conteúdos',
-    'Planilha de preços com desconto',
-    'Configurar Manychat',
-    'Planejamento de anúncios',
-    'Aprovar artes design',
+    {title:'Estratégia da campanha',        canal:'Geral'},
+    {title:'Planejamento de conteúdos',     canal:'Geral'},
+    {title:'Planilha de preços com desconto',canal:'Geral'},
+    {title:'Configurar Manychat',           canal:'WhatsApp VIP'},
+    {title:'Planejamento de anúncios',      canal:'Meta Ads'},
+    {title:'Aprovar artes design',          canal:'Geral'},
   ],
   'Giovana': [
-    'Banner site desk: Home (2568 x 1080)',
-    'Banner site mobile: Home (820 x 1200)',
-    'Banner site mobile: Home promocional (820 x 1000)',
-    'Banner site desk/mobile: Home duplo (1024 x 815)',
-    'Banner site desk: Categoria (3160 x 440)',
-    'Banner site mobile: Categoria (1200 x 500)',
-    'E-mail marketing (900 x 1000)',
-    'Anúncio (1080 x 1080)',
-    'Feed (1080 x 1350)',
-    'Story (1080 x 1920)',
-    'Banner Google Ads (1200 x 628)',
-    'Banner para grupo VIP (1080 x 1350)',
+    {title:'Banner site desk: Home (2568 x 1080)',         canal:'Site'},
+    {title:'Banner site mobile: Home (820 x 1200)',        canal:'Site'},
+    {title:'Banner site mobile: Home promocional (820 x 1000)', canal:'Site'},
+    {title:'Banner site desk/mobile: Home duplo (1024 x 815)',  canal:'Site'},
+    {title:'Banner site desk: Categoria (3160 x 440)',     canal:'Site'},
+    {title:'Banner site mobile: Categoria (1200 x 500)',   canal:'Site'},
+    {title:'E-mail marketing (900 x 1000)',                canal:'E-mail'},
+    {title:'Anúncio (1080 x 1080)',                        canal:'Meta Ads'},
+    {title:'Feed (1080 x 1350)',                           canal:'Feed Instagram'},
+    {title:'Story (1080 x 1920)',                          canal:'Stories IG'},
+    {title:'Banner Google Ads (1200 x 628)',               canal:'Google Ads'},
+    {title:'Banner para grupo VIP (1080 x 1350)',          canal:'WhatsApp VIP'},
   ],
   'Bia': [
-    'Configurar anúncios',
-    'Aviso grupo WhatsApp Influenciadores',
-    'Adicionar Banners site',
-    'Configurar cupom Nuvem',
-    'Configurar promoção automática Nuvem ou app',
-    'Atualizar desconto nos produtos Tiny',
-    'Ativar cronômetro Nuvem',
-    'Testar checkout antes do lançamento',
-    'Cadastrar produto ou brinde',
+    {title:'Configurar anúncios',                          canal:'Meta Ads'},
+    {title:'Aviso grupo WhatsApp Influenciadores',         canal:'Grupo WhatsApp'},
+    {title:'Adicionar Banners site',                       canal:'Site'},
+    {title:'Configurar cupom Nuvem',                       canal:'Site'},
+    {title:'Configurar promoção automática Nuvem ou app',  canal:'Site'},
+    {title:'Atualizar desconto nos produtos Tiny',         canal:'Geral'},
+    {title:'Ativar cronômetro Nuvem',                      canal:'Site'},
+    {title:'Testar checkout antes do lançamento',          canal:'Site'},
+    {title:'Cadastrar produto ou brinde',                  canal:'Geral'},
   ],
   'Tiago': [
-    'Produção de peças finalizadas',
-    'Conferir e atualizar o estoque',
-    'Orçamento',
-    'Comprar brinde',
+    {title:'Produção de peças finalizadas',  canal:'Geral'},
+    {title:'Conferir e atualizar o estoque', canal:'Geral'},
+    {title:'Orçamento',                      canal:'Geral'},
+    {title:'Comprar brinde',                 canal:'Geral'},
   ],
 };
 
@@ -2955,6 +2973,7 @@ function saveCampaign() {
     participants: participants.length ? participants : [document.getElementById('f-owner').value],
     canais: canais,
     driveLink:document.getElementById('f-drive')?.value?.trim()||'',
+      parentCampaignId:document.getElementById('f-parent-campaign')?.value||null,
     description:document.getElementById('f-desc')?.value?.trim()||'',
     subtasks:subs, comments:[],
     templateType: currentTemplate||null,
