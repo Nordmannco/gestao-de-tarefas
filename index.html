@@ -831,16 +831,33 @@ function initDB() {
 /* ═══════════════════════════════════════════════════════
    MEMBERS MANAGEMENT (localStorage)
 ═══════════════════════════════════════════════════════ */
-function loadMembers() {
+async function loadMembers() {
   try {
     const s = localStorage.getItem(MEMBERS_KEY);
-    if (s) { MEMBERS = JSON.parse(s); return; }
+    if (s) MEMBERS = JSON.parse(s);
   } catch(e) {}
-  MEMBERS = [];
+  if (_db) {
+    try {
+      const {data,error} = await _db.from('nordmann_data').select('payload').eq('key','members').single();
+      if (!error && data?.payload) {
+        const r = JSON.parse(data.payload);
+        if (Array.isArray(r) && r.length > 0) {
+          MEMBERS = r;
+          localStorage.setItem(MEMBERS_KEY, JSON.stringify(r));
+        }
+      }
+    } catch(e) {}
+  }
 }
 
 function saveMembers() {
   localStorage.setItem(MEMBERS_KEY, JSON.stringify(MEMBERS));
+  if (_db) {
+    _db.from('nordmann_data').upsert(
+      {key:'members', payload:JSON.stringify(MEMBERS), updated_at:new Date().toISOString()},
+      {onConflict:'key'}
+    ).catch(()=>{});
+  }
 }
 
 function uid() { return Math.random().toString(36).slice(2,9); }
@@ -1028,7 +1045,6 @@ function compressImage(file, cb) {
    BOOT
 ═══════════════════════════════════════════════════════ */
 function bootApp() {
-  initDB();
   loadData().then(() => {
     setView('kanban');
     updateStorageInfo();
@@ -2944,22 +2960,21 @@ document.addEventListener('click', e => {
 /* ═══════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════ */
-loadMembers();
-
-// Check saved session
-const savedSession = localStorage.getItem(SESSION_KEY);
-if (savedSession) {
-  const m = getMember(savedSession);
-  if (m) {
-    window.currentUser = m;
-    document.getElementById('picker-screen').classList.add('hidden');
-    bootApp();
-  } else {
-    renderMemberPicker();
+(async function init() {
+  initDB();
+  await loadMembers();
+  const savedSession = localStorage.getItem(SESSION_KEY);
+  if (savedSession) {
+    const m = getMember(savedSession);
+    if (m) {
+      window.currentUser = m;
+      document.getElementById('picker-screen').classList.add('hidden');
+      bootApp();
+      return;
+    }
   }
-} else {
   renderMemberPicker();
-}
+})();
 </script>
 </body>
 </html>
