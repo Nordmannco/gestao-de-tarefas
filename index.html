@@ -2266,11 +2266,18 @@ function updateCampaign(id) {
   c.description = document.getElementById('f-desc')?.value?.trim()||'';
   c.templateType = currentTemplate||null;
   c.templateData = currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null;
+  const oldStatus = c.status; // status before update
   c.subtasks = [...autoSubs, ...manualSubs];
   subForms=[]; currentTemplate=null; tplData={};
+  // Apply status rules if status changed
+  const newStatus = document.getElementById('f-status').value;
+  if (newStatus !== oldStatus) {
+    c.status = newStatus;
+    applyStatusRules(c, oldStatus, newStatus);
+  }
   saveData();
   renderKanban();
-  if (currentView==='personal') renderPersonal();
+  renderPersonal();
   closePanel();
   showToast('Campanha atualizada','#3ecf8e');
 }
