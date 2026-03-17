@@ -737,7 +737,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
     <button class="btn-cancel" onclick="closePanel()">Cancelar</button>
     <div style="display:flex;gap:8px">
       <button id="btn-delete" style="display:none" class="btn-delete" onclick="deleteCampaign()">🗑 Excluir</button>
-      <button class="btn-save" id="btn-save" onclick="saveCampaign()">Salvar campanha</button>
+      <button class="btn-save" id="btn-save">Salvar campanha</button>
     </div>
   </div>
 </div>
@@ -997,9 +997,12 @@ function saveMember() {
   document.getElementById('member-modal-backdrop').classList.remove('active');
   renderMemberPicker();
   // Refresh sidebar if app is running
-  if (!document.getElementById('picker-screen').classList.contains('hidden')) return;
-  updateSidebarMembers();
-  if (currentView === 'admin') renderAdmin();
+  const isAppActive = document.getElementById('picker-screen').classList.contains('hidden');
+  if (isAppActive) {
+    updateSidebarMembers();
+    if (currentView === 'admin') renderAdmin();
+    if (currentView === 'kanban') renderKanban();
+  }
   showToast('Membro salvo', '#3ecf8e');
 }
 
@@ -1298,6 +1301,10 @@ function toggleSubtask(campId, subId) {
   s.status = s.status==='Concluído' ? 'Pendente' : 'Concluído';
   if ((c.subtasks||[]).every(x=>x.status==='Concluído') && c.status!=='Concluído') c.status='Concluído';
   saveData();
+  if (currentView==='kanban') renderKanban();
+  if (currentView==='personal') renderPersonal();
+  if (currentView==='overview') renderOverview();
+  if (editingCampId === campId) openCampaignDetail(campId);
 }
 
 /* NAVIGATION */
@@ -1805,7 +1812,7 @@ function openNewCampaignPanel() {
   if (btnDel) btnDel.style.display='none';
   document.getElementById('panel-title').textContent='Nova campanha';
   document.getElementById('btn-save').textContent='Salvar campanha';
-  document.getElementById('btn-save').onclick=saveCampaign;
+  document.getElementById('btn-save').onclick = saveCampaign;
   renderCampaignForm(null);
   openPanel();
 }
@@ -2425,11 +2432,7 @@ function addNewCanal() {
   inp.value = '';
 }
 
-let _saving = false;
 function saveCampaign() {
-  if (_saving) return;
-  _saving = true;
-  setTimeout(() => { _saving = false; }, 2000);
   const name = document.getElementById('f-name')?.value?.trim();
   if (!name) { _saving = false; alert('Insira o nome da campanha'); return; }
 
