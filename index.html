@@ -1859,7 +1859,7 @@ function applyStatusRules(c, oldStatus, newStatus) {
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
 
     const jaCriou = (c.subtasks||[]).some(s=>s._auto==='checklist');
-    if (!jaCriou && c.templateType) {
+    if (!jaCriou) { // distribui para qualquer campanha, com ou sem template
       // Check for custom override checklist first
       const customTpls = getCustomTemplates();
       const customTpl = customTpls.find(t => t.id === c.templateType);
@@ -1876,8 +1876,8 @@ function applyStatusRules(c, oldStatus, newStatus) {
             _auto: 'checklist',
           });
         });
-      } else if (c.templateType === 'campanhas' && c.templateData?.checklistsMembro) {
-        // Use built-in campanhas checklist per member
+      } else if (c.templateData?.checklistsMembro) {
+        // Use template data checklist per member (campanhas template)
         const clm = c.templateData.checklistsMembro;
         Object.entries(clm).forEach(([nome, itens]) => {
           const m = MEMBERS.find(x=>x.name===nome);
@@ -1893,6 +1893,18 @@ function applyStatusRules(c, oldStatus, newStatus) {
             });
           });
         });
+      } else {
+        // Sem template — cria uma tarefa genérica para cada participante
+        (c.participants || [c.owner]).forEach(memberId => {
+          if (!memberId) return;
+          c.subtasks.push({
+            id: uid(), title: 'Executar: ' + c.name,
+            canal: 'Geral', urgency: 'Normal',
+            owner: memberId, due: '',
+            status: 'Pendente', dep: null, checklist: [],
+            _auto: 'checklist',
+          });
+        });
       }
     }
   }
@@ -1904,10 +1916,9 @@ function c_updateStatus(id, status) {
   c.status = status;
   applyStatusRules(c, oldStatus, status);
   saveData();
-  // Fecha painel e re-renderiza kanban para mover o card
   closePanel();
   renderKanban();
-  if (currentView==='personal') renderPersonal();
+  renderPersonal(); // sempre — regras de status afetam painéis de todos os membros
   if (currentView==='overview') renderOverview();
   showToast('Status: ' + status, '#7c6af7');
 }
