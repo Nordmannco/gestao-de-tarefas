@@ -8,12 +8,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ─── RESET ─── */
+/* --- RESET --- */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 button{font-family:inherit;cursor:pointer}
 input,textarea,select{font-family:inherit}
 
-/* ─── VARS ─── */
+/* --- VARS --- */
 :root{
   --font:'DM Sans',sans-serif;
   --font-mono:'DM Mono',monospace;
@@ -48,7 +48,7 @@ input,textarea,select{font-family:inherit}
   --c-tarefa:#f59e0b;     --c-tarefa-bg:rgba(245,158,11,.08);
 }
 
-/* ─── MEMBER PICKER SCREEN ─── */
+/* --- MEMBER PICKER SCREEN --- */
 #picker-screen{
   position:fixed;inset:0;
   background:var(--bg-base);
@@ -84,7 +84,7 @@ input,textarea,select{font-family:inherit}
 }
 .btn-add-member:hover{border-color:var(--c-campanha);color:var(--c-campanha)}
 
-/* ─── TEMPLATES ─── */
+/* --- TEMPLATES --- */
 .tpl-picker{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
 .tpl-card{
   border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;cursor:pointer;
@@ -124,7 +124,7 @@ input,textarea,select{font-family:inherit}
 .tpl-step-box{background:var(--bg-surface);border:0.5px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px;position:relative}
 .tpl-step-num{font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:6px}
 
-/* ─── TEMPLATE DETAIL VIEW ─── */
+/* --- TEMPLATE DETAIL VIEW --- */
 .td-section{background:var(--bg-surface);border:0.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
 .td-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .td-field{margin-bottom:10px}
@@ -159,7 +159,7 @@ input,textarea,select{font-family:inherit}
 .tpl-photo-upload{width:100%;height:100px;border:1.5px dashed var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--text-muted);gap:6px;transition:border-color .15s;background:var(--bg-card)}
 .tpl-photo-upload:hover{border-color:var(--c-campanha);color:var(--c-campanha)}
 
-/* ─── MODAL GENÉRICO ─── */
+/* --- MODAL GENÉRICO --- */
 .modal-backdrop{
   position:fixed;inset:0;background:rgba(0,0,0,0.5);
   z-index:10000;display:flex;align-items:center;justify-content:center;
@@ -186,7 +186,7 @@ input,textarea,select{font-family:inherit}
 .modal-msg.err{color:var(--u-urgente)}
 .modal-msg.ok{color:var(--c-conteudo)}
 
-/* ─── AVATAR UPLOAD ─── */
+/* --- AVATAR UPLOAD --- */
 .avatar-upload-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
 .avatar-upload-circle{
   width:52px;height:52px;border-radius:50%;background:var(--bg-surface);
@@ -204,7 +204,7 @@ input,textarea,select{font-family:inherit}
   border-radius:6px;padding:6px 14px;background:var(--c-campanha-bg);cursor:pointer;
 }
 
-/* ─── LAYOUT PRINCIPAL ─── */
+/* --- LAYOUT PRINCIPAL --- */
 body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary);height:100vh;overflow:hidden;display:flex}
 .sidebar{
   width:var(--sidebar-w);flex-shrink:0;background:var(--sidebar-bg);
@@ -262,7 +262,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .view{display:none}
 .view.active{display:block}
 
-/* ─── KANBAN ─── */
+/* --- KANBAN --- */
 .kanban-board{display:flex;gap:12px;min-height:calc(100vh - 120px);align-items:flex-start}
 .kanban-col{min-width:260px;max-width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:0}
 .kanban-col-header{display:flex;align-items:center;gap:7px;padding:8px 2px;margin-bottom:6px}
@@ -303,7 +303,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .empty-col{font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0;border:1.5px dashed var(--border);border-radius:8px}
 .comment-count{font-size:10px;color:var(--text-muted)}
 
-/* ─── SLIDE PANEL ─── */
+/* --- SLIDE PANEL --- */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s}
 .overlay.active{opacity:1;pointer-events:all}
 .slide-panel{
@@ -323,7 +323,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .btn-cancel{height:34px;padding:0 14px;background:var(--bg-surface);color:var(--text-secondary);border:none;border-radius:var(--radius);font-size:13px}
 .btn-delete{height:34px;padding:0 14px;background:transparent;border:0.5px solid var(--u-urgente);border-radius:var(--radius);color:var(--u-urgente);font-size:13px}
 
-/* ─── FORM ─── */
+/* --- FORM --- */
 .form-group{margin-bottom:14px}
 .form-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);display:block;margin-bottom:5px}
 .form-input{width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;outline:none;color:var(--text-primary);background:var(--bg-card);transition:border-color .15s}
@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .subtask-form{background:var(--bg-surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;position:relative}
 .subtask-remove{position:absolute;top:8px;right:8px;background:none;border:none;font-size:16px;color:var(--text-muted);line-height:1}
 
-/* ─── CAMPAIGN DETAIL ─── */
+/* --- CAMPAIGN DETAIL --- */
 .status-select{
   width:100%;padding:6px 10px;border:0.5px solid var(--border);border-radius:var(--radius);
   font-size:12px;outline:none;background:var(--bg-surface);font-family:var(--font);
@@ -372,7 +372,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .add-sub-input{flex:1;height:32px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:12px;outline:none;background:var(--bg-card)}
 .add-sub-input:focus{border-color:var(--c-campanha)}
 
-/* ─── PAINEL PESSOAL ─── */
+/* --- PAINEL PESSOAL --- */
 .personal-panel{max-width:680px;margin:0 auto}
 .panel-header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:0.5px solid var(--border);margin-bottom:14px}
 .panel-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden}
@@ -406,7 +406,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .task-blocked{font-size:11px;color:var(--u-urgente);margin-top:3px}
 .urgency-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
 
-/* ─── FILTROS DROPDOWN ─── */
+/* --- FILTROS DROPDOWN --- */
 .filter-bar{padding:10px 0 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--border);margin-bottom:14px}
 .filter-dd{position:relative}
 .filter-dd-btn{
@@ -427,7 +427,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .filter-dd-clear{padding:6px 14px;font-size:11px;color:var(--text-muted);cursor:pointer;border-top:0.5px solid var(--border)}
 .btn-clear-all{height:30px;padding:0 12px;border:0.5px solid var(--u-urgente);border-radius:6px;background:var(--u-urgente-bg);color:var(--u-urgente);font-size:11px}
 
-/* ─── CARGA DA EQUIPE ─── */
+/* --- CARGA DA EQUIPE --- */
 .overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
 .overview-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .15s}
 .overview-card:hover{border-color:var(--c-campanha)}
@@ -443,7 +443,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .ov-task-item{font-size:11px;color:var(--text-secondary);display:flex;align-items:center;gap:6px}
 .ov-task-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
-/* ─── CALENDÁRIO ─── */
+/* --- CALENDÁRIO --- */
 .calendar-wrap{display:flex;gap:0;height:calc(100vh - 90px)}
 .calendar-main{flex:1;min-width:0}
 .calendar-side{width:280px;flex-shrink:0;border-left:0.5px solid var(--border);padding:16px;overflow-y:auto}
@@ -465,7 +465,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .cal-task-name{font-weight:500;color:var(--text-primary);margin-bottom:2px}
 .cal-task-meta{color:var(--text-muted);font-size:10px}
 
-/* ─── COMENTÁRIOS NO DETALHE ─── */
+/* --- COMENTÁRIOS NO DETALHE --- */
 .comment-section{margin-top:20px;border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .comment-header{padding:10px 14px;background:var(--bg-surface);border-bottom:0.5px solid var(--border);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)}
 .comment-list{padding:12px 14px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
@@ -479,16 +479,16 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .comment-input-row input{flex:1;height:32px;border:0.5px solid var(--border);border-radius:6px;padding:0 10px;font-size:12px;outline:none;background:var(--bg-card)}
 .comment-input-row input:focus{border-color:var(--c-campanha)}
 
-/* ─── PERFIL MODAL ─── */
+/* --- PERFIL MODAL --- */
 #profile-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 #profile-modal-backdrop.active{opacity:1;pointer-events:all}
 
-/* ─── ADMIN ─── */
+/* --- ADMIN --- */
 .admin-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:8px}
 .admin-badge-active{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--c-conteudo-bg,rgba(16,185,129,.08));color:var(--c-conteudo);font-weight:500}
 .btn-revoke{height:28px;padding:0 12px;background:transparent;color:var(--u-urgente);border:0.5px solid var(--u-urgente);border-radius:6px;font-size:11px}
 
-/* ─── TOAST ─── */
+/* --- TOAST --- */
 .toast{
   position:fixed;bottom:36px;left:50%;transform:translateX(-50%) translateY(8px);
   background:var(--bg-card);border:0.5px solid var(--border);border-radius:20px;
@@ -499,7 +499,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
-/* ─── STORAGE BAR ─── */
+/* --- STORAGE BAR --- */
 .storage-bar{
   position:fixed;bottom:0;left:var(--sidebar-w);right:0;height:28px;
   background:var(--bg-surface);border-top:0.5px solid var(--border);
@@ -511,7 +511,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .storage-sep{color:var(--border-light)}
 .content{padding-bottom:36px}
 
-/* ─── TEMPLATE CARDS ─── */
+/* --- TEMPLATE CARDS --- */
 #template-section{margin-bottom:16px}
 .template-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .template-card{padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg-card);cursor:pointer;text-align:left;transition:all .15s}
@@ -528,9 +528,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
+<!-- ===========================================
      MEMBER PICKER
-═══════════════════════════════════════════ -->
+=========================================== -->
 <div id="picker-screen">
   <div class="picker-box">
     <div class="picker-logo">N</div>
@@ -543,9 +543,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ===========================================
      ADD / EDIT MEMBER MODAL
-═══════════════════════════════════════════ -->
+=========================================== -->
 <div class="modal-backdrop" id="member-modal-backdrop" onclick="closeMemberModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-h" id="member-modal-title">Novo membro</div>
@@ -581,9 +581,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ===========================================
      PROFILE EDIT MODAL (dentro do app)
-═══════════════════════════════════════════ -->
+=========================================== -->
 <div id="profile-modal-backdrop" onclick="closeProfileModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-h">✏️ Editar perfil</div>
@@ -619,9 +619,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ===========================================
      APP PRINCIPAL
-═══════════════════════════════════════════ -->
+=========================================== -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">N</div>
 
@@ -765,9 +765,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════════════
-   CONSTANTS & STATE
-═══════════════════════════════════════════════════════ */
+/* CONSTANTS & STATE */
 const TYPES    = ['Campanha','Conteúdo','Tarefa'];
 const STATUSES = ['Em planejamento','Em andamento','Bloqueado','Aguardando aprovação','Concluído'];
 const CANAIS   = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
@@ -813,9 +811,7 @@ let tplData = {}; // working copy of template-specific data
 
 window.currentUser = null;
 
-/* ═══════════════════════════════════════════════════════
-   SUPABASE DATA SYNC (dados apenas, sem auth)
-═══════════════════════════════════════════════════════ */
+/* SUPABASE DATA SYNC (dados apenas, sem auth) */
 const SB_URL = 'https://qnwmhncfbzmukrqypkuc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFud21obmNmYnptdWtycXlwa3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MDU1MzksImV4cCI6MjA4OTI4MTUzOX0.DL9KcXEdwCf42BOH7GP7PDOAbJG1nznl_S8TbPSu1rA';
 let _db = null;
@@ -828,9 +824,7 @@ function initDB() {
   } catch(e) {}
 }
 
-/* ═══════════════════════════════════════════════════════
-   MEMBERS MANAGEMENT (localStorage)
-═══════════════════════════════════════════════════════ */
+/* MEMBERS MANAGEMENT (localStorage) */
 async function loadMembers() {
   try {
     const s = localStorage.getItem(MEMBERS_KEY);
@@ -838,9 +832,9 @@ async function loadMembers() {
   } catch(e) {}
   if (_db) {
     try {
-      const {data,error} = await _db.from('nordmann_data').select('payload').eq('key','members').single();
-      if (!error && data?.payload) {
-        const r = JSON.parse(data.payload);
+      const res = await _db.from('nordmann_data').select('payload').eq('key','members').single();
+      if (!res.error && res.data && res.data.payload) {
+        const r = JSON.parse(res.data.payload);
         if (Array.isArray(r) && r.length > 0) {
           MEMBERS = r;
           localStorage.setItem(MEMBERS_KEY, JSON.stringify(r));
@@ -856,7 +850,7 @@ function saveMembers() {
     _db.from('nordmann_data').upsert(
       {key:'members', payload:JSON.stringify(MEMBERS), updated_at:new Date().toISOString()},
       {onConflict:'key'}
-    ).catch(()=>{});
+    ).catch(function(){});
   }
 }
 
@@ -871,7 +865,7 @@ function memberInitials(name) {
   return name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
 }
 
-/* ── PICKER ── */
+/* -- PICKER -- */
 function renderMemberPicker() {
   const grid = document.getElementById('member-pick-grid');
   if (!grid) return;
@@ -908,7 +902,7 @@ function doLogout() {
   renderMemberPicker();
 }
 
-/* ── ADD / EDIT MEMBER MODAL ── */
+/* -- ADD / EDIT MEMBER MODAL -- */
 function openAddMemberModal() {
   mmAvatarB64 = null;
   document.getElementById('mm-id').value = '';
@@ -1023,7 +1017,7 @@ function deleteMember() {
   showToast('Membro removido', '#f5a623');
 }
 
-/* ── COMPRESS IMAGE ── */
+/* -- COMPRESS IMAGE -- */
 function compressImage(file, cb) {
   if (!file) return;
   const canvas = document.createElement('canvas');
@@ -1041,9 +1035,7 @@ function compressImage(file, cb) {
   img.src = url;
 }
 
-/* ═══════════════════════════════════════════════════════
-   BOOT
-═══════════════════════════════════════════════════════ */
+/* BOOT */
 function bootApp() {
   loadData().then(() => {
     setView('kanban');
@@ -1086,9 +1078,7 @@ function updateSidebarUser() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   PROFILE MODAL
-═══════════════════════════════════════════════════════ */
+/* PROFILE MODAL */
 function openProfileModal() {
   const u = window.currentUser;
   if (!u) return;
@@ -1164,9 +1154,7 @@ function saveProfile() {
   setTimeout(() => document.getElementById('profile-modal-backdrop').classList.remove('active'), 1000);
 }
 
-/* ═══════════════════════════════════════════════════════
-   ADMIN
-═══════════════════════════════════════════════════════ */
+/* ADMIN */
 function renderAdmin() {
   const el = document.getElementById('admin-members-list');
   if (!el) return;
@@ -1183,9 +1171,7 @@ function renderAdmin() {
   }).join('') || '<div style="color:var(--text-muted);font-size:13px;padding:16px;text-align:center">Nenhum membro</div>';
 }
 
-/* ═══════════════════════════════════════════════════════
-   PERSISTENCE
-═══════════════════════════════════════════════════════ */
+/* PERSISTENCE */
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(campaigns));
   updateStorageInfo();
@@ -1245,9 +1231,7 @@ function confirmReset() {
   showToast('Dados resetados','#ef4444');
 }
 
-/* ═══════════════════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════════════════ */
+/* HELPERS */
 function getCampaign(id) { return campaigns.find(c => c.id===id); }
 
 function formatDate(s) {
@@ -1316,9 +1300,7 @@ function toggleSubtask(campId, subId) {
   saveData();
 }
 
-/* ═══════════════════════════════════════════════════════
-   NAVIGATION
-═══════════════════════════════════════════════════════ */
+/* NAVIGATION */
 function setView(view, member) {
   document.querySelectorAll('.sidebar-btn,.avatar-btn').forEach(b=>b.classList.remove('active'));
   currentView = view; currentMember = member||null;
@@ -1363,9 +1345,7 @@ function setView(view, member) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   KANBAN
-═══════════════════════════════════════════════════════ */
+/* KANBAN */
 function renderKanbanFilters() {
   const chips = document.getElementById('topbar-chips');
   let html = '';
@@ -1435,9 +1415,7 @@ function renderCampaignCard(c) {
     '</div>';
 }
 
-/* ═══════════════════════════════════════════════════════
-   CAMPAIGN DETAIL
-═══════════════════════════════════════════════════════ */
+/* CAMPAIGN DETAIL */
 function openCampaignDetail(id) {
   const c = getCampaign(id); if (!c) return;
   editingCampId = id;
@@ -1517,11 +1495,11 @@ function openCampaignDetail(id) {
   openPanel();
 }
 
-/* ── REGRAS AUTOMÁTICAS DE STATUS ── */
+/* -- REGRAS AUTOMÁTICAS DE STATUS -- */
 function applyStatusRules(c, oldStatus, newStatus) {
   if (!c) return;
 
-  // ── Em planejamento → cria tarefa "Planejar [nome]" para o responsável ──
+  // -- Em planejamento → cria tarefa "Planejar [nome]" para o responsável --
   if (newStatus === 'Em planejamento' && (oldStatus !== 'Em planejamento' || oldStatus === null)) {
     const jaTemPlanning = (c.subtasks||[]).some(s=>s._auto==='planning');
     if (!jaTemPlanning) {
@@ -1540,7 +1518,7 @@ function applyStatusRules(c, oldStatus, newStatus) {
     }
   }
 
-  // ── Em andamento → remove tarefa de planejamento e cria tarefas por checklist ──
+  // -- Em andamento → remove tarefa de planejamento e cria tarefas por checklist --
   if (newStatus === 'Em andamento' && oldStatus !== 'Em andamento') {
     // Remove tarefa de planejamento automática
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
@@ -1627,9 +1605,7 @@ function addDetailComment(campId) {
   if (currentView==='kanban') renderKanban();
 }
 
-/* ═══════════════════════════════════════════════════════
-   TEMPLATE DETAIL RENDERER
-═══════════════════════════════════════════════════════ */
+/* TEMPLATE DETAIL RENDERER */
 function renderTemplateDetail(c) {
   const t = c.templateType;
   const d = c.templateData||{};
@@ -1783,7 +1759,7 @@ function renderTplDemandaDetail(c,d){
   return blocosHtml || '';
 }
 
-/* ── Toggle checklists dentro do detalhe ── */
+/* -- Toggle checklists dentro do detalhe -- */
 function tplDetailClToggle(campId, path, idx) {
   const c = getCampaign(campId); if(!c||!c.templateData) return;
   const parts = path.split('.');
@@ -1800,9 +1776,7 @@ function tplDetailStepToggle(campId, membId, idx) {
   saveData(); openCampaignDetail(campId);
 }
 
-/* ═══════════════════════════════════════════════════════
-   PANEL OPEN/CLOSE
-═══════════════════════════════════════════════════════ */
+/* PANEL OPEN/CLOSE */
 function openPanel() {
   document.getElementById('overlay').classList.add('active');
   document.getElementById('slide-panel').classList.add('active');
@@ -1824,9 +1798,7 @@ function deleteCampaign() {
   showToast('"'+c.name+'" excluída','#ef4444');
 }
 
-/* ═══════════════════════════════════════════════════════
-   NEW / EDIT CAMPAIGN PANEL
-═══════════════════════════════════════════════════════ */
+/* NEW / EDIT CAMPAIGN PANEL */
 function openNewCampaignPanel() {
   editingCampId=null; subForms=[]; currentTemplate=null; tplData={};
   const btnDel = document.getElementById('btn-delete');
@@ -1838,7 +1810,7 @@ function openNewCampaignPanel() {
   openPanel();
 }
 
-/* ─── TEMPLATE DEFINITIONS ─── */
+/* --- TEMPLATE DEFINITIONS --- */
 const TEMPLATES = [
   {id:'campanhas',  icon:'⚡', name:'Campanha',       desc:'Briefing completo com metas, cronograma e checklists'},
   {id:'publicacoes',icon:'📸', name:'Publicação',      desc:'Brief de post com copy (Bia) e design (Giovana)'},
@@ -1913,9 +1885,7 @@ function selectTemplate(id) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   TEMPLATE FIELD RENDERERS
-═══════════════════════════════════════════════════════ */
+/* TEMPLATE FIELD RENDERERS */
 function renderTplFields() {
   const c = document.getElementById('tpl-fields-container');
   if (!c) return;
@@ -1926,8 +1896,8 @@ function renderTplFields() {
   autoResizeAll();
 }
 
-/* ── CAMPANHAS form ── */
-/* ── DEFAULTS de checklist para template Campanhas ── */
+/* -- CAMPANHAS form -- */
+/* -- DEFAULTS de checklist para template Campanhas -- */
 const CL_DEFAULTS = {
   'Eric': [
     'Estratégia da campanha',
@@ -1998,7 +1968,7 @@ function campCheckItem(it, i, path, colorDot) {
 function renderTplCampanhasForm() {
   const d = tplData;
 
-  /* ── inicializa defaults se primeira vez ── */
+  /* -- inicializa defaults se primeira vez -- */
   if (!d._defaultsApplied) {
     // Use participants selected in form, fallback to all defaults
     const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
@@ -2029,7 +1999,7 @@ function renderTplCampanhasForm() {
   const membrosFixos = ['Eric','Giovana','Bia','Tiago'];
   const memberColors = {Eric:'#7c6af7',Giovana:'#8b5cf6',Bia:'#06b6d4',Tiago:'#f59e0b'};
 
-  /* ── Datas-chave ── */
+  /* -- Datas-chave -- */
   const datasHtml = (d.datasChave||[]).map((x,i)=>
     '<div style="display:grid;grid-template-columns:1fr 130px 100px auto;gap:6px;align-items:center;margin-bottom:6px">'+
       '<input class="form-input" style="height:30px;font-size:12px" placeholder="Ex: Início oficial" value="'+esc(x.label||'')+'" oninput="tplData.datasChave['+i+'].label=this.value">'+
@@ -2039,7 +2009,7 @@ function renderTplCampanhasForm() {
     '</div>'
   ).join('');
 
-  /* ── Checklists membro ── */
+  /* -- Checklists membro -- */
   const clMembrosHtml = membrosFixos.map(nome=>{
     const itens = checklistsMembro[nome]||[];
     const color = memberColors[nome]||'#888';
@@ -2061,11 +2031,11 @@ function renderTplCampanhasForm() {
     '</div>';
   }).join('');
 
-  /* ── Checklist encerramento ── */
+  /* -- Checklist encerramento -- */
   const clEnc = d.checklistEncerramento||[];
   const clEncHtml = clEnc.map((it,i)=>campCheckItem(it,i,'checklistEncerramento','#888')).join('');
 
-  /* ── Giovana briefing extra ── */
+  /* -- Giovana briefing extra -- */
   const gio = d.giovanaBriefing||{};
 
   return (
@@ -2141,7 +2111,7 @@ function renderTplCampanhasForm() {
   );
 }
 
-/* ── PUBLICAÇÕES form ── */
+/* -- PUBLICAÇÕES form -- */
 function renderTplPublicacoesForm() {
   const d = tplData;
   const tipo = d.designTipo || 'banner';
@@ -2190,7 +2160,7 @@ function renderTplPublicacoesForm() {
   '</div>';
 }
 
-/* ── EMAIL MKT form ── */
+/* -- EMAIL MKT form -- */
 function renderTplEmailForm() {
   const d = tplData;
   const produtos = d.produtos||[];
@@ -2235,7 +2205,7 @@ function renderTplEmailForm() {
   '</div>';
 }
 
-/* ── DEMANDA INTERNA form ── */
+/* -- DEMANDA INTERNA form -- */
 function renderTplDemandaForm() {
   const d = tplData;
   const membrosAtivos = d.membrosAtivos||[];
@@ -2282,7 +2252,7 @@ function renderTplDemandaForm() {
   '</div>';
 }
 
-/* ── TEMPLATE HELPER FUNCTIONS ── */
+/* -- TEMPLATE HELPER FUNCTIONS -- */
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function autoResizeAll(){
@@ -2537,9 +2507,7 @@ function saveCampaign() {
   showToast('Campanha criada','#3ecf8e');
 }
 
-/* ═══════════════════════════════════════════════════════
-   PERSONAL PANEL
-═══════════════════════════════════════════════════════ */
+/* PERSONAL PANEL */
 function renderPersonalFilters() {
   const bar = document.getElementById('personal-filter-bar');
   if (!bar) return;
@@ -2651,47 +2619,74 @@ function renderPersonal() {
   // Cards
   function taskCard(t, isDone) {
     const {sub:s, campaign:c} = t;
-    const blocked=isBlocked(s,c);
-    const late=isLate(s);
-    const uc=URG_COLOR[s.urgency]||{color:'#888',bg:'#eee'};
-    const scc=STATUS_COLOR[c.status]||{color:'#888',bg:'rgba(136,136,136,.08)'};
-    const depTask=s.dep?(c.subtasks||[]).find(x=>x.id===s.dep):null;
-    return '<div class="task-block'+(isDone?' done':'')+'" onclick="openCampaignDetail(''+c.id+'')" style="padding-left:16px;cursor:pointer">'+
+    const blocked = isBlocked(s,c);
+    const late = isLate(s);
+    const uc = URG_COLOR[s.urgency] || {color:'#888', bg:'#eee'};
+    const scc = STATUS_COLOR[c.status] || {color:'#888', bg:'rgba(136,136,136,.08)'};
+    const depTask = s.dep ? (c.subtasks||[]).find(x=>x.id===s.dep) : null;
+    const urgOpts = URGENCIAS.map(u =>
+      '<option value="'+u+'"'+(u===s.urgency?' selected':'')+'>'+u+'</option>'
+    ).join('');
+    const metaLine = [
+      '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>',
+      '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>',
+      s.canal ? '<span class="sub-tag">'+s.canal+'</span>' : '',
+      s.due ? '<span style="font-size:11px;color:var(--text-muted)">\u23F0 '+formatDue(s.due)+'</span>' : '',
+      late ? '<span class="late-badge">\u26A0 Atrasada</span>' : '',
+    ].filter(Boolean).join('');
+    const cbSvg = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
+    const campId = c.id, subId = s.id;
+    const div = document.createElement('div');
+    div.className = 'task-block' + (isDone ? ' done' : '');
+    div.style.cssText = 'padding-left:16px;cursor:pointer';
+    div.onclick = function(){ openCampaignDetail(campId); };
+    div.innerHTML =
       '<div style="position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:4px 0 0 4px;background:'+uc.color+'"></div>'+
-      '<div class="task-cb '+(isDone?'checked':'')+'" onclick="event.stopPropagation();toggleSubtaskPersonal(''+c.id+'',''+s.id+'')">'+
-        (isDone?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
+      '<div class="task-cb '+(isDone?'checked':'')+'" id="cb-'+subId+'">'+
+        (isDone ? cbSvg : '')+
       '</div>'+
       '<div class="task-body">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:3px">'+
           '<div class="task-title"'+(isDone?' style="text-decoration:line-through;opacity:.5"':'')+'>'+s.title+'</div>'+
-          '<select onchange="changeUrgency(''+c.id+'',''+s.id+'',this.value)" onclick="event.stopPropagation()" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none">'+
-            URGENCIAS.map(u=>'<option value="'+u+'"'+(u===s.urgency?' selected':'')+'>'+u+'</option>').join('')+
+          '<select id="urg-'+subId+'" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none">'+
+            urgOpts+
           '</select>'+
         '</div>'+
         '<div class="task-campaign" style="margin-bottom:5px">'+c.name+'</div>'+
-        '<div class="task-meta-line" style="margin-top:2px;gap:4px">'+
-          '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>'+
-          '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>'+
-          (s.canal?'<span class="sub-tag">'+s.canal+'</span>':'')+
-          (s.due?'<span style="font-size:11px;color:var(--text-muted)">⏰ '+formatDue(s.due)+'</span>':'')+
-          (late?'<span class="late-badge">⚠ Atrasada</span>':'')+
-        '</div>'+
-        (blocked&&depTask?'<div class="task-blocked">🔒 '+depTask.title+'</div>':'')+
-      '</div></div>';
+        '<div class="task-meta-line" style="margin-top:2px;gap:4px">'+metaLine+'</div>'+
+        (blocked&&depTask ? '<div class="task-blocked">\uD83D\uDD12 '+depTask.title+'</div>' : '')+
+      '</div>';
+    // Attach events after setting innerHTML
+    const cb = div.querySelector('.task-cb');
+    if (cb) cb.onclick = function(e){ e.stopPropagation(); toggleSubtaskPersonal(campId, subId); };
+    const sel = div.querySelector('#urg-'+subId);
+    if (sel) sel.onchange = function(e){ e.stopPropagation(); changeUrgency(campId, subId, this.value); };
+    return div;
   }
 
-  let html='';
+
+
+  const container = document.getElementById('personal-tasks');
+  container.innerHTML = '';
+  if (!tasks.length) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:40px 0">Nenhuma tarefa encontrada</div>';
+    return;
+  }
   if (pending.length) {
-    html+='<div class="task-section-title">Pendentes ('+pending.length+')</div>';
-    pending.forEach(t=>html+=taskCard(t,false));
+    const title = document.createElement('div');
+    title.className = 'task-section-title';
+    title.textContent = 'Pendentes (' + pending.length + ')';
+    container.appendChild(title);
+    pending.forEach(t => container.appendChild(taskCard(t, false)));
   }
   if (done.length) {
-    html+='<div class="task-section-title" style="margin-top:20px">Concluídas ('+done.length+')</div>';
-    done.forEach(t=>html+=taskCard(t,true));
+    const title = document.createElement('div');
+    title.className = 'task-section-title';
+    title.style.marginTop = '20px';
+    title.textContent = 'Concluídas (' + done.length + ')';
+    container.appendChild(title);
+    done.forEach(t => container.appendChild(taskCard(t, true)));
   }
-  if (!tasks.length) html='<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:40px 0">Nenhuma tarefa encontrada</div>';
-
-  document.getElementById('personal-tasks').innerHTML=html;
 }
 
 function toggleSubtaskPersonal(campId, subId) {
@@ -2705,9 +2700,7 @@ function changeUrgency(campId, subId, urgency) {
   s.urgency=urgency; saveData(); renderPersonal();
 }
 
-/* ═══════════════════════════════════════════════════════
-   OVERVIEW (carga da equipe)
-═══════════════════════════════════════════════════════ */
+/* OVERVIEW (carga da equipe) */
 function renderOverview() {
   const grid = document.getElementById('overview-grid');
   const now = new Date();
@@ -2740,9 +2733,7 @@ function renderOverview() {
   }).join('');
 }
 
-/* ═══════════════════════════════════════════════════════
-   CALENDAR
-═══════════════════════════════════════════════════════ */
+/* CALENDAR */
 function calNav(dir) {
   calDate = new Date(calDate.getFullYear(), calDate.getMonth()+dir, 1);
   renderCalendar();
@@ -2814,9 +2805,7 @@ function calSelectDay(d,y,m) {
   renderCalendar();
 }
 
-/* ═══════════════════════════════════════════════════════
-   DRAG & DROP KANBAN
-═══════════════════════════════════════════════════════ */
+/* DRAG & DROP KANBAN */
 let draggedId = null;
 
 function dragStart(e, el) {
@@ -2866,9 +2855,7 @@ function dropCard(e, status) {
   showToast(c.name + ' → ' + status, '#7c6af7');
 }
 
-/* ═══════════════════════════════════════════════════════
-   MULTI-SELECT & BULK DELETE
-═══════════════════════════════════════════════════════ */
+/* MULTI-SELECT & BULK DELETE */
 let selectedCards = new Set();
 let isSelecting = false;
 let selectStartId = null;
@@ -2957,10 +2944,8 @@ document.addEventListener('click', e => {
   }
 });
 
-/* ═══════════════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════════════ */
-(async function init() {
+/* INIT */
+(async function() {
   initDB();
   await loadMembers();
   const savedSession = localStorage.getItem(SESSION_KEY);
