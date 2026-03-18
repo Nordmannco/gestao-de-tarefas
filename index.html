@@ -431,6 +431,14 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .filter-dd-item:hover,.filter-dd-item.sel{background:var(--c-campanha-bg);color:var(--c-campanha)}
 .filter-dd-clear{padding:6px 14px;font-size:11px;color:var(--text-muted);cursor:pointer;border-top:0.5px solid var(--border)}
 .btn-clear-all{height:30px;padding:0 12px;border:0.5px solid var(--u-urgente);border-radius:6px;background:var(--u-urgente-bg);color:var(--u-urgente);font-size:11px}
+.filter-period{display:flex;align-items:center;gap:6px;padding:6px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-card);flex-wrap:wrap}
+.filter-period-label{font-size:12px;color:var(--text-secondary);font-weight:500}
+.filter-date{height:30px;padding:0 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-base);font-size:12px;color:var(--text-primary);outline:none}
+.filter-date:focus{border-color:var(--c-campanha)}
+.task-group-title{font-size:20px;font-weight:700;color:var(--text-primary);margin:28px 0 14px}
+.task-group-title:first-child{margin-top:6px}
+.task-group-empty{font-size:13px;color:var(--text-muted);padding:18px 0 8px}
+
 
 /* --- CARGA DA EQUIPE --- */
 .overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
@@ -865,7 +873,7 @@ let campaigns = [];
 let currentView = 'kanban';
 let currentMember = null;
 let kanbanFilter  = { type: [], member: [] };
-let personalFilter = { urgency: [], canal: [], tipo: [], period: null };
+let personalFilter = { urgency: [], canal: [], tipo: [], periodStart: '', periodEnd: '' };
 let calDate = new Date();
 let calSelectedDay = null;
 let editingCampId = null;
@@ -1972,7 +1980,7 @@ function setView(view, member) {
     btnNew.style.display='none';
     const nb = document.getElementById('nav-'+member); if (nb) nb.classList.add('active');
     document.getElementById('personal-search').value='';
-    personalFilter={urgency:[],canal:[],tipo:[],period:null};
+    personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:''};
     renderPersonalFilters(); renderPersonal();
   } else if (view==='admin') {
     document.getElementById('view-admin').classList.add('active');
@@ -3520,16 +3528,26 @@ function renderPersonalFilters() {
     return '<div class="filter-dd">'+
       '<button class="filter-dd-btn'+(hasVal?' has-value':'')+'" onclick="toggleDD(\''+id+'\')">'+labelText+' ▾</button>'+
       '<div class="filter-dd-list" id="'+id+'">'+items+
-        '<div class="filter-dd-clear" onclick="clearPF(\''+key+'\')">Limpar</div>'+
+        (hasVal?'<div class="filter-dd-clear" onclick="clearPF(\''+key+'\')">Limpar</div>':'')+
       '</div></div>';
   }
 
+  const canaisOrdenados = [...CANAIS].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const hasPeriod = !!(personalFilter.periodStart || personalFilter.periodEnd);
+  const periodHtml =
+    '<div class="filter-period">'+
+      '<span class="filter-period-label">Período</span>'+
+      '<input type="date" class="filter-date" value="'+(personalFilter.periodStart||'')+'" onchange="setPFPeriod(\'start\', this.value)">'+
+      '<span class="filter-period-label">até</span>'+
+      '<input type="date" class="filter-date" value="'+(personalFilter.periodEnd||'')+'" onchange="setPFPeriod(\'end\', this.value)">'+
+    '</div>';
+
   bar.innerHTML =
     ddBtn('Prioridade','urgency',personalFilter.urgency,URGENCIAS,u=>URG_COLOR[u]) +
-    ddBtn('Prazo','period',personalFilter.period?[personalFilter.period]:[],['Hoje','Amanhã','Essa semana'],null) +
+    periodHtml +
     ddBtn('Tipo','tipo',personalFilter.tipo,TYPES,null) +
-    ddBtn('Canal','canal',personalFilter.canal,CANAIS,null) +
-    ((personalFilter.urgency.length||personalFilter.canal.length||personalFilter.tipo.length||personalFilter.period)?
+    ddBtn('Canal','canal',personalFilter.canal,canaisOrdenados,null) +
+    ((personalFilter.urgency.length||personalFilter.canal.length||personalFilter.tipo.length||hasPeriod)?
       '<button class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>':'');
 }
 
@@ -3543,7 +3561,7 @@ document.addEventListener('click', e => {
 });
 
 function togglePF(key, val) {
-  if (key==='period') { personalFilter.period = personalFilter.period===val?null:val; }
+  if (key==='period') return;
   else {
     const arr = personalFilter[key];
     const idx = arr.indexOf(val);
@@ -3552,14 +3570,32 @@ function togglePF(key, val) {
   renderPersonalFilters(); renderPersonal();
 }
 
+function setPFPeriod(edge, value) {
+  if (edge==='start') personalFilter.periodStart = value || '';
+  if (edge==='end') personalFilter.periodEnd = value || '';
+  renderPersonalFilters(); renderPersonal();
+}
+
 function clearPF(key) {
-  if (key==='period') personalFilter.period=null; else personalFilter[key]=[];
+  if (key==='period') { personalFilter.periodStart=''; personalFilter.periodEnd=''; } else personalFilter[key]=[];
   renderPersonalFilters(); renderPersonal();
 }
 
 function clearAllPF() {
-  personalFilter={urgency:[],canal:[],tipo:[],period:null};
+  personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:''};
   renderPersonalFilters(); renderPersonal();
+}
+
+
+function getEffectiveTaskCanal(task) {
+  const s = task.sub || {};
+  const c = task.campaign || {};
+  if (s.canal && s.canal !== 'Geral') return s.canal;
+  if (c.canais && c.canais.length) {
+    const canalCampanha = c.canais.find(v => v && v !== 'Geral');
+    if (canalCampanha) return canalCampanha;
+  }
+  return s.canal || (c.canais && c.canais[0]) || 'Geral';
 }
 
 function renderPersonal() {
@@ -3591,17 +3627,19 @@ function renderPersonal() {
 
   // Apply filters
   if (personalFilter.urgency.length) tasks=tasks.filter(t=>personalFilter.urgency.includes(t.sub.urgency));
-  if (personalFilter.canal.length)   tasks=tasks.filter(t=>personalFilter.canal.includes(t.sub.canal));
+  if (personalFilter.canal.length)   tasks=tasks.filter(t=>personalFilter.canal.includes(getEffectiveTaskCanal(t)));
   if (personalFilter.tipo.length)    tasks=tasks.filter(t=>personalFilter.tipo.includes(t.campaign.type));
-  if (personalFilter.period==='Hoje') {
-    tasks=tasks.filter(t=>t.sub.due&&new Date(t.sub.due).toDateString()===now.toDateString());
-  } else if (personalFilter.period==='Amanhã') {
-    const tom=new Date(now); tom.setDate(tom.getDate()+1);
-    tasks=tasks.filter(t=>t.sub.due&&new Date(t.sub.due).toDateString()===tom.toDateString());
-  } else if (personalFilter.period==='Essa semana') {
-    const s0=new Date(now); s0.setHours(0,0,0,0); s0.setDate(now.getDate()-now.getDay());
-    const s1=new Date(s0); s1.setDate(s0.getDate()+7);
-    tasks=tasks.filter(t=>t.sub.due&&new Date(t.sub.due)>=s0&&new Date(t.sub.due)<=s1);
+  if (personalFilter.periodStart || personalFilter.periodEnd) {
+    const start = personalFilter.periodStart ? new Date(personalFilter.periodStart+'T00:00:00') : null;
+    const end = personalFilter.periodEnd ? new Date(personalFilter.periodEnd+'T23:59:59') : null;
+    tasks = tasks.filter(t => {
+      if (!t.sub.due) return false;
+      const due = new Date(t.sub.due);
+      if (Number.isNaN(due.getTime())) return false;
+      if (start && due < start) return false;
+      if (end && due > end) return false;
+      return true;
+    });
   }
   if (search) tasks=tasks.filter(t=>t.sub.title.toLowerCase().includes(search)||t.campaign.name.toLowerCase().includes(search));
 
@@ -3644,8 +3682,7 @@ function renderPersonal() {
       'SMS': {bg:'#f3f4f6',color:'#374151'},
     };
     // Use subtask canal, fallback to campaign's first canal
-    const effectiveCanal = (s.canal && s.canal !== 'Geral') ? s.canal
-      : (c.canais && c.canais.length && c.canais[0] !== 'Geral') ? c.canais[0] : null;
+    const effectiveCanal = getEffectiveTaskCanal(t);
     const cc = effectiveCanal && canalColors[effectiveCanal];
     const canalTag = effectiveCanal
       ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+effectiveCanal+'</span>'
@@ -3705,21 +3742,37 @@ function renderPersonal() {
     container.innerHTML = '<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:40px 0">Nenhuma tarefa encontrada</div>';
     return;
   }
-  if (pending.length) {
+
+  const sortTasks = list => [...list].sort((a,b) => {
+    const aDone = a.sub.status === 'Concluído' ? 1 : 0;
+    const bDone = b.sub.status === 'Concluído' ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    const aDue = a.sub.due ? new Date(a.sub.due).getTime() : Number.MAX_SAFE_INTEGER;
+    const bDue = b.sub.due ? new Date(b.sub.due).getTime() : Number.MAX_SAFE_INTEGER;
+    if (aDue !== bDue) return aDue - bDue;
+    return (a.sub.title||'').localeCompare((b.sub.title||''),'pt-BR');
+  });
+
+  const taskGroups = [
+    {
+      title: 'Campanha',
+      items: sortTasks(tasks.filter(t => t.campaign.templateType === 'campanhas'))
+    },
+    {
+      title: 'Publicação, e-mail mkt e demanda interna',
+      items: sortTasks(tasks.filter(t => t.campaign.templateType !== 'campanhas'))
+    }
+  ];
+
+  taskGroups.forEach(group => {
+    if (!group.items.length) return;
     const title = document.createElement('div');
-    title.className = 'task-section-title';
-    title.textContent = 'Pendentes (' + pending.length + ')';
+    title.className = 'task-group-title';
+    title.textContent = group.title;
     container.appendChild(title);
-    pending.forEach(t => container.appendChild(taskCard(t, false)));
-  }
-  if (done.length) {
-    const title = document.createElement('div');
-    title.className = 'task-section-title';
-    title.style.marginTop = '20px';
-    title.textContent = 'Concluídas (' + done.length + ')';
-    container.appendChild(title);
-    done.forEach(t => container.appendChild(taskCard(t, true)));
-  }
+
+    group.items.forEach(t => container.appendChild(taskCard(t, t.sub.status === 'Concluído')));
+  });
 }
 
 function toggleSubtaskPersonal(campId, subId) {
