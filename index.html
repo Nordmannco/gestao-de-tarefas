@@ -883,6 +883,224 @@ let pmAvatarB64 = null;
 let currentTemplate = null; // 'campanhas'|'publicacoes'|'email'|'demanda'
 let tplData = {}; // working copy of template-specific data
 
+
+function sanitizeTextValue(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function getCleanFieldValue(id, fallback = '') {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  return sanitizeTextValue(el.value) || fallback;
+}
+
+function getNullableFieldValue(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const value = sanitizeTextValue(el.value);
+  return value || null;
+}
+
+function createEmptyCampaignDraft() {
+  return {
+    id: null,
+    name: '',
+    type: 'Campanha',
+    status: 'Em planejamento',
+    startDate: '',
+    endDate: '',
+    endTime: '',
+    owner: window.currentUser?.id || MEMBERS[0]?.id || '',
+    participants: window.currentUser?.id ? [window.currentUser.id] : [],
+    canais: [],
+    driveLink: '',
+    parentCampaignId: null,
+    description: '',
+    subtasks: [],
+    comments: [],
+    templateType: null,
+    templateData: null,
+  };
+}
+
+function getDefaultTemplateData(templateId) {
+  if (!templateId) return {};
+  if (templateId === 'campanhas') {
+    return {
+      objetivos: '',
+      resumoEstrategico: '',
+      ofertas: '',
+      cronograma: '',
+      cronogramaTasks: [],
+      metas: {},
+      datasChave: [
+        {label:'Pré-lançamento Clube',date:'',time:''},
+        {label:'Início oficial',date:'',time:''},
+        {label:'Término',date:'',time:''},
+      ],
+      checklistsMembro: {},
+      notasMembro: {},
+      encMembro: {},
+      _defaultsApplied: false,
+    };
+  }
+  if (templateId === 'publicacoes') {
+    return {
+      designTipo: 'banner',
+      slides: [],
+      biaCopy: '',
+      biaBotao: '',
+      biaLink: '',
+      biaObs: '',
+      gioPretitulo: '',
+      gioEntrelinha: '',
+      gioTitulo: '',
+      gioSubtitulo: '',
+      gioCta: '',
+    };
+  }
+  if (templateId === 'email') {
+    return {
+      publico: '',
+      assunto: '',
+      subassunto: '',
+      layoutOrdem: '',
+      produtos: [],
+      gioBannerB64: '',
+      gioPretitulo: '',
+      gioEntrelinha: '',
+      gioTitulo: '',
+      gioSubtitulo: '',
+      gioCta: '',
+    };
+  }
+  if (templateId === 'demanda') {
+    return {
+      membrosAtivos: [],
+      blocosMembros: {},
+    };
+  }
+  return {};
+}
+
+function initializeTemplateData(templateId, existingTemplateData) {
+  const base = getDefaultTemplateData(templateId);
+  if (!existingTemplateData || typeof existingTemplateData !== 'object') {
+    return JSON.parse(JSON.stringify(base));
+  }
+
+  const source = JSON.parse(JSON.stringify(existingTemplateData));
+  const merged = JSON.parse(JSON.stringify(base));
+
+  if (templateId === 'campanhas') {
+    merged.objetivos = sanitizeTextValue(source.objetivos) || '';
+    merged.resumoEstrategico = sanitizeTextValue(source.resumoEstrategico) || '';
+    merged.ofertas = sanitizeTextValue(source.ofertas) || '';
+    merged.cronograma = sanitizeTextValue(source.cronograma) || '';
+    merged.metas = {...(base.metas || {}), ...(source.metas || {})};
+    merged.datasChave = Array.isArray(source.datasChave)
+      ? source.datasChave.map(item => ({
+          label: sanitizeTextValue(item?.label) || '',
+          date: sanitizeTextValue(item?.date) || '',
+          time: sanitizeTextValue(item?.time) || '',
+        }))
+      : JSON.parse(JSON.stringify(base.datasChave));
+    merged.checklistsMembro = JSON.parse(JSON.stringify(source.checklistsMembro || {}));
+    merged.notasMembro = JSON.parse(JSON.stringify(source.notasMembro || {}));
+    merged.encMembro = JSON.parse(JSON.stringify(source.encMembro || {}));
+    merged.cronogramaTasks = Array.isArray(source.cronogramaTasks)
+      ? JSON.parse(JSON.stringify(source.cronogramaTasks))
+      : [];
+    return merged;
+  }
+
+  if (templateId === 'publicacoes') {
+    merged.tipo = sanitizeTextValue(source.tipo) || '';
+    merged.titulo = sanitizeTextValue(source.titulo) || '';
+    merged.copy = sanitizeTextValue(source.copy) || '';
+    merged.legenda = sanitizeTextValue(source.legenda) || '';
+    merged.cta = sanitizeTextValue(source.cta) || '';
+    merged.slides = Array.isArray(source.slides)
+      ? JSON.parse(JSON.stringify(source.slides))
+      : [];
+    return merged;
+  }
+
+  if (templateId === 'email') {
+    merged.publico = sanitizeTextValue(source.publico) || '';
+    merged.assunto = sanitizeTextValue(source.assunto) || '';
+    merged.subassunto = sanitizeTextValue(source.subassunto) || '';
+    merged.layoutOrdem = sanitizeTextValue(source.layoutOrdem) || '';
+    merged.gioBannerB64 = sanitizeTextValue(source.gioBannerB64) || '';
+    merged.gioPretitulo = sanitizeTextValue(source.gioPretitulo) || '';
+    merged.gioEntrelinha = sanitizeTextValue(source.gioEntrelinha) || '';
+    merged.gioTitulo = sanitizeTextValue(source.gioTitulo) || '';
+    merged.gioSubtitulo = sanitizeTextValue(source.gioSubtitulo) || '';
+    merged.gioCta = sanitizeTextValue(source.gioCta) || '';
+    merged.produtos = Array.isArray(source.produtos)
+      ? JSON.parse(JSON.stringify(source.produtos))
+      : [];
+    return merged;
+  }
+
+  if (templateId === 'demanda') {
+    merged.membrosAtivos = Array.isArray(source.membrosAtivos)
+      ? JSON.parse(JSON.stringify(source.membrosAtivos))
+      : [];
+    merged.blocosMembros = JSON.parse(JSON.stringify(source.blocosMembros || {}));
+    return merged;
+  }
+
+  return merged;
+}
+
+function sanitizeCampaignTemplateData(data, participantIds) {
+  const initialized = initializeTemplateData('campanhas', data);
+  const participantNames = (participantIds || []).map(id => MEMBERS.find(m => m.id === id)?.name).filter(Boolean);
+
+  initialized.datasChave = (initialized.datasChave || [])
+    .map(item => ({
+      label: sanitizeTextValue(item?.label) || '',
+      date: sanitizeTextValue(item?.date) || '',
+      time: sanitizeTextValue(item?.time) || '',
+    }))
+    .filter(item => item.label || item.date || item.time);
+
+  const cleanChecklistMap = {};
+  participantNames.forEach(nome => {
+    const itens = Array.isArray(initialized.checklistsMembro?.[nome]) ? initialized.checklistsMembro[nome] : [];
+    cleanChecklistMap[nome] = itens
+      .map(it => ({
+        texto: sanitizeTextValue(it?.texto) || '',
+        canal: sanitizeTextValue(it?.canal) || 'Geral',
+        done: !!it?.done,
+      }))
+      .filter(it => it.texto);
+  });
+  initialized.checklistsMembro = cleanChecklistMap;
+
+  const cleanEncMap = {};
+  participantNames.forEach(nome => {
+    const itens = Array.isArray(initialized.encMembro?.[nome]) ? initialized.encMembro[nome] : [];
+    cleanEncMap[nome] = itens
+      .map(it => ({
+        texto: sanitizeTextValue(it?.texto) || '',
+        done: !!it?.done,
+      }))
+      .filter(it => it.texto);
+  });
+  initialized.encMembro = cleanEncMap;
+
+  const cleanNotas = {};
+  participantNames.forEach(nome => {
+    cleanNotas[nome] = sanitizeTextValue(initialized.notasMembro?.[nome]) || '';
+  });
+  initialized.notasMembro = cleanNotas;
+  initialized._defaultsApplied = true;
+
+  return initialized;
+}
+
 window.currentUser = null;
 
 /* SUPABASE DATA SYNC (dados apenas, sem auth) */
@@ -2223,8 +2441,10 @@ function applyStatusRules(c, oldStatus, newStatus) {
         participantes.forEach(memberId => {
           if (!memberId) return;
           customChecklist.forEach(item => {
+            const title = sanitizeTextValue(typeof item === 'string' ? item : item.title||item) || '';
+            if (!title) return;
             c.subtasks.push({
-              id: uid(), title: typeof item === 'string' ? item : item.title||item,
+              id: uid(), title,
               canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
               owner: memberId, due: '',
               status: 'Pendente', dep: null, checklist: [],
@@ -2234,16 +2454,17 @@ function applyStatusRules(c, oldStatus, newStatus) {
         });
 
       } else if (clm && Object.keys(clm).length > 0) {
-        // Campanhas template — per-member checklist
+        // Campanhas template — somente o que foi realmente preenchido no checklist
         Object.entries(clm).forEach(([nome, itens]) => {
           const m = MEMBERS.find(x=>x.name===nome) ||
                     MEMBERS.find(x=>x.name.toLowerCase()===nome.toLowerCase());
           const ownerId = m?.id || c.owner;
           (itens||[]).forEach(it => {
-            if (!it.texto?.trim()) return;
+            const titulo = sanitizeTextValue(it?.texto) || '';
+            if (!titulo) return;
             c.subtasks.push({
-              id: uid(), title: it.texto,
-              canal: it.canal || 'Geral', urgency: 'Normal',
+              id: uid(), title: titulo,
+              canal: sanitizeTextValue(it?.canal) || 'Geral', urgency: 'Normal',
               owner: ownerId, due: '',
               status: it.done ? 'Concluído' : 'Pendente',
               dep: null, checklist: [],
@@ -2252,41 +2473,18 @@ function applyStatusRules(c, oldStatus, newStatus) {
           });
         });
 
-      } else {
-        // No template data — use CL_DEFAULTS per participant
-        let criouAlguma = false;
+      } else if (c.templateType !== 'campanhas') {
+        // Para outros tipos sem checklist específico, cria uma tarefa genérica por participante
         participantes.forEach(memberId => {
           if (!memberId) return;
-          const m = MEMBERS.find(x => x.id === memberId);
-          if (!m) return;
-          const defaultItems = CL_DEFAULTS[m.name] || [];
-          if (defaultItems.length > 0) {
-            defaultItems.forEach(item => {
-              const t = typeof item === 'string' ? {title:item, canal:'Geral'} : item;
-              c.subtasks.push({
-                id: uid(), title: t.title,
-                canal: t.canal || 'Geral', urgency: 'Normal',
-                owner: memberId, due: '',
-                status: 'Pendente', dep: null, checklist: [],
-                _auto: 'checklist',
-              });
-            });
-            criouAlguma = true;
-          }
-        });
-        if (!criouAlguma) {
-          // Last resort: one generic task per participant
-          participantes.forEach(memberId => {
-            if (!memberId) return;
-            c.subtasks.push({
-              id: uid(), title: 'Executar: ' + c.name,
-              canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
-              owner: memberId, due: '',
-              status: 'Pendente', dep: null, checklist: [],
-              _auto: 'checklist',
-            });
+          c.subtasks.push({
+            id: uid(), title: 'Executar: ' + c.name,
+            canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
+            owner: memberId, due: '',
+            status: 'Pendente', dep: null, checklist: [],
+            _auto: 'checklist',
           });
-        }
+        });
       }
     }
   }
@@ -2528,7 +2726,7 @@ function openPanel() {
 function closePanel() {
   document.getElementById('overlay').classList.remove('active');
   document.getElementById('slide-panel').classList.remove('active');
-  editingCampId=null; subForms=[];
+  editingCampId=null; subForms=[]; currentTemplate=null; tplData={};
 }
 
 function deleteCampaign() {
@@ -2543,21 +2741,26 @@ function deleteCampaign() {
 
 /* NEW / EDIT CAMPAIGN PANEL */
 function openNewCampaignPanel() {
-  editingCampId=null; subForms=[]; currentTemplate=null; tplData={};
+  editingCampId = null;
+  subForms = [];
+  currentTemplate = null;
+  tplData = {};
+  const cleanCampaign = createEmptyCampaignDraft();
   const btnDel = document.getElementById('btn-delete');
   if (btnDel) btnDel.style.display='none';
   document.getElementById('panel-title').textContent='Nova campanha';
   document.getElementById('btn-save').textContent='Salvar campanha';
   document.getElementById('btn-save').onclick = saveCampaign;
-  renderCampaignForm(null);
+  renderCampaignForm(cleanCampaign);
   openPanel();
 }
 
 function openEditCampaignPanel(id) {
   const c = getCampaign(id); if (!c) return;
   editingCampId = id;
-  subForms = []; currentTemplate = c.templateType||null;
-  tplData = c.templateData ? JSON.parse(JSON.stringify(c.templateData)) : {};
+  subForms = [];
+  currentTemplate = c.templateType || null;
+  tplData = initializeTemplateData(currentTemplate, c.templateData);
   const btnDel = document.getElementById('btn-delete');
   if (btnDel) btnDel.style.display='';
   document.getElementById('panel-title').textContent = 'Editar: ' + c.name;
@@ -2569,44 +2772,49 @@ function openEditCampaignPanel(id) {
 
 function updateCampaign(id) {
   const c = getCampaign(id); if (!c) return;
-  const name = document.getElementById('f-name')?.value?.trim();
+  const name = getCleanFieldValue('f-name');
   if (!name) { alert('Insira o nome'); return; }
-  const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val);
-  const canais = [...document.querySelectorAll('#multi-canais .multi-item.selected')].map(el=>el.dataset.canal||el.textContent);
-  // Collect subtasks from manual forms (keep existing _auto subtasks)
+
+  const oldStatus = c.status;
+  const owner = getCleanFieldValue('f-owner');
+  const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val).filter(Boolean);
+  const canais = [...document.querySelectorAll('#multi-canais .multi-item.selected')].map(el=>(el.dataset.canal||el.textContent||'').trim()).filter(Boolean);
+  const description = getCleanFieldValue('f-desc', '');
+  const driveLink = getCleanFieldValue('f-drive', '');
+  const parentCampaignId = getNullableFieldValue('f-parent-campaign');
+  const sanitizedTemplateData = currentTemplate ? (currentTemplate === 'campanhas' ? sanitizeCampaignTemplateData(tplData, participants.length ? participants : (owner ? [owner] : [])) : initializeTemplateData(currentTemplate, tplData)) : null;
+
   const manualSubs = subForms.map(sf=>({
     id:sf.id,
-    title:document.getElementById('sf-title-'+sf.id)?.value?.trim()||'Subtarefa',
+    title:getCleanFieldValue('sf-title-'+sf.id, 'Subtarefa'),
     canal:document.getElementById('sf-canal-'+sf.id)?.value||'Geral',
     urgency:document.getElementById('sf-urg-'+sf.id)?.value||'Normal',
     owner:document.getElementById('sf-owner-'+sf.id)?.value||'',
     due:document.getElementById('sf-due-'+sf.id)?.value||'',
-    dep:document.getElementById('sf-dep-'+sf.id)?.value||null,
-    note:document.getElementById('sf-note-'+sf.id)?.value?.trim()||'',
+    dep:getNullableFieldValue('sf-dep-'+sf.id),
+    note:getCleanFieldValue('sf-note-'+sf.id, ''),
     status:'Pendente', checklist:[],
   }));
-  // Keep existing auto subtasks, replace manual ones
+
   const autoSubs = (c.subtasks||[]).filter(s=>s._auto);
+  const newStatus = document.getElementById('f-status').value;
+
   c.name = name;
   c.type = document.getElementById('f-type').value;
-  c.status = document.getElementById('f-status').value;
   c.startDate = document.getElementById('f-start').value;
   c.endDate = document.getElementById('f-end').value;
   c.endTime = document.getElementById('f-end-time')?.value||'';
-  c.owner = document.getElementById('f-owner').value;
-  c.participants = participants.length ? participants : [c.owner];
+  c.owner = owner;
+  c.participants = participants.length ? participants : (owner ? [owner] : []);
   c.canais = canais;
-  c.driveLink = document.getElementById('f-drive')?.value?.trim()||'';
-  c.parentCampaignId = document.getElementById('f-parent-campaign')?.value||null;
-  c.description = document.getElementById('f-desc')?.value?.trim()||'';
+  c.driveLink = driveLink;
+  c.parentCampaignId = parentCampaignId;
+  c.description = description;
   c.templateType = currentTemplate||null;
-  c.templateData = currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null;
-  // Read oldStatus BEFORE any changes
-  const oldStatus = c.status;
-  const newStatus = document.getElementById('f-status').value;
+  c.templateData = sanitizedTemplateData;
   c.subtasks = [...autoSubs, ...manualSubs];
   subForms=[]; currentTemplate=null; tplData={};
-  // Apply status rules if status changed
+
   if (newStatus !== oldStatus) {
     c.status = newStatus;
     applyStatusRules(c, oldStatus, newStatus);
@@ -2629,11 +2837,12 @@ const TEMPLATES = [
 ];
 
 function renderCampaignForm(existingData) {
-  currentTemplate = existingData?.templateType || null;
-  tplData = existingData?.templateData ? JSON.parse(JSON.stringify(existingData.templateData)) : {};
+  const draft = existingData || createEmptyCampaignDraft();
+  currentTemplate = draft.templateType || null;
+  tplData = initializeTemplateData(currentTemplate, draft.templateData);
 
   // canais selectable
-  let _canaisAtual = Array.isArray(existingData?.canais) ? [...existingData.canais] : [];
+  let _canaisAtual = Array.isArray(draft?.canais) ? [...draft.canais] : [];
   const canaisHtml = [...CANAIS, ..._canaisAtual.filter(c=>!CANAIS.includes(c))].map(c=>
     '<div class="multi-item'+(_canaisAtual.includes(c)?' selected':'')+' onclick="toggleMulti(this)" data-canal="'+c+'">'+c+'</div>'
   ).join('');
@@ -2657,10 +2866,10 @@ function renderCampaignForm(existingData) {
   }).join('');
 
   // Campanha mãe — só mostra para tipos que não são Campanha
-  const showParent = existingData?.type !== 'Campanha' && TYPES.indexOf(existingData?.type||'') !== 0;
+  const showParent = draft?.type !== 'Campanha' && TYPES.indexOf(draft?.type||'') !== 0;
   const parentOpts = '<option value="">— Nenhuma —</option>'+
     campaigns.filter(function(c){return c.id!==editingCampId && c.type==='Campanha';}).map(function(c){
-      return '<option value="'+c.id+'"'+(existingData?.parentCampaignId===c.id?' selected':'')+'>'+esc(c.name)+'</option>';
+      return '<option value="'+c.id+'"'+(draft?.parentCampaignId===c.id?' selected':'')+'>'+esc(c.name)+'</option>';
     }).join('');
   const parentHtml = showParent ?
     '<div class="form-group" id="parent-camp-group"><label class="form-label">Vincular à campanha <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opcional)</span></label>'+
@@ -2670,8 +2879,8 @@ function renderCampaignForm(existingData) {
   // - No template selected: show full picker
   // - Has template but not locked: show picker with current selected
   // - Has template and locked (_templateLocked): show only a tag, no picker
-  const _tplLocked = existingData?._templateLocked === true;
-  const _existingTpl = existingData?.templateType;
+  const _tplLocked = draft?._templateLocked === true;
+  const _existingTpl = draft?.templateType;
 
   // Build template display
   let tplDisplay = '';
@@ -2692,15 +2901,15 @@ function renderCampaignForm(existingData) {
 
   document.getElementById('panel-body').innerHTML =
     tplDisplay+
-    '<div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-name" placeholder="Nome da campanha ou tarefa" value="'+(existingData?.name||'')+'"></div>'+
+    '<div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-name" placeholder="Nome da campanha ou tarefa" value="'+(draft?.name||'')+'"></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
-      '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){return '<option'+(existingData?.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
-      '<div class="form-group"><label class="form-label">Status</label><div class="select-wrap"><select class="form-select" id="f-status">'+STATUSES.map(function(s){return '<option'+(existingData?.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div></div>'+
-      '<div class="form-group"><label class="form-label">Início</label><input class="form-input" type="date" id="f-start" value="'+(existingData?.startDate||'')+'"></div>'+
-      '<div class="form-group"><label class="form-label">Entrega</label><div style="display:grid;grid-template-columns:1fr auto;gap:6px"><input class="form-input" type="date" id="f-end" value="'+(existingData?.endDate||'')+'"><input class="form-input" type="time" id="f-end-time" style="width:82px" value="'+(existingData?.endTime||'')+'"></div></div>'+
+      '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){return '<option'+(draft?.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
+      '<div class="form-group"><label class="form-label">Status</label><div class="select-wrap"><select class="form-select" id="f-status">'+STATUSES.map(function(s){return '<option'+(draft?.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div></div>'+
+      '<div class="form-group"><label class="form-label">Início</label><input class="form-input" type="date" id="f-start" value="'+(draft?.startDate||'')+'"></div>'+
+      '<div class="form-group"><label class="form-label">Entrega</label><div style="display:grid;grid-template-columns:1fr auto;gap:6px"><input class="form-input" type="date" id="f-end" value="'+(draft?.endDate||'')+'"><input class="form-input" type="time" id="f-end-time" style="width:82px" value="'+(draft?.endTime||'')+'"></div></div>'+
     '</div>'+
     '<div class="form-group"><label class="form-label">Responsável</label><div class="select-wrap"><select class="form-select" id="f-owner">'+
-      MEMBERS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(existingData?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>';}).join('')+
+      MEMBERS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(draft?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>';}).join('')+
     '</select></div></div>'+
     '<div class="form-group"><label class="form-label">Participantes</label><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
     (currentTemplate !== 'campanhas' ? (
@@ -2708,16 +2917,16 @@ function renderCampaignForm(existingData) {
       '<div style="margin-top:6px;display:flex;gap:6px"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:28px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:28px">+ Adicionar</button></div></div>'
     ) : '')+
     (currentTemplate !== 'campanhas' ? parentHtml : '')+
-    '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
+    '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(draft?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
-    '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
+    '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(draft?.description||'')+'</textarea></div>'+
     '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubForm()">+ Subtarefa</button></div>'+
     '<div id="sub-forms-container"></div>';
 
   // pre-select participants
-  if (existingData?.participants) {
+  if (draft?.participants) {
     document.querySelectorAll('#multi-participants .multi-item').forEach(el=>{
-      if (existingData.participants.includes(el.dataset.val)) el.classList.add('selected');
+      if (draft.participants.includes(el.dataset.val)) el.classList.add('selected');
       else el.classList.remove('selected');
     });
   }
@@ -2726,8 +2935,13 @@ function renderCampaignForm(existingData) {
 }
 
 function selectTemplate(id) {
-  if (currentTemplate === id) { currentTemplate = null; tplData = {}; }
-  else { currentTemplate = id; tplData = {}; }
+  if (currentTemplate === id) {
+    currentTemplate = null;
+    tplData = {};
+  } else {
+    currentTemplate = id;
+    tplData = initializeTemplateData(id);
+  }
   document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('active'));
 
   // Hide/show canais e vincular baseado no template
@@ -2885,17 +3099,16 @@ function renderTplCampanhasForm() {
     const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
       const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
     }).filter(Boolean);
-    const membros = selectedNames.length ? selectedNames.filter(n=>CL_DEFAULTS[n]) : [];
+    const membros = selectedNames.length ? [...selectedNames] : [];
     if (!d.checklistsMembro) d.checklistsMembro = {};
     if (!d.notasMembro) d.notasMembro = {};
     if (!d.encMembro) d.encMembro = {};
     membros.forEach(nome => {
-      if (!d.checklistsMembro[nome] || !d.checklistsMembro[nome].length) {
-        d.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
+      if (!d.checklistsMembro[nome] || !Array.isArray(d.checklistsMembro[nome])) {
+        d.checklistsMembro[nome] = [];
       }
-      // Init encerramento per member from CL_ENCERRAMENTO_DEFAULTS
-      if (!d.encMembro[nome] || !d.encMembro[nome].length) {
-        d.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
+      if (!d.encMembro[nome] || !Array.isArray(d.encMembro[nome])) {
+        d.encMembro[nome] = [];
       }
     });
     if (!d.datasChave || !d.datasChave.length) {
@@ -2912,9 +3125,7 @@ function renderTplCampanhasForm() {
   const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
     const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
   }).filter(Boolean);
-  const membrosVisiveis = selectedNames.length
-    ? selectedNames.filter(n=>CL_DEFAULTS[n]||d.checklistsMembro?.[n]?.length)
-    : [];
+  const membrosVisiveis = selectedNames.length ? [...selectedNames] : [];
 
   const memberColors = {};
   MEMBERS.forEach(m=>{ memberColors[m.name] = m.color||'#888'; });
@@ -3339,28 +3550,24 @@ function syncCampanhasChecklist() {
     return m?.name;
   }).filter(Boolean);
 
-  const membrosComDefault = Object.keys(CL_DEFAULTS);
   if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
   if (!tplData.encMembro) tplData.encMembro = {};
   if (!tplData.notasMembro) tplData.notasMembro = {};
 
-  membrosComDefault.forEach(nome => {
-    const isSelected = selected.includes(nome);
-    if (isSelected) {
-      // Init exec checklist
-      if (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length) {
-        tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
-      }
-      // Init encerramento per member
-      if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
-        tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
-      }
-    } else {
-      // Remove when deselected
-      if (tplData.checklistsMembro[nome]) delete tplData.checklistsMembro[nome];
-      if (tplData.encMembro[nome]) delete tplData.encMembro[nome];
-      if (tplData.notasMembro[nome]) delete tplData.notasMembro[nome];
-    }
+  selected.forEach(nome => {
+    if (!Array.isArray(tplData.checklistsMembro[nome])) tplData.checklistsMembro[nome] = [];
+    if (!Array.isArray(tplData.encMembro[nome])) tplData.encMembro[nome] = [];
+    if (typeof tplData.notasMembro[nome] !== 'string') tplData.notasMembro[nome] = '';
+  });
+
+  Object.keys(tplData.checklistsMembro).forEach(nome => {
+    if (!selected.includes(nome)) delete tplData.checklistsMembro[nome];
+  });
+  Object.keys(tplData.encMembro).forEach(nome => {
+    if (!selected.includes(nome)) delete tplData.encMembro[nome];
+  });
+  Object.keys(tplData.notasMembro).forEach(nome => {
+    if (!selected.includes(nome)) delete tplData.notasMembro[nome];
   });
 
   const container = document.getElementById('tpl-fields-container');
@@ -3414,21 +3621,29 @@ function addNewCanal() {
 }
 
 function saveCampaign() {
-  const name = document.getElementById('f-name')?.value?.trim();
+  const name = getCleanFieldValue('f-name');
   if (!name) { _saving = false; alert('Insira o nome da campanha'); return; }
 
-  const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val);
-  const canais = [...document.querySelectorAll('#multi-canais .multi-item.selected')].map(el=>el.dataset.canal||el.textContent);
+  const owner = getCleanFieldValue('f-owner');
+  const description = getCleanFieldValue('f-desc', '');
+  const driveLink = getCleanFieldValue('f-drive', '');
+  const parentCampaignId = getNullableFieldValue('f-parent-campaign');
+  const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val).filter(Boolean);
+  const canais = [...document.querySelectorAll('#multi-canais .multi-item.selected')].map(el=>(el.dataset.canal||el.textContent||'').trim()).filter(Boolean);
+
+  let sanitizedTemplateData = null;
+  if (currentTemplate) {
+    sanitizedTemplateData = currentTemplate === 'campanhas'
+      ? sanitizeCampaignTemplateData(tplData, participants.length ? participants : (owner ? [owner] : []))
+      : initializeTemplateData(currentTemplate, tplData);
+  }
 
   // Collect subtasks — from template or from manual subForms
   let subs = [];
-  if (currentTemplate && tplData) {
-    // Para template 'campanhas': NÃO criar subtarefas agora
-    // applyStatusRules cuida disso conforme o status muda
+  if (currentTemplate && sanitizedTemplateData) {
     if (currentTemplate === 'campanhas') {
-      subs = []; // começa vazio — briefing task será criada por applyStatusRules
+      subs = [];
     }
-    // For email MKT: auto subtasks
     if (currentTemplate === 'email') {
       const giovana = MEMBERS.find(m=>m.name.toLowerCase().includes('giovana'));
       const bia     = MEMBERS.find(m=>m.name.toLowerCase().includes('bia'));
@@ -3441,34 +3656,39 @@ function saveCampaign() {
   } else {
     subs = subForms.map(sf=>({
       id:sf.id,
-      title:document.getElementById('sf-title-'+sf.id)?.value?.trim()||'Subtarefa',
+      title:getCleanFieldValue('sf-title-'+sf.id, 'Subtarefa'),
       canal:document.getElementById('sf-canal-'+sf.id)?.value||'Geral',
       urgency:document.getElementById('sf-urg-'+sf.id)?.value||'Normal',
       owner:document.getElementById('sf-owner-'+sf.id)?.value||'',
       due:document.getElementById('sf-due-'+sf.id)?.value||'',
-      dep:document.getElementById('sf-dep-'+sf.id)?.value||null,
-      note:document.getElementById('sf-note-'+sf.id)?.value?.trim()||'',
+      dep:getNullableFieldValue('sf-dep-'+sf.id),
+      note:getCleanFieldValue('sf-note-'+sf.id, ''),
       status:'Pendente', checklist:[],
     }));
   }
 
-  campaigns.push({
-    id:cuid(), name,
-    type:document.getElementById('f-type').value,
-    status:document.getElementById('f-status').value,
-    startDate:document.getElementById('f-start').value,
-    endDate:document.getElementById('f-end').value,
-    endTime:document.getElementById('f-end-time')?.value||'',
-    owner:document.getElementById('f-owner').value,
-    participants: participants.length ? participants : [document.getElementById('f-owner').value],
-    canais: canais,
-    driveLink:document.getElementById('f-drive')?.value?.trim()||'',
-      parentCampaignId:document.getElementById('f-parent-campaign')?.value||null,
-    description:document.getElementById('f-desc')?.value?.trim()||'',
-    subtasks:subs, comments:[],
-    templateType: currentTemplate||null,
-    templateData: currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null,
-  });
+  const campaignToSave = {
+    ...createEmptyCampaignDraft(),
+    id: cuid(),
+    name,
+    type: document.getElementById('f-type').value,
+    status: document.getElementById('f-status').value,
+    startDate: document.getElementById('f-start').value,
+    endDate: document.getElementById('f-end').value,
+    endTime: document.getElementById('f-end-time')?.value||'',
+    owner,
+    participants: participants.length ? participants : (owner ? [owner] : []),
+    canais,
+    driveLink,
+    parentCampaignId,
+    description,
+    subtasks: subs,
+    comments: [],
+    templateType: currentTemplate || null,
+    templateData: sanitizedTemplateData,
+  };
+
+  campaigns.push(campaignToSave);
   subForms=[]; currentTemplate=null; tplData={};
   const newCamp = campaigns[campaigns.length-1];
   applyStatusRules(newCamp, null, newCamp.status);
