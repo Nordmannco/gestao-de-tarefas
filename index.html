@@ -412,8 +412,8 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .urgency-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
 
 /* --- FILTROS DROPDOWN --- */
-.filter-bar{padding:10px 0 14px;display:flex;gap:8px;flex-wrap:nowrap;align-items:flex-start;border-bottom:0.5px solid var(--border);margin-bottom:14px;overflow-x:auto}
-.filter-dd{position:relative;flex:0 0 auto}
+.filter-bar{padding:10px 0 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--border);margin-bottom:14px}
+.filter-dd{position:relative}
 .filter-dd-btn{
   height:30px;padding:0 12px;border:0.5px solid var(--border);border-radius:6px;
   background:var(--bg-card);font-size:12px;color:var(--text-secondary);
@@ -423,28 +423,14 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .filter-dd-list{
   display:none;position:absolute;top:34px;left:0;
   background:var(--bg-card);border:0.5px solid var(--border);border-radius:8px;
-  z-index:300;min-width:180px;max-height:320px;overflow-y:auto;
+  z-index:300;min-width:150px;max-height:220px;overflow-y:auto;
   box-shadow:0 4px 16px rgba(0,0,0,.1);padding:4px 0;
 }
 .filter-dd-list.open{display:block}
 .filter-dd-item{padding:7px 14px;font-size:12px;cursor:pointer;color:var(--text-secondary);transition:background .1s}
 .filter-dd-item:hover,.filter-dd-item.sel{background:var(--c-campanha-bg);color:var(--c-campanha)}
-.filter-dd-sep{height:1px;background:var(--border);margin:4px 0}
 .filter-dd-clear{padding:6px 14px;font-size:11px;color:var(--text-muted);cursor:pointer;border-top:0.5px solid var(--border)}
-.btn-clear-all{height:30px;padding:0 12px;border:0.5px solid var(--u-urgente);border-radius:6px;background:var(--u-urgente-bg);color:var(--u-urgente);font-size:11px;flex:0 0 auto}
-.period-range-box{padding:10px 12px;border-top:0.5px solid var(--border)}
-.period-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.period-cal-btn{width:24px;height:24px;border:none;border-radius:6px;background:var(--bg-surface);color:var(--text-secondary);font-size:14px}
-.period-cal-title{font-size:12px;font-weight:600;color:var(--text-primary)}
-.period-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.period-cal-weekday{font-size:9px;color:var(--text-muted);text-align:center;text-transform:uppercase}
-.period-cal-day{height:28px;border:none;border-radius:6px;background:transparent;font-size:11px;color:var(--text-primary)}
-.period-cal-day:hover{background:var(--bg-surface)}
-.period-cal-day.muted{color:var(--text-muted);opacity:.45}
-.period-cal-day.selected,.period-cal-day.in-range{background:var(--c-campanha-bg);color:var(--c-campanha)}
-.period-cal-day.selected{font-weight:700}
-.period-range-actions{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
-.period-range-label{font-size:10px;color:var(--text-muted);margin-bottom:6px}
+.btn-clear-all{height:30px;padding:0 12px;border:0.5px solid var(--u-urgente);border-radius:6px;background:var(--u-urgente-bg);color:var(--u-urgente);font-size:11px}
 .filter-period{display:flex;align-items:center;gap:6px;padding:6px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-card);flex-wrap:wrap}
 .filter-period-label{font-size:12px;color:var(--text-secondary);font-weight:500}
 .filter-date{height:30px;padding:0 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-base);font-size:12px;color:var(--text-primary);outline:none}
@@ -3526,157 +3512,68 @@ function saveCampaign() {
 
 
 /* PERSONAL PANEL */
-
-function getPeriodButtonLabel() {
-  if (personalFilter.period) return personalFilter.period;
-  if (personalFilter.periodStart && personalFilter.periodEnd) return formatShortBR(personalFilter.periodStart)+' – '+formatShortBR(personalFilter.periodEnd);
-  if (personalFilter.periodStart) return 'A partir de '+formatShortBR(personalFilter.periodStart);
-  return 'Prazo';
-}
-
-let periodPickerMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-let tempPeriodStart = null;
-let tempPeriodEnd = null;
-
-function formatShortBR(iso) {
-  if (!iso) return '';
-  const [y,m,d] = iso.split('-');
-  return d+'/'+m;
-}
-
-function openPeriodPicker() {
-  tempPeriodStart = personalFilter.periodStart;
-  tempPeriodEnd = personalFilter.periodEnd;
-  periodPickerMonth = tempPeriodStart ? new Date(tempPeriodStart+'T00:00:00') : new Date();
-  periodPickerMonth = new Date(periodPickerMonth.getFullYear(), periodPickerMonth.getMonth(), 1);
-  renderPeriodCalendar();
-}
-
-function renderPeriodCalendar() {
-  const wrap = document.getElementById('period-range-box');
-  if (!wrap) return;
-  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const weekNames = ['D','S','T','Q','Q','S','S'];
-  const first = new Date(periodPickerMonth.getFullYear(), periodPickerMonth.getMonth(), 1);
-  const startOffset = first.getDay();
-  const gridStart = new Date(first);
-  gridStart.setDate(first.getDate() - startOffset);
-
-  let daysHtml = weekNames.map(w=>'<div class="period-cal-weekday">'+w+'</div>').join('');
-  for (let i=0;i<42;i++) {
-    const day = new Date(gridStart);
-    day.setDate(gridStart.getDate()+i);
-    const iso = day.toISOString().slice(0,10);
-    const sameMonth = day.getMonth() === periodPickerMonth.getMonth();
-    const selected = iso===tempPeriodStart || iso===tempPeriodEnd;
-    const inRange = tempPeriodStart && tempPeriodEnd && iso > tempPeriodStart && iso < tempPeriodEnd;
-    daysHtml += '<button type="button" class="period-cal-day'+(sameMonth?'':' muted')+(selected?' selected':'')+(inRange?' in-range':'')+'" onclick="selectPeriodDate(\''+iso+'\')">'+day.getDate()+'</button>';
-  }
-
-  wrap.innerHTML =
-    '<div class="period-range-label">Período</div>'+
-    '<div class="period-cal-head">'+
-      '<button type="button" class="period-cal-btn" onclick="shiftPeriodMonth(-1)">‹</button>'+
-      '<div class="period-cal-title">'+monthNames[periodPickerMonth.getMonth()]+' '+periodPickerMonth.getFullYear()+'</div>'+
-      '<button type="button" class="period-cal-btn" onclick="shiftPeriodMonth(1)">›</button>'+
-    '</div>'+
-    '<div class="period-cal-grid">'+daysHtml+'</div>'+
-    '<div class="period-range-actions">'+
-      '<button type="button" class="btn-ghost" style="height:28px;padding:0 10px" onclick="clearPeriodRange()">Limpar</button>'+
-      '<button type="button" class="btn-primary" style="height:28px;padding:0 12px" onclick="applyPeriodRange()">Aplicar</button>'+
-    '</div>';
-}
-
-function shiftPeriodMonth(dir) {
-  periodPickerMonth = new Date(periodPickerMonth.getFullYear(), periodPickerMonth.getMonth()+dir, 1);
-  renderPeriodCalendar();
-}
-
-function selectPeriodDate(iso) {
-  if (!tempPeriodStart || (tempPeriodStart && tempPeriodEnd)) {
-    tempPeriodStart = iso;
-    tempPeriodEnd = null;
-  } else if (iso < tempPeriodStart) {
-    tempPeriodEnd = tempPeriodStart;
-    tempPeriodStart = iso;
-  } else {
-    tempPeriodEnd = iso;
-  }
-  renderPeriodCalendar();
-}
-
-function applyPeriodRange() {
-  personalFilter.period = null;
-  personalFilter.periodStart = tempPeriodStart;
-  personalFilter.periodEnd = tempPeriodEnd || tempPeriodStart;
-  renderPersonalFilters();
-  document.getElementById('dd-period')?.classList.remove('open');
-  renderPersonal();
-}
-
-function clearPeriodRange() {
-  tempPeriodStart = null;
-  tempPeriodEnd = null;
-  personalFilter.periodStart = null;
-  personalFilter.periodEnd = null;
-  personalFilter.period = null;
-  renderPersonalFilters();
-  document.getElementById('dd-period')?.classList.remove('open');
-  renderPersonal();
-}
-
 function renderPersonalFilters() {
   const bar = document.getElementById('personal-filter-bar');
   if (!bar) return;
 
   function ddBtn(label, key, vals, allVals, colorFn) {
     const hasVal = vals.length > 0;
-    const labelText = hasVal ? vals.slice(0,2).join(', ')+(vals.length>2?'…':'') : label;
-    const id = 'dd-'+key;
+    const labelText = hasVal ? vals.slice(0,2).join(', ') + (vals.length > 2 ? '…' : '') : label;
+    const id = 'dd-' + key;
     const items = allVals.map(v => {
       const on = vals.includes(v);
-      const style = colorFn&&on ? 'color:'+colorFn(v).color+';background:'+colorFn(v).bg : '';
-      return '<div class="filter-dd-item'+(on?' sel':'')+'" style="'+style+'" onclick="togglePF(\''+key+'\',\''+v+'\')">'+v+'</div>';
+      const style = colorFn && on ? `color:${colorFn(v).color};background:${colorFn(v).bg}` : '';
+      return `<div class="filter-dd-item${on ? ' sel' : ''}" style="${style}" onclick="togglePF('${key}','${v.replace(/'/g, "\\'")}')">${v}</div>`;
     }).join('');
-    return '<div class="filter-dd">'+
-      '<button class="filter-dd-btn'+(hasVal?' has-value':'')+'" onclick="toggleDD(\''+id+'\')">'+labelText+' ▾</button>'+
-      '<div class="filter-dd-list" id="'+id+'">'+items+
-        '<div class="filter-dd-clear" onclick="clearPF(\''+key+'\')">Limpar</div>'+
-      '</div></div>';
+    return `<div class="filter-dd">
+      <button class="filter-dd-btn${hasVal ? ' has-value' : ''}" type="button" onclick="toggleDD('${id}')">${labelText} ▾</button>
+      <div class="filter-dd-list" id="${id}">${items}<div class="filter-dd-clear" onclick="clearPF('${key}')">Limpar</div></div>
+    </div>`;
   }
 
   const periodHasValue = !!(personalFilter.period || personalFilter.periodStart || personalFilter.periodEnd);
+  const periodOptions = ['Hoje','Amanhã','Essa semana'].map(v =>
+    `<div class="filter-dd-item${personalFilter.period===v ? ' sel' : ''}" onclick="togglePF('period','${v}')">${v}</div>`
+  ).join('');
 
   bar.innerHTML =
     ddBtn('Prioridade','urgency',personalFilter.urgency,URGENCIAS,u=>URG_COLOR[u]) +
-    '<div class="filter-dd">'+
-      '<button class="filter-dd-btn'+(periodHasValue?' has-value':'')+'" onclick="toggleDD(\'dd-period\'); if(document.getElementById(\'dd-period\')?.classList.contains(\'open\')){ openPeriodPicker(); }">'+getPeriodButtonLabel()+' ▾</button>'+
-      '<div class="filter-dd-list" id="dd-period">'+
-        ['Hoje','Amanhã','Essa semana'].map(v => '<div class="filter-dd-item'+(personalFilter.period===v?' sel':'')+'" onclick="togglePF(\'period\',\''+v+'\')">'+v+'</div>').join('')+
-        '<div class="filter-dd-sep"></div>'+
-        '<div class="filter-dd-item'+((personalFilter.periodStart||personalFilter.periodEnd)?' sel':'')+'" onclick="openPeriodPicker()">Período</div>'+
-        '<div id="period-range-box" class="period-range-box"></div>'+
-        '<div class="filter-dd-clear" onclick="clearPF(\'period\')">Limpar</div>'+
-      '</div>'+
-    '</div>' +
+    `<div class="filter-dd">
+      <button class="filter-dd-btn${periodHasValue ? ' has-value' : ''}" type="button" onclick="toggleDD('dd-period')">${getPeriodButtonLabel()} ▾</button>
+      <div class="filter-dd-list" id="dd-period">
+        ${periodOptions}
+        <div class="filter-dd-sep"></div>
+        <div class="filter-dd-item${(personalFilter.periodStart || personalFilter.periodEnd) ? ' sel' : ''}" onclick="openPeriodPicker(); event.stopPropagation();">Período</div>
+        <div id="period-range-box" class="period-range-box" style="display:none"></div>
+        <div class="filter-dd-clear" onclick="clearPF('period')">Limpar</div>
+      </div>
+    </div>` +
     ddBtn('Tipo','tipo',personalFilter.tipo,TYPES,null) +
     ddBtn('Canal','canal',personalFilter.canal,[...CANAIS].sort((a,b)=>a.localeCompare(b,'pt-BR')),null) +
-    ((personalFilter.urgency.length||personalFilter.canal.length||personalFilter.tipo.length||personalFilter.period||personalFilter.periodStart||personalFilter.periodEnd)?
-      '<button class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>':'');
+    ((personalFilter.urgency.length || personalFilter.canal.length || personalFilter.tipo.length || personalFilter.period || personalFilter.periodStart || personalFilter.periodEnd)
+      ? `<button class="btn-clear-all" type="button" onclick="clearAllPF()">× Limpar tudo</button>` : '');
 
   renderPeriodCalendar();
 }
 
 function toggleDD(id) {
   document.querySelectorAll('.filter-dd-list').forEach(el=>{ if(el.id!==id) el.classList.remove('open'); });
-  document.getElementById(id)?.classList.toggle('open');
-  if (id==='dd-period' && document.getElementById(id)?.classList.contains('open')) {
-    openPeriodPicker();
+  const target = document.getElementById(id);
+  if (!target) return;
+  const willOpen = !target.classList.contains('open');
+  target.classList.toggle('open');
+  if (id==='dd-period' && !willOpen) {
+    periodPickerExpanded = false;
+    renderPeriodCalendar();
   }
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('.filter-dd')) document.querySelectorAll('.filter-dd-list').forEach(el=>el.classList.remove('open'));
+  if (!e.target.closest('.filter-dd')) {
+    document.querySelectorAll('.filter-dd-list').forEach(el=>el.classList.remove('open'));
+    periodPickerExpanded = false;
+    renderPeriodCalendar();
+  }
 });
 
 function togglePF(key, val) {
@@ -3684,6 +3581,8 @@ function togglePF(key, val) {
     personalFilter.periodStart = null;
     personalFilter.periodEnd = null;
     personalFilter.period = personalFilter.period===val?null:val;
+    periodPickerExpanded = false;
+    document.getElementById('dd-period')?.classList.remove('open');
   } else {
     const arr = personalFilter[key];
     const idx = arr.indexOf(val);
@@ -3692,22 +3591,32 @@ function togglePF(key, val) {
   renderPersonalFilters(); renderPersonal();
 }
 
+function setPFPeriod(edge, value) {
+  if (edge==='start') personalFilter.periodStart = value || '';
+  if (edge==='end') personalFilter.periodEnd = value || '';
+  renderPersonalFilters(); renderPersonal();
+}
+
 function clearPF(key) {
-  if (key==='period') {
-    personalFilter.period=null;
-    personalFilter.periodStart=null;
-    personalFilter.periodEnd=null;
-    tempPeriodStart=null;
-    tempPeriodEnd=null;
-  } else personalFilter[key]=[];
+  if (key==='period') { personalFilter.periodStart=''; personalFilter.periodEnd=''; } else personalFilter[key]=[];
   renderPersonalFilters(); renderPersonal();
 }
 
 function clearAllPF() {
-  personalFilter={urgency:[],canal:[],tipo:[],period:null,periodStart:null,periodEnd:null};
-  tempPeriodStart=null;
-  tempPeriodEnd=null;
+  personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:''};
   renderPersonalFilters(); renderPersonal();
+}
+
+
+function getEffectiveTaskCanal(task) {
+  const s = task.sub || {};
+  const c = task.campaign || {};
+  if (s.canal && s.canal !== 'Geral') return s.canal;
+  if (c.canais && c.canais.length) {
+    const canalCampanha = c.canais.find(v => v && v !== 'Geral');
+    if (canalCampanha) return canalCampanha;
+  }
+  return s.canal || (c.canais && c.canais[0]) || 'Geral';
 }
 
 function renderPersonal() {
@@ -3805,13 +3714,19 @@ function renderPersonal() {
           (c.templateType==='email'?'Email MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':'Demanda')+
         '</span>'
       : '';
-    const statusTag = '<span style="font-size:10px;padding:4px 10px;border-radius:6px;font-weight:600;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>';
-    const dueTag = s.due ? '<span style="font-size:11px;color:var(--text-muted)">Prazo entrega: '+formatDue(s.due)+'</span>' : '';
+    const metaLine = [
+      '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>',
+      '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>',
+      canalTag,
+      tplTag,
+      s.due ? '<span style="font-size:11px;color:var(--text-muted)">\u23F0 '+formatDue(s.due)+'</span>' : '',
+      late ? '<span class="late-badge">\u26A0 Atrasada</span>' : '',
+    ].filter(Boolean).join('');
     const cbSvg = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
     const campId = c.id, subId = s.id;
     const div = document.createElement('div');
     div.className = 'task-block' + (isDone ? ' done' : '');
-    div.style.cssText = 'padding:18px 18px 18px 16px;cursor:pointer';
+    div.style.cssText = 'padding-left:16px;cursor:pointer';
     div.onclick = function(){
       if (s._openEdit) { openEditCampaignPanel(campId); }
       else { openCampaignDetail(campId); }
@@ -3821,20 +3736,20 @@ function renderPersonal() {
       '<div class="task-cb '+(isDone?'checked':'')+'" id="cb-'+subId+'" style="margin-top:4px">'+
         (isDone ? cbSvg : '')+
       '</div>'+
-      '<div class="task-body" style="display:flex;justify-content:space-between;align-items:flex-start;gap:18px">'+
+      '<div class="task-body" style="display:flex;justify-content:space-between;align-items:flex-start;gap:18px;width:100%">'+
         '<div style="flex:1;min-width:0">'+
           '<div class="task-title" style="font-size:18px;font-weight:700;margin-bottom:10px;'+(isDone?'text-decoration:line-through;opacity:.5;':'')+'">'+s.title+'</div>'+
           (c.name && c.templateType!=='campanhas' ? '<div class="task-campaign" style="margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">'+c.name+'</div>' : '')+
-          '<div class="task-meta-line" style="gap:8px">'+tplTag+dueTag+'</div>'+
-          (blocked&&depTask ? '<div class="task-blocked">\uD83D\uDD12 '+depTask.title+'</div>' : '')+
+          '<div class="task-meta-line" style="gap:8px;margin-top:18px">'+tplTag+dueTag+'</div>'+
+          (blocked&&depTask ? '<div class="task-blocked">🔒 '+depTask.title+'</div>' : '')+
         '</div>'+
-        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">'+
-          '<select id="urg-'+subId+'" style="font-size:10px;font-weight:600;padding:4px 10px;border-radius:6px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none;text-align:right">'+
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:8px;flex-shrink:0;min-width:170px">'+
+          '<select id="urg-'+subId+'" style="font-size:10px;font-weight:600;padding:4px 10px;border-radius:6px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none;text-align:right;min-width:134px">'+
             urgOpts+
           '</select>'+
           statusTag+
           canalTag+
-          (late ? '<span class="late-badge">\u26A0 Atrasada</span>' : '')+
+          (late ? '<span class="late-badge">⚠ Atrasada</span>' : '')+
         '</div>'+
       '</div>';
     // Attach events after setting innerHTML
