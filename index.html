@@ -20,9 +20,9 @@ input,textarea,select{font-family:inherit}
   --sidebar-w:48px;
   --bg-base:#f0f0f0;
   --bg-surface:#e6e6e8;
-  --bg-card:#ffff;
+  --bg-card:#ffffff;
   --bg-card-hover:#f8f8fa;
-  --bg-modal:#ffff;
+  --bg-modal:#ffffff;
   --border:#e0e0e2;
   --border-light:#ebebed;
   --text-primary:#18181b;
@@ -533,9 +533,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 </head>
 <body>
 
-<!-- ====
+<!-- ===========================================
      MEMBER PICKER
-==== -->
+=========================================== -->
 <div id="picker-screen">
   <div class="picker-box">
     <div class="picker-logo">N</div>
@@ -548,9 +548,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   </div>
 </div>
 
-<!-- ====
+<!-- ===========================================
      ADD / EDIT MEMBER MODAL
-==== -->
+=========================================== -->
 <div class="modal-backdrop" id="member-modal-backdrop" onclick="closeMemberModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-h" id="member-modal-title">Novo membro</div>
@@ -586,9 +586,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   </div>
 </div>
 
-<!-- ====
+<!-- ===========================================
      PROFILE EDIT MODAL (dentro do app)
-==== -->
+=========================================== -->
 <div id="profile-modal-backdrop" onclick="closeProfileModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-h">✏️ Editar perfil</div>
@@ -624,9 +624,9 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   </div>
 </div>
 
-<!-- ====
+<!-- ===========================================
      APP PRINCIPAL
-==== -->
+=========================================== -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">N</div>
 
@@ -2117,8 +2117,7 @@ function openCampaignDetail(id) {
       '<select class="status-select" onchange="c_updateStatus(\''+id+'\',this.value)">'+
         STATUSES.map(s=>'<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>').join('')+
       '</select>'+
-
- '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">INÍCIO</div><div style="font-size:13px">'+formatDate(c.startDate)+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">ENTREGA</div><div style="font-size:13px">'+formatDate(c.endDate)+(c.endTime?'<span style="font-size:11px;color:var(--text-muted);margin-left:5px">'+c.endTime+'</span>':'')+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">RESPONSÁVEL</div><div style="display:flex;align-items:center;gap:5px;font-size:13px">'+avatarHtml(owner,18)+(owner?owner.name:'—')+'</div></div>'+
@@ -2205,191 +2204,90 @@ function applyStatusRules(c, oldStatus, newStatus) {
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
 
     const jaCriou = (c.subtasks||[]).some(s=>s._auto==='checklist');
-    if (jaCriou) return;
+    if (!jaCriou) {
+      const participantes = (c.participants && c.participants.length) ? c.participants : [c.owner];
 
-    const participantes = (c.participants && c.participants.length) ? c.participants : [c.owner];
+      // Priority 1: custom override checklist for this template
+      const customTpls = getCustomTemplates();
+      const customTpl = customTpls.find(t => t.id === c.templateType);
+      const customChecklist = customTpl?.checklist || [];
 
-    // FIRST: try to source checklist from campaign.templateData (cronogramaTasks / cronograma / checklist / checklistsMembro)
-    let checklist = [];
+      // Priority 2: template data checklistsMembro (campanhas template)
+      const clm = c.templateData?.checklistsMembro;
 
-    if (c.templateData) {
-      // Prefer explicit parsed cronograma tasks (created when user saved cronograma)
-      if (Array.isArray(c.templateData.cronogramaTasks) && c.templateData.cronogramaTasks.length) {
-        checklist = c.templateData.cronogramaTasks.map(t => {
-          if (typeof t === 'string') return t;
-          return t.name || t.title || (t.nome || JSON.stringify(t));
-        });
-      }
-      // Next, if cronograma text exists, parse it
-      else if (typeof c.templateData.cronograma === 'string' && c.templateData.cronograma.trim()) {
-        try {
-          const parsed = parseCronograma(c.templateData.cronograma);
-          if (parsed && parsed.length) checklist = parsed.map(p => p.name || p.title || JSON.stringify(p));
-        } catch(e) { checklist = []; }
-      }
-      // Next, look for a simple checklist array
-      else if (Array.isArray(c.templateData.checklist) && c.templateData.checklist.length) {
-        checklist = c.templateData.checklist.slice();
-      }
-      // Per-member checklists (checklistsMembro) -> create tasks mapped to owner
-      else if (c.templateData.checklistsMembro && Object.keys(c.templateData.checklistsMembro).length) {
-        // Build per-member subtasks
-        const entries = [];
-        participantes.forEach(pid => {
-          const member = MEMBERS.find(m=>m.id === pid);
-          const name = member?.name;
-          if (name && c.templateData.checklistsMembro[name] && c.templateData.checklistsMembro[name].length) {
-            c.templateData.checklistsMembro[name].forEach(it => {
-              const title = it.texto || it.title || (typeof it === 'string' ? it : JSON.stringify(it));
-              entries.push({ title, owner: pid, canal: it.canal || c.canais?.[0] || 'Geral', done: it.done || false });
-            });
-          }
-        });
-        if (entries.length) {
-          // Avoid duplicates
-          const existingTitles = new Set((c.subtasks||[]).filter(s=>s._auto==='checklist').map(s=>s.title));
-          entries.forEach(en => {
-            if (existingTitles.has(en.title)) return;
+      // Priority 3: encMembro (per-member encerramento tasks in template)
+      const encMembro = c.templateData?.encMembro;
+
+      if (customChecklist.length > 0) {
+        // Custom checklist — distribute to all participants
+        participantes.forEach(memberId => {
+          if (!memberId) return;
+          customChecklist.forEach(item => {
             c.subtasks.push({
-              id: uid(),
-              title: en.title,
-              status: en.done ? 'Concluído' : 'Pendente',
-              owner: en.owner || c.owner,
-              canal: en.canal || 'Geral',
-              urgency: 'Normal',
-              due: c.startDate ? new Date(c.startDate + 'T09:00:00').toISOString() : null,
-              _auto: 'checklist'
-            });
-          });
-          return;
-        }
-      }
-    }
-
-    // SECOND: if checklist pulled from campaign.templateData and has items -> distribute to participants
-    if (checklist.length > 0) {
-      const existingTitles = new Set((c.subtasks||[]).filter(s=>s._auto==='checklist').map(s=>s.title));
-      const itemsToAdd = [];
-      checklist.forEach(item => {
-        if (typeof item === 'string') {
-          // distribute generic checklist items to all participants (same behavior as earlier custom checklist)
-          participantes.forEach(pid => {
-            if (!existingTitles.has(item)) itemsToAdd.push({ title: item, owner: pid });
-          });
-        } else {
-          // item may be object
-          const title = item.texto || item.title || item.name || String(item);
-          const memberName = item.membro || item.ownerName || null;
-          let ownerId = null;
-          if (memberName) {
-            const m = MEMBERS.find(mm => mm.name === memberName || mm.name.toLowerCase() === memberName.toLowerCase());
-            ownerId = m?.id || null;
-          } else if (item.owner) {
-            ownerId = MEMBERS.find(mm => mm.id === item.owner)?.id || null;
-          }
-          if (ownerId) {
-            if (!existingTitles.has(title)) itemsToAdd.push({ title, owner: ownerId });
-          } else {
-            participantes.forEach(pid => { if (!existingTitles.has(title)) itemsToAdd.push({ title, owner: pid }); });
-          }
-        }
-      });
-
-      itemsToAdd.forEach(it => {
-        c.subtasks.push({
-          id: uid(),
-          title: it.title,
-          status: 'Pendente',
-          owner: it.owner || participantes[0],
-          canal: c.canais?.[0] || 'Geral',
-          urgency: 'Normal',
-          due: c.startDate ? new Date(c.startDate + 'T09:00:00').toISOString() : null,
-          _auto: 'checklist'
-        });
-      });
-      return;
-    }
-
-    // THIRD: fallback to custom template override (user-edited template stored under local custom templates)
-    const customTpls = getCustomTemplates();
-    const customTpl = customTpls.find(t => t.id === c.templateType);
-    const customChecklist = customTpl?.checklist || [];
-
-    if (customChecklist.length > 0) {
-      const existingTitles = new Set((c.subtasks||[]).filter(s=>s._auto==='checklist').map(s=>s.title));
-      participantes.forEach(memberId => {
-        if (!memberId) return;
-        customChecklist.forEach(item => {
-          const title = typeof item === 'string' ? item : (item.title || item.name || String(item));
-          if (!existingTitles.has(title)) {
-            c.subtasks.push({
-              id: uid(), title,
+              id: uid(), title: typeof item === 'string' ? item : item.title||item,
               canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
               owner: memberId, due: '',
               status: 'Pendente', dep: null, checklist: [],
               _auto: 'checklist',
             });
+          });
+        });
+
+      } else if (clm && Object.keys(clm).length > 0) {
+        // Campanhas template — per-member checklist
+        Object.entries(clm).forEach(([nome, itens]) => {
+          const m = MEMBERS.find(x=>x.name===nome) ||
+                    MEMBERS.find(x=>x.name.toLowerCase()===nome.toLowerCase());
+          const ownerId = m?.id || c.owner;
+          (itens||[]).forEach(it => {
+            if (!it.texto?.trim()) return;
+            c.subtasks.push({
+              id: uid(), title: it.texto,
+              canal: it.canal || 'Geral', urgency: 'Normal',
+              owner: ownerId, due: '',
+              status: it.done ? 'Concluído' : 'Pendente',
+              dep: null, checklist: [],
+              _auto: 'checklist',
+            });
+          });
+        });
+
+      } else {
+        // No template data — use CL_DEFAULTS per participant
+        let criouAlguma = false;
+        participantes.forEach(memberId => {
+          if (!memberId) return;
+          const m = MEMBERS.find(x => x.id === memberId);
+          if (!m) return;
+          const defaultItems = CL_DEFAULTS[m.name] || [];
+          if (defaultItems.length > 0) {
+            defaultItems.forEach(item => {
+              const t = typeof item === 'string' ? {title:item, canal:'Geral'} : item;
+              c.subtasks.push({
+                id: uid(), title: t.title,
+                canal: t.canal || 'Geral', urgency: 'Normal',
+                owner: memberId, due: '',
+                status: 'Pendente', dep: null, checklist: [],
+                _auto: 'checklist',
+              });
+            });
+            criouAlguma = true;
           }
         });
-      });
-      return;
-    }
-
-    // FOURTH: older behavior - check for templateData.checklistsMembro (if not handled above)
-    const clm = c.templateData?.checklistsMembro;
-    if (clm && Object.keys(clm).length > 0) {
-      Object.entries(clm).forEach(([nome, itens]) => {
-        const m = MEMBERS.find(x=>x.name===nome) ||
-                  MEMBERS.find(x=>x.name.toLowerCase()===nome.toLowerCase());
-        const ownerId = m?.id || c.owner;
-        (itens||[]).forEach(it => {
-          if (!it.texto?.trim()) return;
-          c.subtasks.push({
-            id: uid(), title: it.texto,
-            canal: it.canal || 'Geral', urgency: 'Normal',
-            owner: ownerId, due: '',
-            status: it.done ? 'Concluído' : 'Pendente',
-            dep: null, checklist: [],
-            _auto: 'checklist',
+        if (!criouAlguma) {
+          // Last resort: one generic task per participant
+          participantes.forEach(memberId => {
+            if (!memberId) return;
+            c.subtasks.push({
+              id: uid(), title: 'Executar: ' + c.name,
+              canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
+              owner: memberId, due: '',
+              status: 'Pendente', dep: null, checklist: [],
+              _auto: 'checklist',
+            });
           });
-        });
-      });
-      return;
-    }
-
-    // FINAL FALLBACKS: CL_DEFAULTS per participant, then generic task per participant
-    let criouAlguma = false;
-    participantes.forEach(memberId => {
-      if (!memberId) return;
-      const m = MEMBERS.find(x => x.id === memberId);
-      if (!m) return;
-      const defaultItems = CL_DEFAULTS[m.name] || [];
-      if (defaultItems.length > 0) {
-        defaultItems.forEach(item => {
-          const t = typeof item === 'string' ? {title:item, canal:'Geral'} : item;
-          c.subtasks.push({
-            id: uid(), title: t.title,
-            canal: t.canal || 'Geral', urgency: 'Normal',
-            owner: memberId, due: '',
-            status: 'Pendente', dep: null, checklist: [],
-            _auto: 'checklist',
-          });
-        });
-        criouAlguma = true;
+        }
       }
-    });
-    if (!criouAlguma) {
-      // Last resort: one generic task per participant
-      participantes.forEach(memberId => {
-        if (!memberId) return;
-        c.subtasks.push({
-          id: uid(), title: 'Executar: ' + c.name,
-          canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
-          owner: memberId, due: '',
-          status: 'Pendente', dep: null, checklist: [],
-          _auto: 'checklist',
-        });
-      });
     }
   }
 }
@@ -2883,27 +2781,27 @@ const CL_DEFAULTS = {
     {title:'Banner site desk: Categoria (3160 x 440)',     canal:'Site'},
     {title:'Banner site mobile: Categoria (1200 x 500)',   canal:'Site'},
     {title:'E-mail marketing (900 x 1000)',                canal:'E-mail'},
-    {title:'Anúncio (1080 x 1080)',                    canal:'Meta Ads'},
-    {title:'Feed (1080 x 1350)',                    canal:'Feed Instagram'},
-    {title:'Story (1080 x 1920)',                    canal:'Stories IG'},
+    {title:'Anúncio (1080 x 1080)',                        canal:'Meta Ads'},
+    {title:'Feed (1080 x 1350)',                           canal:'Feed Instagram'},
+    {title:'Story (1080 x 1920)',                          canal:'Stories IG'},
     {title:'Banner Google Ads (1200 x 628)',               canal:'Google Ads'},
     {title:'Banner para grupo VIP (1080 x 1350)',          canal:'WhatsApp VIP'},
   ],
   'Bia': [
-    {title:'Configurar anúncios',                    canal:'Meta Ads'},
+    {title:'Configurar anúncios',                          canal:'Meta Ads'},
     {title:'Aviso grupo WhatsApp Influenciadores',         canal:'Grupo WhatsApp'},
-    {title:'Adicionar Banners site',                    canal:'Site'},
-    {title:'Configurar cupom Nuvem',                    canal:'Site'},
+    {title:'Adicionar Banners site',                       canal:'Site'},
+    {title:'Configurar cupom Nuvem',                       canal:'Site'},
     {title:'Configurar promoção automática Nuvem ou app',  canal:'Site'},
     {title:'Atualizar desconto nos produtos Tiny',         canal:'Geral'},
-    {title:'Ativar cronômetro Nuvem',                    canal:'Site'},
+    {title:'Ativar cronômetro Nuvem',                      canal:'Site'},
     {title:'Testar checkout antes do lançamento',          canal:'Site'},
     {title:'Cadastrar produto ou brinde',                  canal:'Geral'},
   ],
   'Tiago': [
     {title:'Produção de peças finalizadas',  canal:'Geral'},
     {title:'Conferir e atualizar o estoque', canal:'Geral'},
-    {title:'Orçamento',                    canal:'Geral'},
+    {title:'Orçamento',                      canal:'Geral'},
     {title:'Comprar brinde',                 canal:'Geral'},
   ],
 };
@@ -3184,7 +3082,7 @@ function renderTplPublicacoesForm() {
     '</div>'+
     '<div class="form-group"><label class="form-label">Título</label><input class="form-input" value="'+esc(d.gioTitulo||'')+'" oninput="tplData.gioTitulo=this.value"></div>'+
     '<div class="form-group"><label class="form-label">Subtítulo</label><input class="form-input" value="'+esc(d.gioSubtitulo||'')+'" oninput="tplData.gioSubtitulo=this.value"></div>'+
-    '<div class="form-group" style="margin:0"><label class="form-label">CTA</label><input class="form-input" value="'+esc(d.gioCta||'')+'" oninput="tplData.gioCta=this.value"></div>'
+    '<div class="form-group"><label class="form-label">CTA</label><input class="form-input" value="'+esc(d.gioCta||'')+'" oninput="tplData.gioCta=this.value"></div>'
     :
     '<div id="tpl-slides-container">'+slidesHtml+'</div>'+
     '<button type="button" class="btn-add-sub" style="margin-top:4px" onclick="tplSlideAdd()">+ Slide</button>')+
@@ -3703,44 +3601,81 @@ function renderPersonal() {
     const uc = URG_COLOR[s.urgency] || {color:'#888', bg:'#eee'};
     const scc = STATUS_COLOR[c.status] || {color:'#888', bg:'rgba(136,136,136,.08)'};
     const depTask = s.dep ? (c.subtasks||[]).find(x=>x.id===s.dep) : null;
-    const uc = URG_COLOR[s.urgency] || {color:'#888', bg:'#eee'};
-    const scc = STATUS_COLOR[c.status] || {color:'#888', bg:'rgba(136,136,136,.08)'};
-    const depTask = s.dep ? (c.subtasks||[]).find(x=>x.id===s.dep) : null;
+    const urgOpts = URGENCIAS.map(u =>
+      '<option value="'+u+'"'+(u===s.urgency?' selected':'')+'>'+u+'</option>'
+    ).join('');
+    // Canal color
+    const canalColors = {
+      'E-mail': {bg:'#dbeafe',color:'#1e40af'},
+      'Feed Instagram': {bg:'#fce7f3',color:'#9d174d'},
+      'Stories IG': {bg:'#fce7f3',color:'#9d174d'},
+      'Instagram Reels': {bg:'#fce7f3',color:'#9d174d'},
+      'TikTok': {bg:'#e0e7ff',color:'#3730a3'},
+      'YouTube': {bg:'#fee2e2',color:'#991b1b'},
+      'Pinterest': {bg:'#fee2e2',color:'#991b1b'},
+      'WhatsApp VIP': {bg:'#d1fae5',color:'#065f46'},
+      'WhatsApp lista': {bg:'#d1fae5',color:'#065f46'},
+      'Grupo WhatsApp': {bg:'#d1fae5',color:'#065f46'},
+      'Meta Ads': {bg:'#ede9fe',color:'#5b21b6'},
+      'Google Ads': {bg:'#fef3c7',color:'#92400e'},
+      'Site': {bg:'#f0fdf4',color:'#166534'},
+      'SMS': {bg:'#f3f4f6',color:'#374151'},
+    };
+    // Use subtask canal, fallback to campaign's first canal
+    const effectiveCanal = (s.canal && s.canal !== 'Geral') ? s.canal
+      : (c.canais && c.canais.length && c.canais[0] !== 'Geral') ? c.canais[0] : null;
+    const cc = effectiveCanal && canalColors[effectiveCanal];
+    const canalTag = effectiveCanal
+      ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+effectiveCanal+'</span>'
+      : '';
+    // Template type tag
+    const tplTag = c.templateType
+      ? '<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+
+          (c.templateType==='email'?'Email MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':'Demanda')+
+        '</span>'
+      : '';
+    const metaLine = [
+      '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>',
+      '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>',
+      canalTag,
+      tplTag,
+      s.due ? '<span style="font-size:11px;color:var(--text-muted)">\u23F0 '+formatDue(s.due)+'</span>' : '',
+      late ? '<span class="late-badge">\u26A0 Atrasada</span>' : '',
+    ].filter(Boolean).join('');
+    const cbSvg = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
+    const campId = c.id, subId = s.id;
     const div = document.createElement('div');
     div.className = 'task-block' + (isDone ? ' done' : '');
     div.style.cssText = 'padding-left:16px;cursor:pointer';
     div.onclick = function(){
-      if (s._openEdit) { openEditCampaignPanel(c.id); }
-      else { openCampaignDetail(c.id); }
+      if (s._openEdit) { openEditCampaignPanel(campId); }
+      else { openCampaignDetail(campId); }
     };
     div.innerHTML =
       '<div style="position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:4px 0 0 4px;background:'+uc.color+'"></div>'+
-      '<div class="task-cb '+(isDone?'checked':'')+'" id="cb-'+s.id+'">'+
-        (isDone ? '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>' : '')+
+      '<div class="task-cb '+(isDone?'checked':'')+'" id="cb-'+subId+'">'+
+        (isDone ? cbSvg : '')+
       '</div>'+
       '<div class="task-body">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:3px">'+
           '<div class="task-title"'+(isDone?' style="text-decoration:line-through;opacity:.5"':'')+'>'+s.title+'</div>'+
-          '<select id="urg-'+s.id+'" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none">'+
-            URGENCIAS.map(u=>'<option'+(s.urgency===u?' selected':'')+'>'+u+'</option>').join('')+
+          '<select id="urg-'+subId+'" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none">'+
+            urgOpts+
           '</select>'+
         '</div>'+
         '<div class="task-campaign" style="margin-bottom:5px">'+c.name+'</div>'+
-        '<div class="task-meta-line" style="margin-top:2px;gap:4px">'+
-          '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>'+
-          '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>'+
-          (s.canal?'<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg-surface);font-weight:500;color:var(--text-muted)">'+s.canal+'</span>':'')+
-          (s.due?'<span style="font-size:11px;color:var(--text-muted)">\u23F0 '+formatDue(s.due)+'</span>':'')+
-          (late?'<span class="late-badge">\u26A0 Atrasada</span>':'')+
-        '</div>'+
+        '<div class="task-meta-line" style="margin-top:2px;gap:4px">'+metaLine+'</div>'+
         (blocked&&depTask ? '<div class="task-blocked">\uD83D\uDD12 '+depTask.title+'</div>' : '')+
       '</div>';
+    // Attach events after setting innerHTML
     const cb = div.querySelector('.task-cb');
-    if (cb) cb.onclick = function(e){ e.stopPropagation(); toggleSubtaskPersonal(c.id, s.id); };
-    const sel = div.querySelector('#urg-'+s.id);
-    if (sel) sel.onchange = function(e){ e.stopPropagation(); changeUrgency(c.id, s.id, this.value); };
+    if (cb) cb.onclick = function(e){ e.stopPropagation(); toggleSubtaskPersonal(campId, subId); };
+    const sel = div.querySelector('#urg-'+subId);
+    if (sel) sel.onchange = function(e){ e.stopPropagation(); changeUrgency(campId, subId, this.value); };
     return div;
   }
+
+
 
   const container = document.getElementById('personal-tasks');
   container.innerHTML = '';
