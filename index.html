@@ -3714,6 +3714,8 @@ function renderPersonal() {
           (c.templateType==='email'?'Email MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':'Demanda')+
         '</span>'
       : '';
+    const statusTag = '<span style="font-size:10px;padding:4px 10px;border-radius:6px;font-weight:600;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>';
+    const dueTag = s.due ? '<span style="font-size:11px;color:var(--text-muted)">Prazo entrega: '+formatDue(s.due)+'</span>' : '';
     const metaLine = [
       '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>',
       '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>',
