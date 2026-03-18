@@ -2875,12 +2875,12 @@ function campCheckItem(it, idx, path, colorDot) {
   }).join('');
 
   return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border-light)">' +
-    '<div class="tpl-cl-cb' + (it?.done ? ' checked' : '') + '" style="flex-shrink:0" onclick="tplClToggle('' + path + '',' + idx + ')">' +
+    '<div class="tpl-cl-cb' + (it?.done ? ' checked' : '') + '" style="flex-shrink:0" onclick="tplClToggle(\'' + path + '\',' + idx + ')">' +
       (it?.done ? '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>' : '') +
     '</div>' +
-    '<input style="' + inputStyle + '" value="' + texto + '" placeholder="Tarefa..." oninput="tplClText('' + path + '',' + idx + ',this.value)">' +
-    '<select style="' + selectStyle + '" onchange="tplClSelectCanal('' + path + '',' + idx + ',this)">' + optionsHtml + '</select>' +
-    '<button class="tpl-remove-btn" style="opacity:.4" onclick="tplClRemove('' + path + '',' + idx + ')">×</button>' +
+    '<input style="' + inputStyle + '" value="' + texto + '" placeholder="Tarefa..." oninput="tplClText(\'' + path + '\',' + idx + ',this.value)">' +
+    '<select style="' + selectStyle + '" onchange="tplClSelectCanal(\'' + path + '\',' + idx + ',this)">' + optionsHtml + '</select>' +
+    '<button class="tpl-remove-btn" style="opacity:.4" onclick="tplClRemove(\'' + path + '\',' + idx + ')">×</button>' +
   '</div>';
 }
 
