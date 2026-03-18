@@ -743,16 +743,8 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
     </div>
     <div style="padding:16px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
       <div>
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Objetivo</div>
-        <textarea id="resumo-objetivo" style="width:100%;min-height:70px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Gerar pico em 24h, aumentar base VIP, liquidar estoque..."></textarea>
-      </div>
-      <div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Resumo estratégico</div>
-        <textarea id="resumo-estrategico" style="width:100%;min-height:80px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Como a campanha está estruturada..."></textarea>
-      </div>
-      <div>
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Oferta</div>
-        <textarea id="resumo-oferta" style="width:100%;min-height:60px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Descontos, brindes, condições especiais..."></textarea>
+        <textarea id="resumo-estrategico" style="width:100%;min-height:220px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Resumo geral da campanha, objetivo, estrutura, oferta, observações..."></textarea>
       </div>
     </div>
     <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
@@ -893,20 +885,18 @@ let _db = null;
 function openResumoModal() {
   var bd = document.getElementById('resumo-backdrop');
   if (!bd) return;
-  document.getElementById('resumo-objetivo').value = tplData.objetivos || '';
   document.getElementById('resumo-estrategico').value = tplData.resumoEstrategico || '';
-  document.getElementById('resumo-oferta').value = tplData.ofertas || '';
   bd.style.display = 'flex';
-  setTimeout(function(){ document.getElementById('resumo-objetivo').focus(); }, 100);
+  setTimeout(function(){ document.getElementById('resumo-estrategico').focus(); }, 100);
 }
 function closeResumoModal() {
   var bd = document.getElementById('resumo-backdrop');
   if (bd) bd.style.display = 'none';
 }
 function saveResumoModal() {
-  tplData.objetivos = document.getElementById('resumo-objetivo').value;
-  tplData.resumoEstrategico = document.getElementById('resumo-estrategico').value;
-  tplData.ofertas = document.getElementById('resumo-oferta').value;
+  tplData.resumoEstrategico = document.getElementById('resumo-estrategico').value.trim();
+  if (tplData.objetivos) delete tplData.objetivos;
+  if (tplData.ofertas) delete tplData.ofertas;
   closeResumoModal();
   renderTplFields();
 }
@@ -2408,9 +2398,7 @@ function renderTplCampanhasDetail(c,d){
 
   return '<div class="td-section">'+
     '<div class="td-section-title">⚡ Briefing da Campanha</div>'+
-    tdField('Objetivos',esc(d.objetivos))+
     tdField('Resumo estratégico',esc(d.resumoEstrategico))+
-    tdField('Ofertas',esc(d.ofertas))+
     (datasHtml?'<div style="margin-bottom:10px"><div class="td-label">Datas-chave</div>'+datasHtml+'</div>':'')+
     tdField('Cronograma',esc(d.cronograma))+
     metasHtml+
@@ -2571,6 +2559,73 @@ function openEditCampaignPanel(id) {
   openPanel();
 }
 
+function sanitizeChecklistItems(items, includeCanal) {
+  return (items||[])
+    .map(function(it){
+      const texto = (it?.texto||'').trim();
+      if (!texto) return null;
+      const out = { texto:texto, done: !!it?.done };
+      if (includeCanal) out.canal = (it?.canal||'Geral').trim() || 'Geral';
+      return out;
+    })
+    .filter(Boolean);
+}
+
+function sanitizeCampaignTemplateData(data) {
+  const d = JSON.parse(JSON.stringify(data||{}));
+  d.resumoEstrategico = (d.resumoEstrategico||'').trim();
+  delete d.objetivos;
+  delete d.ofertas;
+
+  d.datasChave = (d.datasChave||[]).map(function(item){
+    return {
+      label: (item?.label||'').trim(),
+      date: item?.date || '',
+      time: item?.time || ''
+    };
+  }).filter(function(item){
+    return item.label || item.date || item.time;
+  });
+  if (!d.datasChave.length) {
+    d.datasChave = [
+      {label:'Pré-lançamento Clube',date:'',time:''},
+      {label:'Início oficial',date:'',time:''},
+      {label:'Término',date:'',time:''},
+    ];
+  }
+
+  const cleanExec = {};
+  Object.entries(d.checklistsMembro||{}).forEach(function(entry){
+    const nome = entry[0];
+    const itens = sanitizeChecklistItems(entry[1], true);
+    if (itens.length) cleanExec[nome] = itens;
+  });
+  d.checklistsMembro = cleanExec;
+
+  const cleanEnc = {};
+  Object.entries(d.encMembro||{}).forEach(function(entry){
+    const nome = entry[0];
+    const itens = sanitizeChecklistItems(entry[1], false);
+    if (itens.length) cleanEnc[nome] = itens;
+  });
+  d.encMembro = cleanEnc;
+
+  const cleanNotas = {};
+  Object.entries(d.notasMembro||{}).forEach(function(entry){
+    const texto = (entry[1]||'').trim();
+    if (texto) cleanNotas[entry[0]] = texto;
+  });
+  d.notasMembro = cleanNotas;
+  d._defaultsApplied = true;
+  return d;
+}
+
+function getTemplateDataForSave() {
+  if (!currentTemplate) return null;
+  if (currentTemplate === 'campanhas') return sanitizeCampaignTemplateData(tplData);
+  return JSON.parse(JSON.stringify(tplData||{}));
+}
+
 function updateCampaign(id) {
   const c = getCampaign(id); if (!c) return;
   const oldStatus = c.status;
@@ -2605,7 +2660,8 @@ function updateCampaign(id) {
   c.parentCampaignId = document.getElementById('f-parent-campaign')?.value||null;
   c.description = document.getElementById('f-desc')?.value?.trim()||'';
   c.templateType = currentTemplate||null;
-  c.templateData = currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null;
+  c.templateData = getTemplateDataForSave();
+  c._templateLocked = c.templateType === 'campanhas' ? true : !!c._templateLocked;
   c.subtasks = [...autoSubs, ...manualSubs];
   subForms=[]; currentTemplate=null; tplData={};
   // Apply status rules if status changed
@@ -2672,7 +2728,7 @@ function renderCampaignForm(existingData) {
   // - No template selected: show full picker
   // - Has template but not locked: show picker with current selected
   // - Has template and locked (_templateLocked): show only a tag, no picker
-  const _tplLocked = existingData?._templateLocked === true;
+  const _tplLocked = existingData?._templateLocked === true || existingData?.templateType === 'campanhas';
   const _existingTpl = existingData?.templateType;
 
   // Build template display
@@ -2768,57 +2824,43 @@ function renderTplFields() {
 /* -- DEFAULTS de checklist para template Campanhas -- */
 const CL_DEFAULTS = {
   'Eric': [
-    {title:'Estratégia da campanha',        canal:'Geral'},
-    {title:'Planejamento de conteúdos',     canal:'Geral'},
-    {title:'Planilha de preços com desconto',canal:'Geral'},
-    {title:'Configurar Manychat',           canal:'WhatsApp VIP'},
-    {title:'Planejamento de anúncios',      canal:'Meta Ads'},
-    {title:'Aprovar artes design',          canal:'Geral'},
+    {title:'Planejamento de cronograma', canal:'Geral'},
+    {title:'Planilha de preços com desconto', canal:'Site'},
+    {title:'Configurar Manychat', canal:'Geral'},
+    {title:'Planejamento de anúncios', canal:'Meta Ads'},
   ],
   'Giovana': [
-    {title:'Banner site desk: Home (2568 x 1080)',         canal:'Site'},
-    {title:'Banner site mobile: Home (820 x 1200)',        canal:'Site'},
-    {title:'Banner site mobile: Home promocional (820 x 1000)', canal:'Site'},
-    {title:'Banner site desk/mobile: Home duplo (1024 x 815)',  canal:'Site'},
-    {title:'Banner site desk: Categoria (3160 x 440)',     canal:'Site'},
-    {title:'Banner site mobile: Categoria (1200 x 500)',   canal:'Site'},
-    {title:'E-mail marketing (900 x 1000)',                canal:'E-mail'},
-    {title:'Anúncio (1080 x 1080)',                        canal:'Meta Ads'},
-    {title:'Feed (1080 x 1350)',                           canal:'Feed Instagram'},
-    {title:'Story (1080 x 1920)',                          canal:'Stories IG'},
-    {title:'Banner Google Ads (1200 x 628)',               canal:'Google Ads'},
-    {title:'Banner para grupo VIP (1080 x 1350)',          canal:'WhatsApp VIP'},
+    {title:'Banner site', canal:'Site'},
+    {title:'Anúncios', canal:'Meta Ads'},
   ],
   'Bia': [
-    {title:'Configurar anúncios',                          canal:'Meta Ads'},
-    {title:'Aviso grupo WhatsApp Influenciadores',         canal:'Grupo WhatsApp'},
-    {title:'Adicionar Banners site',                       canal:'Site'},
-    {title:'Configurar cupom Nuvem',                       canal:'Site'},
-    {title:'Configurar promoção automática Nuvem ou app',  canal:'Site'},
-    {title:'Atualizar desconto nos produtos Tiny',         canal:'Geral'},
-    {title:'Ativar cronômetro Nuvem',                      canal:'Site'},
-    {title:'Testar checkout antes do lançamento',          canal:'Site'},
-    {title:'Cadastrar produto ou brinde',                  canal:'Geral'},
+    {title:'Configurar anúncios', canal:'Meta Ads'},
+    {title:'Aviso Influenciadores', canal:'Grupo WhatsApp'},
+    {title:'Adicionar Banners', canal:'Site'},
+    {title:'Configurar cupom', canal:'Site'},
+    {title:'Configurar promoção', canal:'Site'},
+    {title:'Atualizar desconto nos produtos', canal:'Site'},
+    {title:'Ativar cronômetro Nuvem', canal:'Site'},
+    {title:'Testar checkout antes do lançamento', canal:'Site'},
+    {title:'Cadastrar produto ou brinde', canal:'Site'},
   ],
   'Tiago': [
-    {title:'Produção de peças finalizadas',  canal:'Geral'},
-    {title:'Conferir e atualizar o estoque', canal:'Geral'},
-    {title:'Orçamento',                      canal:'Geral'},
-    {title:'Comprar brinde',                 canal:'Geral'},
+    {title:'Produção de peças finalizadas', canal:'Geral'},
+    {title:'Conferir e atualizar o estoque', canal:'Site'},
+    {title:'Orçamento', canal:'Geral'},
+    {title:'Comprar de brinde', canal:'Geral'},
   ],
 };
 
 const CL_ENCERRAMENTO_DEFAULTS = [
-  { membro: 'Eric', item: 'Inativar Manychat' },
-  { membro: 'Bia', item: 'Remover postagens da campanha nas redes sociais' },
-  { membro: 'Bia', item: 'Pausar anúncios no Meta Ads' },
-  { membro: 'Bia', item: 'Pausar anúncios no Google Ads' },
-  { membro: 'Bia', item: 'Pausar anúncios no TikTok Ads' },
-  { membro: 'Bia', item: 'Relatório da campanha' },
-  { membro: 'Bia', item: 'Remover banner promocional do site' },
-  { membro: 'Bia', item: 'Desativar promoção' },
-  { membro: 'Bia', item: 'Pausar cupom' },
-  { membro: 'Bia', item: 'Atualizar preços normais' },
+  { membro: 'Bia', item: 'Remover postagens da campanha nas redes sociais', canal:'Feed Instagram' },
+  { membro: 'Bia', item: 'Pausar anúncios no', canal:'Meta Ads' },
+  { membro: 'Bia', item: 'Pausar anúncios no', canal:'Google Ads' },
+  { membro: 'Bia', item: 'Pausar anúncios no', canal:'Tiktok Ads' },
+  { membro: 'Bia', item: 'Remover banner promocional', canal:'Site' },
+  { membro: 'Bia', item: 'Desativar promoção', canal:'Site' },
+  { membro: 'Bia', item: 'Pausar cupom', canal:'Site' },
+  { membro: 'Bia', item: 'Atualizar preços normais', canal:'Site' },
 ];
 
 function campCheckItem(it, idx, path, colorDot) {
@@ -2897,7 +2939,7 @@ function renderTplCampanhasForm() {
       }
       // Init encerramento per member from CL_ENCERRAMENTO_DEFAULTS
       if (!d.encMembro[nome] || !d.encMembro[nome].length) {
-        d.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
+        d.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
       }
     });
     if (!d.datasChave || !d.datasChave.length) {
@@ -2953,25 +2995,8 @@ function renderTplCampanhasForm() {
     // Exec checklist
     const itensHtml = itens.map((it,i)=>campCheckItem(it,i,pathExec,color)).join('');
 
-    // Encerramento checklist — same structure as exec, fully editable
-    const encHtml = encItens.map((it,i)=>{
-      var wrap = document.createElement('div');
-      wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border-light)';
-      var cb = document.createElement('div');
-      cb.className = 'tpl-cl-cb'+(it.done?' checked':'');
-      cb.style.flexShrink='0';
-      if(it.done) cb.innerHTML='<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
-      cb.onclick=(function(p,idx){return function(){tplClToggle(p,idx);};})(pathEnc,i);
-      var inp = document.createElement('input');
-      inp.style.cssText='flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;'+(it.done?'text-decoration:line-through;opacity:.5':'');
-      inp.value=it.texto||''; inp.placeholder='Tarefa de encerramento...';
-      inp.oninput=(function(p,idx){return function(){tplClText(p,idx,this.value);};})(pathEnc,i);
-      var rm = document.createElement('button');
-      rm.className='tpl-remove-btn'; rm.style.opacity='.4'; rm.textContent='×';
-      rm.onclick=(function(p,idx){return function(){tplClRemove(p,idx);};})(pathEnc,i);
-      wrap.appendChild(cb); wrap.appendChild(inp); wrap.appendChild(rm);
-      return wrap.outerHTML;
-    }).join('');
+    // Encerramento checklist — mesma estrutura do checklist de execução
+    const encHtml = encItens.map((it,i)=>campCheckItem(it,i,pathEnc,color)).join('');
 
     return '<div style="margin-bottom:20px">'+
       // Member header
@@ -3007,9 +3032,9 @@ function renderTplCampanhasForm() {
   }).join('');
 
   /* -- Resumo / Cronograma previews -- */
-  const resumoPreview = d.resumoEstrategico||d.objetivos||d.ofertas
-    ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-height:60px;overflow:hidden">'+
-        esc([(d.objetivos?'Objetivo: '+d.objetivos:''),(d.resumoEstrategico||''),(d.ofertas?'Oferta: '+d.ofertas:'')].filter(Boolean).join('\n')).slice(0,200)+
+  const resumoPreview = d.resumoEstrategico
+    ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-height:90px;overflow:hidden;white-space:pre-wrap">'+
+        esc(d.resumoEstrategico).slice(0,280)+(d.resumoEstrategico.length>280?'...':'')+
       '</div>'
     : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum resumo definido — clique em Editar</span>';
 
@@ -3240,8 +3265,7 @@ function tplClAdd(path, inputEl, forceEmpty) {
   for (let k=0;k<parts.length-1;k++) { if(!obj[parts[k]])obj[parts[k]]={};obj=obj[parts[k]]; }
   const key = parts[parts.length-1];
   if (!obj[key]) obj[key]=[];
-  const isEnc = parts[0]==='encMembro';
-  obj[key].push(isEnc ? {texto:forceEmpty?'':val,done:false} : {texto:forceEmpty?'':val,canal:'Geral',done:false});
+  obj[key].push({texto:forceEmpty?'':val,canal:'Geral',done:false});
   if (inputEl) inputEl.value='';
   renderTplFields();
 }
@@ -3355,7 +3379,7 @@ function syncCampanhasChecklist() {
       }
       // Init encerramento per member
       if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
-        tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
+        tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
       }
     } else {
       // Remove when deselected
@@ -3469,7 +3493,8 @@ function saveCampaign() {
     description:document.getElementById('f-desc')?.value?.trim()||'',
     subtasks:subs, comments:[],
     templateType: currentTemplate||null,
-    templateData: currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null,
+    templateData: getTemplateDataForSave(),
+    _templateLocked: currentTemplate === 'campanhas',
   });
   subForms=[]; currentTemplate=null; tplData={};
   const newCamp = campaigns[campaigns.length-1];
