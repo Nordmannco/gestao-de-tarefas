@@ -2780,6 +2780,7 @@ function renderCampaignForm(existingData) {
     });
   }
 
+  if (currentTemplate === 'campanhas') ensureCampanhasDefaultsForSelectedParticipants();
   if (currentTemplate) renderTplFields();
 }
 
@@ -2921,36 +2922,48 @@ function campCheckItem(it, idx, path, colorDot) {
   return wrap.outerHTML;
 }
 
-function renderTplCampanhasForm() {
-  const d = tplData;
 
-  /* -- inicializa defaults -- */
-  if (!d._defaultsApplied) {
-    const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
-      const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
-    }).filter(Boolean);
-    const membros = selectedNames.length ? selectedNames.filter(n=>CL_DEFAULTS[n]) : [];
-    if (!d.checklistsMembro) d.checklistsMembro = {};
-    if (!d.notasMembro) d.notasMembro = {};
-    if (!d.encMembro) d.encMembro = {};
-    membros.forEach(nome => {
-      if (!d.checklistsMembro[nome] || !d.checklistsMembro[nome].length) {
-        d.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
-      }
-      // Init encerramento per member from CL_ENCERRAMENTO_DEFAULTS
-      if (!d.encMembro[nome] || !d.encMembro[nome].length) {
-        d.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
-      }
-    });
-    if (!d.datasChave || !d.datasChave.length) {
-      d.datasChave = [
-        {label:'Pré-lançamento Clube',date:'',time:''},
-        {label:'Início oficial',date:'',time:''},
-        {label:'Término',date:'',time:''},
-      ];
+function ensureCampanhasDefaultsForSelectedParticipants() {
+  if (currentTemplate !== 'campanhas') return;
+  if (!tplData || typeof tplData !== 'object') tplData = {};
+
+  const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
+    const m = MEMBERS.find(x=>x.id===el.dataset.val);
+    return m?.name;
+  }).filter(Boolean);
+
+  if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+  if (!tplData.encMembro) tplData.encMembro = {};
+
+  selectedNames.forEach(nome => {
+    if (CL_DEFAULTS[nome] && (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length)) {
+      tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'
+        ? {texto:t,canal:'Geral',done:false}
+        : {texto:t.title,canal:t.canal||'Geral',done:false}));
     }
-    d._defaultsApplied = true;
+    if (!tplData.notasMembro[nome]) tplData.notasMembro[nome] = tplData.notasMembro[nome] || '';
+    if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
+      tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS
+        .filter(x=>x.membro===nome)
+        .map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
+    }
+  });
+
+  if (!tplData.datasChave || !tplData.datasChave.length) {
+    tplData.datasChave = [
+      {label:'Pré-lançamento Clube',date:'',time:''},
+      {label:'Início oficial',date:'',time:''},
+      {label:'Término',date:'',time:''},
+    ];
   }
+
+  tplData._defaultsApplied = true;
+}
+
+function renderTplCampanhasForm() {
+  ensureCampanhasDefaultsForSelectedParticipants();
+  const d = tplData;
 
   /* -- Participantes selecionados -- */
   const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
@@ -3373,21 +3386,20 @@ function syncCampanhasChecklist() {
   membrosComDefault.forEach(nome => {
     const isSelected = selected.includes(nome);
     if (isSelected) {
-      // Init exec checklist
       if (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length) {
         tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
       }
-      // Init encerramento per member
       if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
         tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
       }
     } else {
-      // Remove when deselected
       if (tplData.checklistsMembro[nome]) delete tplData.checklistsMembro[nome];
       if (tplData.encMembro[nome]) delete tplData.encMembro[nome];
       if (tplData.notasMembro[nome]) delete tplData.notasMembro[nome];
     }
   });
+
+  ensureCampanhasDefaultsForSelectedParticipants();
 
   const container = document.getElementById('tpl-fields-container');
   if (container && currentTemplate==='campanhas') renderTplFields();
