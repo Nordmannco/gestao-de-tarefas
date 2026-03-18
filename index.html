@@ -412,8 +412,8 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .urgency-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
 
 /* --- FILTROS DROPDOWN --- */
-.filter-bar{padding:10px 0 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--border);margin-bottom:14px}
-.filter-dd{position:relative}
+.filter-bar{padding:10px 0 14px;display:flex;gap:8px;flex-wrap:nowrap;align-items:flex-start;border-bottom:0.5px solid var(--border);margin-bottom:14px;overflow-x:auto}
+.filter-dd{position:relative;flex:0 0 auto}
 .filter-dd-btn{
   height:30px;padding:0 12px;border:0.5px solid var(--border);border-radius:6px;
   background:var(--bg-card);font-size:12px;color:var(--text-secondary);
@@ -423,35 +423,32 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .filter-dd-list{
   display:none;position:absolute;top:34px;left:0;
   background:var(--bg-card);border:0.5px solid var(--border);border-radius:8px;
-  z-index:300;min-width:150px;max-height:220px;overflow-y:auto;
+  z-index:300;min-width:180px;max-height:320px;overflow-y:auto;
   box-shadow:0 4px 16px rgba(0,0,0,.1);padding:4px 0;
 }
 .filter-dd-list.open{display:block}
 .filter-dd-item{padding:7px 14px;font-size:12px;cursor:pointer;color:var(--text-secondary);transition:background .1s}
 .filter-dd-item:hover,.filter-dd-item.sel{background:var(--c-campanha-bg);color:var(--c-campanha)}
+.filter-dd-sep{height:1px;background:var(--border);margin:4px 0}
 .filter-dd-clear{padding:6px 14px;font-size:11px;color:var(--text-muted);cursor:pointer;border-top:0.5px solid var(--border)}
-.btn-clear-all{height:30px;padding:0 12px;border:0.5px solid var(--u-urgente);border-radius:6px;background:var(--u-urgente-bg);color:var(--u-urgente);font-size:11px}
-.filter-stack{display:flex;flex-direction:column;gap:8px;width:100%}
-.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
-.filter-period-wrap{position:relative}
-.filter-period-btn{height:30px;padding:0 12px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-card);font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;white-space:nowrap}
-.filter-period-btn.has-value{border-color:var(--c-campanha);background:var(--c-campanha-bg);color:var(--c-campanha)}
-.filter-period-pop{display:none;position:absolute;top:36px;left:0;background:var(--bg-card);border:0.5px solid var(--border);border-radius:12px;z-index:350;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:12px;width:290px}
-.filter-period-pop.open{display:block}
-.filter-period-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-.filter-period-nav{width:28px;height:28px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-secondary);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.filter-period-title{font-size:13px;font-weight:600;color:var(--text-primary)}
-.filter-period-weekdays,.filter-period-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.filter-period-weekdays div{font-size:10px;color:var(--text-muted);text-align:center;padding:4px 0;text-transform:uppercase}
-.filter-period-day{height:34px;border-radius:8px;border:none;background:transparent;font-size:12px;color:var(--text-primary);cursor:pointer}
-.filter-period-day:hover{background:var(--bg-surface)}
-.filter-period-day.muted{color:var(--text-muted);opacity:.45}
-.filter-period-day.today{border:0.5px solid var(--c-campanha)}
-.filter-period-day.in-range{background:var(--c-campanha-bg);color:var(--c-campanha)}
-.filter-period-day.range-edge{background:var(--c-campanha);color:#fff}
-.filter-period-actions{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
-.filter-period-summary{font-size:11px;color:var(--text-muted)}
-.filter-link-btn{border:none;background:none;color:var(--c-campanha);font-size:11px;cursor:pointer;padding:0}
+.btn-clear-all{height:30px;padding:0 12px;border:0.5px solid var(--u-urgente);border-radius:6px;background:var(--u-urgente-bg);color:var(--u-urgente);font-size:11px;flex:0 0 auto}
+.period-range-box{padding:10px 12px;border-top:0.5px solid var(--border)}
+.period-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.period-cal-btn{width:24px;height:24px;border:none;border-radius:6px;background:var(--bg-surface);color:var(--text-secondary);font-size:14px}
+.period-cal-title{font-size:12px;font-weight:600;color:var(--text-primary)}
+.period-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.period-cal-weekday{font-size:9px;color:var(--text-muted);text-align:center;text-transform:uppercase}
+.period-cal-day{height:28px;border:none;border-radius:6px;background:transparent;font-size:11px;color:var(--text-primary)}
+.period-cal-day:hover{background:var(--bg-surface)}
+.period-cal-day.muted{color:var(--text-muted);opacity:.45}
+.period-cal-day.selected,.period-cal-day.in-range{background:var(--c-campanha-bg);color:var(--c-campanha)}
+.period-cal-day.selected{font-weight:700}
+.period-range-actions{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
+.period-range-label{font-size:10px;color:var(--text-muted);margin-bottom:6px}
+.filter-period{display:flex;align-items:center;gap:6px;padding:6px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-card);flex-wrap:wrap}
+.filter-period-label{font-size:12px;color:var(--text-secondary);font-weight:500}
+.filter-date{height:30px;padding:0 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-base);font-size:12px;color:var(--text-primary);outline:none}
+.filter-date:focus{border-color:var(--c-campanha)}
 .task-group-title{font-size:20px;font-weight:700;color:var(--text-primary);margin:28px 0 14px}
 .task-group-title:first-child{margin-top:6px}
 .task-group-empty{font-size:13px;color:var(--text-muted);padding:18px 0 8px}
@@ -891,7 +888,6 @@ let currentView = 'kanban';
 let currentMember = null;
 let kanbanFilter  = { type: [], member: [] };
 let personalFilter = { urgency: [], canal: [], tipo: [], periodStart: '', periodEnd: '' };
-let personalPeriodPicker = { open:false, month:new Date().getMonth(), year:new Date().getFullYear(), draftStart:'', draftEnd:'' };
 let calDate = new Date();
 let calSelectedDay = null;
 let editingCampId = null;
@@ -3530,64 +3526,103 @@ function saveCampaign() {
 
 
 /* PERSONAL PANEL */
-function formatPeriodLabel(start, end) {
-  if (!start && !end) return 'Período';
-  const fmt = v => {
-    const [y,m,d] = v.split('-');
-    return d+'/'+m;
-  };
-  if (start && end) return fmt(start)+' → '+fmt(end);
-  if (start) return 'A partir de '+fmt(start);
-  return 'Até '+fmt(end);
+
+function getPeriodButtonLabel() {
+  if (personalFilter.period) return personalFilter.period;
+  if (personalFilter.periodStart && personalFilter.periodEnd) return formatShortBR(personalFilter.periodStart)+' – '+formatShortBR(personalFilter.periodEnd);
+  if (personalFilter.periodStart) return 'A partir de '+formatShortBR(personalFilter.periodStart);
+  return 'Prazo';
 }
 
-function renderPeriodPicker() {
-  const current = new Date(personalPeriodPicker.year, personalPeriodPicker.month, 1);
-  const monthLabel = current.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
-  const weekdays = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const firstDay = new Date(personalPeriodPicker.year, personalPeriodPicker.month, 1).getDay();
-  const daysInMonth = new Date(personalPeriodPicker.year, personalPeriodPicker.month + 1, 0).getDate();
-  const prevMonthDays = new Date(personalPeriodPicker.year, personalPeriodPicker.month, 0).getDate();
-  const start = personalPeriodPicker.draftStart || personalFilter.periodStart;
-  const end = personalPeriodPicker.draftEnd || personalFilter.periodEnd;
+let periodPickerMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let tempPeriodStart = null;
+let tempPeriodEnd = null;
 
-  let daysHtml = '';
-  for (let i = 0; i < 42; i++) {
-    let dayNum, dateObj, muted = false;
-    if (i < firstDay) {
-      dayNum = prevMonthDays - firstDay + i + 1;
-      dateObj = new Date(personalPeriodPicker.year, personalPeriodPicker.month - 1, dayNum);
-      muted = true;
-    } else if (i >= firstDay + daysInMonth) {
-      dayNum = i - (firstDay + daysInMonth) + 1;
-      dateObj = new Date(personalPeriodPicker.year, personalPeriodPicker.month + 1, dayNum);
-      muted = true;
-    } else {
-      dayNum = i - firstDay + 1;
-      dateObj = new Date(personalPeriodPicker.year, personalPeriodPicker.month, dayNum);
-    }
-    const iso = dateObj.toISOString().slice(0,10);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const isToday = dateObj.getTime() === today.getTime();
-    const inRange = start && end && iso >= start && iso <= end;
-    const isEdge = iso === start || iso === end;
-    daysHtml += '<button class="filter-period-day'+(muted?' muted':'')+(isToday?' today':'')+(inRange?' in-range':'')+(isEdge?' range-edge':'')+'" onclick="pickPeriodDate(\''+iso+'\')">'+dayNum+'</button>';
+function formatShortBR(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return d+'/'+m;
+}
+
+function openPeriodPicker() {
+  tempPeriodStart = personalFilter.periodStart;
+  tempPeriodEnd = personalFilter.periodEnd;
+  periodPickerMonth = tempPeriodStart ? new Date(tempPeriodStart+'T00:00:00') : new Date();
+  periodPickerMonth = new Date(periodPickerMonth.getFullYear(), periodPickerMonth.getMonth(), 1);
+  renderPeriodCalendar();
+}
+
+function renderPeriodCalendar() {
+  const wrap = document.getElementById('period-range-box');
+  if (!wrap) return;
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const weekNames = ['D','S','T','Q','Q','S','S'];
+  const first = new Date(periodPickerMonth.getFullYear(), periodPickerMonth.getMonth(), 1);
+  const startOffset = first.getDay();
+  const gridStart = new Date(first);
+  gridStart.setDate(first.getDate() - startOffset);
+
+  let daysHtml = weekNames.map(w=>'<div class="period-cal-weekday">'+w+'</div>').join('');
+  for (let i=0;i<42;i++) {
+    const day = new Date(gridStart);
+    day.setDate(gridStart.getDate()+i);
+    const iso = day.toISOString().slice(0,10);
+    const sameMonth = day.getMonth() === periodPickerMonth.getMonth();
+    const selected = iso===tempPeriodStart || iso===tempPeriodEnd;
+    const inRange = tempPeriodStart && tempPeriodEnd && iso > tempPeriodStart && iso < tempPeriodEnd;
+    daysHtml += '<button type="button" class="period-cal-day'+(sameMonth?'':' muted')+(selected?' selected':'')+(inRange?' in-range':'')+'" onclick="selectPeriodDate(\''+iso+'\')">'+day.getDate()+'</button>';
   }
 
-  return '<div class="filter-period-pop'+(personalPeriodPicker.open?' open':'')+'" id="filter-period-pop">'+
-    '<div class="filter-period-head">'+
-      '<button class="filter-period-nav" onclick="changePeriodMonth(-1)">‹</button>'+
-      '<div class="filter-period-title">'+monthLabel+'</div>'+
-      '<button class="filter-period-nav" onclick="changePeriodMonth(1)">›</button>'+
+  wrap.innerHTML =
+    '<div class="period-range-label">Período</div>'+
+    '<div class="period-cal-head">'+
+      '<button type="button" class="period-cal-btn" onclick="shiftPeriodMonth(-1)">‹</button>'+
+      '<div class="period-cal-title">'+monthNames[periodPickerMonth.getMonth()]+' '+periodPickerMonth.getFullYear()+'</div>'+
+      '<button type="button" class="period-cal-btn" onclick="shiftPeriodMonth(1)">›</button>'+
     '</div>'+
-    '<div class="filter-period-weekdays">'+weekdays.map(d => '<div>'+d+'</div>').join('')+'</div>'+
-    '<div class="filter-period-grid">'+daysHtml+'</div>'+
-    '<div class="filter-period-actions">'+
-      '<button class="filter-link-btn" onclick="clearPF(\'period\')">Limpar</button>'+
-      '<div class="filter-period-summary">'+formatPeriodLabel(start, end)+'</div>'+
-    '</div>'+
-  '</div>';
+    '<div class="period-cal-grid">'+daysHtml+'</div>'+
+    '<div class="period-range-actions">'+
+      '<button type="button" class="btn-ghost" style="height:28px;padding:0 10px" onclick="clearPeriodRange()">Limpar</button>'+
+      '<button type="button" class="btn-primary" style="height:28px;padding:0 12px" onclick="applyPeriodRange()">Aplicar</button>'+
+    '</div>';
+}
+
+function shiftPeriodMonth(dir) {
+  periodPickerMonth = new Date(periodPickerMonth.getFullYear(), periodPickerMonth.getMonth()+dir, 1);
+  renderPeriodCalendar();
+}
+
+function selectPeriodDate(iso) {
+  if (!tempPeriodStart || (tempPeriodStart && tempPeriodEnd)) {
+    tempPeriodStart = iso;
+    tempPeriodEnd = null;
+  } else if (iso < tempPeriodStart) {
+    tempPeriodEnd = tempPeriodStart;
+    tempPeriodStart = iso;
+  } else {
+    tempPeriodEnd = iso;
+  }
+  renderPeriodCalendar();
+}
+
+function applyPeriodRange() {
+  personalFilter.period = null;
+  personalFilter.periodStart = tempPeriodStart;
+  personalFilter.periodEnd = tempPeriodEnd || tempPeriodStart;
+  renderPersonalFilters();
+  document.getElementById('dd-period')?.classList.remove('open');
+  renderPersonal();
+}
+
+function clearPeriodRange() {
+  tempPeriodStart = null;
+  tempPeriodEnd = null;
+  personalFilter.periodStart = null;
+  personalFilter.periodEnd = null;
+  personalFilter.period = null;
+  renderPersonalFilters();
+  document.getElementById('dd-period')?.classList.remove('open');
+  renderPersonal();
 }
 
 function renderPersonalFilters() {
@@ -3606,63 +3641,50 @@ function renderPersonalFilters() {
     return '<div class="filter-dd">'+
       '<button class="filter-dd-btn'+(hasVal?' has-value':'')+'" onclick="toggleDD(\''+id+'\')">'+labelText+' ▾</button>'+
       '<div class="filter-dd-list" id="'+id+'">'+items+
-        (hasVal?'<div class="filter-dd-clear" onclick="clearPF(\''+key+'\')">Limpar</div>':'')+
+        '<div class="filter-dd-clear" onclick="clearPF(\''+key+'\')">Limpar</div>'+
       '</div></div>';
   }
 
-  const canaisOrdenados = [...CANAIS].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  const hasPeriod = !!(personalFilter.periodStart || personalFilter.periodEnd);
-  const periodHtml =
-    '<div class="filter-period-wrap">'+
-      '<button class="filter-period-btn'+(hasPeriod?' has-value':'')+'" onclick="togglePeriodPicker(event)">'+formatPeriodLabel(personalFilter.periodStart, personalFilter.periodEnd)+' ▾</button>'+
-      renderPeriodPicker()+
-    '</div>';
+  const periodHasValue = !!(personalFilter.period || personalFilter.periodStart || personalFilter.periodEnd);
 
   bar.innerHTML =
-    '<div class="filter-stack">'+
-      '<div class="filter-row">'+
-        ddBtn('Prioridade','urgency',personalFilter.urgency,URGENCIAS,u=>URG_COLOR[u]) +
-        ddBtn('Tipo','tipo',personalFilter.tipo,TYPES,null) +
-        ddBtn('Canal','canal',personalFilter.canal,canaisOrdenados,null) +
-        ((personalFilter.urgency.length||personalFilter.canal.length||personalFilter.tipo.length||hasPeriod)?
-          '<button class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>':'')+
+    ddBtn('Prioridade','urgency',personalFilter.urgency,URGENCIAS,u=>URG_COLOR[u]) +
+    '<div class="filter-dd">'+
+      '<button class="filter-dd-btn'+(periodHasValue?' has-value':'')+'" onclick="toggleDD(\'dd-period\'); if(document.getElementById(\'dd-period\')?.classList.contains(\'open\')){ openPeriodPicker(); }">'+getPeriodButtonLabel()+' ▾</button>'+
+      '<div class="filter-dd-list" id="dd-period">'+
+        ['Hoje','Amanhã','Essa semana'].map(v => '<div class="filter-dd-item'+(personalFilter.period===v?' sel':'')+'" onclick="togglePF(\'period\',\''+v+'\')">'+v+'</div>').join('')+
+        '<div class="filter-dd-sep"></div>'+
+        '<div class="filter-dd-item'+((personalFilter.periodStart||personalFilter.periodEnd)?' sel':'')+'" onclick="openPeriodPicker()">Período</div>'+
+        '<div id="period-range-box" class="period-range-box"></div>'+
+        '<div class="filter-dd-clear" onclick="clearPF(\'period\')">Limpar</div>'+
       '</div>'+
-      '<div class="filter-row">'+periodHtml+'</div>'+
-    '</div>';
+    '</div>' +
+    ddBtn('Tipo','tipo',personalFilter.tipo,TYPES,null) +
+    ddBtn('Canal','canal',personalFilter.canal,[...CANAIS].sort((a,b)=>a.localeCompare(b,'pt-BR')),null) +
+    ((personalFilter.urgency.length||personalFilter.canal.length||personalFilter.tipo.length||personalFilter.period||personalFilter.periodStart||personalFilter.periodEnd)?
+      '<button class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>':'');
+
+  renderPeriodCalendar();
 }
 
 function toggleDD(id) {
   document.querySelectorAll('.filter-dd-list').forEach(el=>{ if(el.id!==id) el.classList.remove('open'); });
   document.getElementById(id)?.classList.toggle('open');
-}
-
-function togglePeriodPicker(event) {
-  event.stopPropagation();
-  document.querySelectorAll('.filter-dd-list').forEach(el=>el.classList.remove('open'));
-  personalPeriodPicker.open = !personalPeriodPicker.open;
-  personalPeriodPicker.draftStart = personalFilter.periodStart || '';
-  personalPeriodPicker.draftEnd = personalFilter.periodEnd || '';
-  if (personalFilter.periodStart) {
-    const ref = new Date(personalFilter.periodStart+'T00:00:00');
-    personalPeriodPicker.month = ref.getMonth();
-    personalPeriodPicker.year = ref.getFullYear();
+  if (id==='dd-period' && document.getElementById(id)?.classList.contains('open')) {
+    openPeriodPicker();
   }
-  renderPersonalFilters();
 }
 
 document.addEventListener('click', e => {
   if (!e.target.closest('.filter-dd')) document.querySelectorAll('.filter-dd-list').forEach(el=>el.classList.remove('open'));
-  if (!e.target.closest('.filter-period-wrap')) {
-    if (personalPeriodPicker.open) {
-      personalPeriodPicker.open = false;
-      renderPersonalFilters();
-    }
-  }
 });
 
 function togglePF(key, val) {
-  if (key==='period') return;
-  else {
+  if (key==='period') {
+    personalFilter.periodStart = null;
+    personalFilter.periodEnd = null;
+    personalFilter.period = personalFilter.period===val?null:val;
+  } else {
     const arr = personalFilter[key];
     const idx = arr.indexOf(val);
     if (idx===-1) arr.push(val); else arr.splice(idx,1);
@@ -3670,61 +3692,22 @@ function togglePF(key, val) {
   renderPersonalFilters(); renderPersonal();
 }
 
-function changePeriodMonth(step) {
-  const d = new Date(personalPeriodPicker.year, personalPeriodPicker.month + step, 1);
-  personalPeriodPicker.month = d.getMonth();
-  personalPeriodPicker.year = d.getFullYear();
-  renderPersonalFilters();
-}
-
-function pickPeriodDate(value) {
-  const start = personalPeriodPicker.draftStart;
-  const end = personalPeriodPicker.draftEnd;
-  if (!start || (start && end)) {
-    personalPeriodPicker.draftStart = value;
-    personalPeriodPicker.draftEnd = '';
-  } else if (value < start) {
-    personalPeriodPicker.draftEnd = start;
-    personalPeriodPicker.draftStart = value;
-  } else {
-    personalPeriodPicker.draftEnd = value;
-  }
-  personalFilter.periodStart = personalPeriodPicker.draftStart || '';
-  personalFilter.periodEnd = personalPeriodPicker.draftEnd || '';
-  renderPersonalFilters();
-  renderPersonal();
-}
-
-function setPFPeriod(edge, value) {
-  if (edge==='start') personalFilter.periodStart = value || '';
-  if (edge==='end') personalFilter.periodEnd = value || '';
-  renderPersonalFilters(); renderPersonal();
-}
-
 function clearPF(key) {
   if (key==='period') {
-    personalFilter.periodStart=''; personalFilter.periodEnd='';
-    personalPeriodPicker.draftStart=''; personalPeriodPicker.draftEnd='';
+    personalFilter.period=null;
+    personalFilter.periodStart=null;
+    personalFilter.periodEnd=null;
+    tempPeriodStart=null;
+    tempPeriodEnd=null;
   } else personalFilter[key]=[];
   renderPersonalFilters(); renderPersonal();
 }
 
 function clearAllPF() {
-  personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:''};
-  personalPeriodPicker.draftStart=''; personalPeriodPicker.draftEnd=''; personalPeriodPicker.open=false;
+  personalFilter={urgency:[],canal:[],tipo:[],period:null,periodStart:null,periodEnd:null};
+  tempPeriodStart=null;
+  tempPeriodEnd=null;
   renderPersonalFilters(); renderPersonal();
-}
-
-
-function getEffectiveTaskCanal(task) {
-  const s = task.sub || {};
-  const c = task.campaign || {};
-  if (s.canal && s.canal !== 'Geral') return s.canal;
-  if (c.canais && c.canais.length) {
-    const canalCampanha = c.canais.find(v => v && v !== 'Geral');
-    if (canalCampanha) return canalCampanha;
-  }
-  return s.canal || (c.canais && c.canais[0]) || 'Geral';
 }
 
 function renderPersonal() {
@@ -3790,7 +3773,10 @@ function renderPersonal() {
     const uc = URG_COLOR[s.urgency] || {color:'#888', bg:'#eee'};
     const scc = STATUS_COLOR[c.status] || {color:'#888', bg:'rgba(136,136,136,.08)'};
     const depTask = s.dep ? (c.subtasks||[]).find(x=>x.id===s.dep) : null;
-    const effectiveCanal = getEffectiveTaskCanal(t);
+    const urgOpts = URGENCIAS.map(u =>
+      '<option value="'+u+'"'+(u===s.urgency?' selected':'')+'>'+u+'</option>'
+    ).join('');
+    // Canal color
     const canalColors = {
       'E-mail': {bg:'#dbeafe',color:'#1e40af'},
       'Feed Instagram': {bg:'#fce7f3',color:'#9d174d'},
@@ -3806,51 +3792,59 @@ function renderPersonal() {
       'Google Ads': {bg:'#fef3c7',color:'#92400e'},
       'Site': {bg:'#f0fdf4',color:'#166534'},
       'SMS': {bg:'#f3f4f6',color:'#374151'},
-      'Geral': {bg:'#f3f4f6',color:'#6b7280'}
     };
+    // Use subtask canal, fallback to campaign's first canal
+    const effectiveCanal = getEffectiveTaskCanal(t);
     const cc = effectiveCanal && canalColors[effectiveCanal];
-    const typeLabel = c.templateType==='email'?'E-mail MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':'Demanda interna';
-    const dueText = s.due ? 'Prazo entrega: '+formatDue(s.due) : '';
+    const canalTag = effectiveCanal
+      ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+effectiveCanal+'</span>'
+      : '';
+    // Template type tag
+    const tplTag = c.templateType
+      ? '<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+
+          (c.templateType==='email'?'Email MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':'Demanda')+
+        '</span>'
+      : '';
+    const statusTag = '<span style="font-size:10px;padding:4px 10px;border-radius:6px;font-weight:600;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>';
+    const dueTag = s.due ? '<span style="font-size:11px;color:var(--text-muted)">Prazo entrega: '+formatDue(s.due)+'</span>' : '';
     const cbSvg = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
     const campId = c.id, subId = s.id;
-    const showCampaignName = c.templateType !== 'campanhas';
     const div = document.createElement('div');
     div.className = 'task-block' + (isDone ? ' done' : '');
-    div.style.cssText = 'padding:14px 16px 14px 18px;cursor:pointer;position:relative';
+    div.style.cssText = 'padding:18px 18px 18px 16px;cursor:pointer';
     div.onclick = function(){
       if (s._openEdit) { openEditCampaignPanel(campId); }
       else { openCampaignDetail(campId); }
     };
     div.innerHTML =
-      '<div style="position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:4px 0 0 4px;background:#34d399"></div>'+
-      '<div style="display:flex;gap:12px;align-items:flex-start">'+
-        '<div class="task-cb '+(isDone?'checked':'')+'" id="cb-'+subId+'">'+(isDone ? cbSvg : '')+'</div>'+
-        '<div class="task-body">'+
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">'+
-            '<div style="min-width:0;flex:1">'+
-              '<div class="task-title"'+(isDone?' style="text-decoration:line-through;opacity:.5"':'')+' style="font-size:15px;font-weight:600;margin-bottom:'+(showCampaignName?'4px':'10px')+'">'+s.title+'</div>'+
-              (showCampaignName ? '<div class="task-campaign" style="font-size:12px;margin-bottom:10px;text-transform:uppercase">'+c.name+'</div>' : '')+
-            '</div>'+
-            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">'+
-              '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+';border:0.5px solid '+uc.color+';min-width:74px;text-align:center">'+s.urgency+'</span>'+
-              '<span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>'+
-              (c.templateType !== 'campanhas' && effectiveCanal ? '<span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+effectiveCanal+'</span>' : '')+
-            '</div>'+
-          '</div>'+
-          '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-top:4px">'+
-            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
-              '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+typeLabel+'</span>'+
-              (dueText ? '<span style="font-size:11px;color:var(--text-secondary);font-weight:500">'+dueText+'</span>' : '')+
-              (late ? '<span class="late-badge">⚠ Atrasada</span>' : '')+
-            '</div>'+
-          '</div>'+
-          (blocked&&depTask ? '<div class="task-blocked">🔒 '+depTask.title+'</div>' : '')+
+      '<div style="position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;background:'+uc.color+'"></div>'+
+      '<div class="task-cb '+(isDone?'checked':'')+'" id="cb-'+subId+'" style="margin-top:4px">'+
+        (isDone ? cbSvg : '')+
+      '</div>'+
+      '<div class="task-body" style="display:flex;justify-content:space-between;align-items:flex-start;gap:18px">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="task-title" style="font-size:18px;font-weight:700;margin-bottom:10px;'+(isDone?'text-decoration:line-through;opacity:.5;':'')+'">'+s.title+'</div>'+
+          (c.name && c.templateType!=='campanhas' ? '<div class="task-campaign" style="margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">'+c.name+'</div>' : '')+
+          '<div class="task-meta-line" style="gap:8px">'+tplTag+dueTag+'</div>'+
+          (blocked&&depTask ? '<div class="task-blocked">\uD83D\uDD12 '+depTask.title+'</div>' : '')+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">'+
+          '<select id="urg-'+subId+'" style="font-size:10px;font-weight:600;padding:4px 10px;border-radius:6px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none;text-align:right">'+
+            urgOpts+
+          '</select>'+
+          statusTag+
+          canalTag+
+          (late ? '<span class="late-badge">\u26A0 Atrasada</span>' : '')+
         '</div>'+
       '</div>';
+    // Attach events after setting innerHTML
     const cb = div.querySelector('.task-cb');
     if (cb) cb.onclick = function(e){ e.stopPropagation(); toggleSubtaskPersonal(campId, subId); };
+    const sel = div.querySelector('#urg-'+subId);
+    if (sel) sel.onchange = function(e){ e.stopPropagation(); changeUrgency(campId, subId, this.value); };
     return div;
   }
+
 
 
   const container = document.getElementById('personal-tasks');
