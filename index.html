@@ -290,12 +290,14 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 #bulk-delete-bar button{height:26px;padding:0 12px;border-radius:10px;border:none;font-size:11px;cursor:pointer;font-family:var(--font)}
 .btn-bulk-del{background:#ef4444;color:#fff}
 .btn-bulk-cancel{background:rgba(255,255,255,.1);color:#fff}
-.card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
-.card-name{font-size:13px;font-weight:500;color:var(--text-primary);line-height:1.3;flex:1}
+.card-header{display:block;margin-bottom:6px}
+.card-name{font-size:13px;font-weight:500;color:var(--text-primary);line-height:1.3}
+.card-parent{font-size:11px;color:var(--text-muted);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-info-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.card-info-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
 .type-tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap;flex-shrink:0}
-.card-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.card-member{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)}
-.card-date{font-size:10px;color:var(--text-muted);font-family:var(--font-mono)}
+.card-sep{font-size:10px;color:var(--text-muted)}
+.card-date{font-size:10px;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap}
 .mini-avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0;width:20px;height:20px;overflow:hidden}
 .mini-avatar img{width:100%;height:100%;object-fit:cover}
 .progress-bar{height:3px;background:var(--bg-surface);border-radius:2px;overflow:hidden}
@@ -602,6 +604,74 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
   align-items:flex-end;
   gap:8px;
   min-height:58px;
+}
+
+
+.compact-select-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:12px;
+  align-items:start;
+}
+.compact-select-row .form-group{margin:0}
+.compact-dropdown{
+  position:relative;
+}
+.compact-dropdown-btn{
+  width:100%;
+  height:44px;
+  border:0.5px solid var(--border);
+  border-radius:14px;
+  background:var(--bg-card);
+  color:var(--text-primary);
+  font-size:14px;
+  font-family:var(--font);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 14px;
+  cursor:pointer;
+}
+.compact-dropdown-btn .summary{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-secondary);
+}
+.compact-dropdown.open .compact-dropdown-btn{
+  border-color:var(--c-campanha);
+  box-shadow:0 0 0 2px rgba(124,106,247,.08);
+}
+.compact-dropdown-panel{
+  position:absolute;
+  top:50px;
+  left:0;
+  right:0;
+  z-index:30;
+  border:0.5px solid var(--border);
+  border-radius:16px;
+  background:var(--bg-card);
+  box-shadow:0 12px 28px rgba(15,23,42,.08);
+  padding:12px;
+  display:none;
+}
+.compact-dropdown.open .compact-dropdown-panel{display:block}
+.compact-dropdown .multi-select{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.compact-dropdown .multi-item{
+  padding:6px 10px;
+  border-radius:999px;
+}
+.compact-dropdown .extra-actions{
+  margin-top:10px;
+  display:flex;
+  gap:6px;
+}
+@media (max-width: 900px){
+  .compact-select-row{grid-template-columns:1fr}
 }
 
 </style>
@@ -2121,10 +2191,21 @@ function renderKanban() {
 
 function renderCampaignCard(c) {
   const prog = calcProgress(c);
-  const owner = getMember(c.owner);
   const progColor = prog.pct===100?'var(--c-conteudo)':prog.pct>50?'var(--c-tarefa)':'var(--c-campanha)';
   const cc = c.comments?.length||0;
   const isSelected = selectedCards.has(c.id);
+
+  const parentCampaign = c.parentCampaignId ? campaigns.find(x=>x.id===c.parentCampaignId) : null;
+  const linkedTitle = parentCampaign?.name || '';
+
+  let topLabel = 'Campanha';
+  if (c.templateType && c.templateType !== 'campanhas') {
+    topLabel = (c.canais && c.canais.length ? c.canais[0] : c.type || 'Geral');
+  }
+
+  const urgency = c.urgency || 'Normal';
+  const secondaryTitle = linkedTitle || '';
+
   return '<div class="campaign-card'+(isSelected?' selected':'')+'" id="card-'+c.id+'"' +
     ' draggable="true"' +
     ' ondragstart="dragStart(event,this)"' +
@@ -2133,9 +2214,9 @@ function renderCampaignCard(c) {
     '<div class="card-checkbox'+(isSelected?' checked visible':'')+'" onclick="event.stopPropagation();toggleCardSelection(\''+c.id+'\')">' +
       (isSelected?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
     '</div>'+
-    '<div class="card-header"><span class="card-name">'+c.name+'</span>'+typeTag(c.type)+'</div>'+
-    '<div class="card-meta"><div class="card-member">'+avatarHtml(owner,18)+'<span>'+(owner?owner.name:'')+'</span></div>'+
-    '<span class="card-date">'+formatDate(c.endDate)+'</span></div>'+
+    '<div class="card-header"><div class="card-name">'+c.name+'</div></div>'+
+    '<div class="card-parent">'+secondaryTitle+'</div>'+
+    '<div class="card-info-line"><div class="card-info-left">'+typeTag(topLabel)+'<span class="card-sep">-</span>'+urgBadge(urgency)+'<span class="card-sep">-</span><span class="card-date">'+formatDate(c.endDate)+'</span></div></div>'+
     '<div class="progress-label"><span>'+prog.pct+'%</span><span style="display:flex;gap:8px"><span>'+prog.done+'/'+prog.total+'</span>'+(cc?'<span class="comment-count">💬 '+cc+'</span>':'')+'</span></div>'+
     '<div class="progress-bar"><div class="progress-fill" style="width:'+prog.pct+'%;background:'+progColor+'"></div></div>'+
     '</div>';
@@ -2798,6 +2879,7 @@ function updateCampaign(id) {
   c.endDate = document.getElementById('f-end').value;
   c.endTime = document.getElementById('f-end-time')?.value||'';
   c.owner = document.getElementById('f-owner').value;
+  c.urgency = document.getElementById('f-urgency')?.value || c.urgency || 'Normal';
   c.participants = participants.length ? participants : [c.owner];
   c.canais = canais;
   c.driveLink = document.getElementById('f-drive')?.value?.trim()||'';
@@ -2899,18 +2981,29 @@ function renderCampaignForm(existingData) {
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
       '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){return '<option'+(existingData?.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
       '<div class="form-group"><label class="form-label">Status</label><div class="select-wrap"><select class="form-select" id="f-status">'+STATUSES.map(function(s){return '<option'+(existingData?.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div></div>'+
-      '<div class="form-group"><label class="form-label">Início</label><input class="form-input" type="date" id="f-start" value="'+(existingData?.startDate||'')+'"></div>'+
+      '<div class="form-group"><label class="form-label">Início</label><input class="form-input" type="date" id="f-start" value="'+(existingData?.startDate||new Date().toISOString().slice(0,10))+'"></div>'+
       '<div class="form-group"><label class="form-label">Entrega</label><div style="display:grid;grid-template-columns:1fr auto;gap:6px"><input class="form-input" type="date" id="f-end" value="'+(existingData?.endDate||'')+'"><input class="form-input" type="time" id="f-end-time" style="width:82px" value="'+(existingData?.endTime||'')+'"></div></div>'+
     '</div>'+
-    '<div class="form-group"><label class="form-label">Responsável</label><div class="select-wrap"><select class="form-select" id="f-owner">'+
-      MEMBERS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(existingData?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>';}).join('')+
-    '</select></div></div>'+
-    '<div class="form-group"><label class="form-label">Participantes</label><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
-    (currentTemplate !== 'campanhas' ? (
-      '<div class="form-group"><label class="form-label">Canais</label><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
-      '<div style="margin-top:6px;display:flex;gap:6px"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:28px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:28px">+ Adicionar</button></div></div>'
-    ) : '')+
-    (currentTemplate !== 'campanhas' ? parentHtml : '')+
+    '<div class="tpl-row">'+
+      '<div class="form-group" style="margin:0"><label class="form-label">Responsável</label><div class="select-wrap"><select class="form-select" id="f-owner">'+
+        MEMBERS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(existingData?.owner||window.currentUser?.id)?' selected':'')+'>'+m.name+' — '+m.role+'</option>';}).join('')+
+      '</select></div></div>'+
+      '<div class="form-group" style="margin:0"><label class="form-label">Prioridade</label><div class="select-wrap"><select class="form-select" id="f-urgency">'+
+        URGENCIAS.map(function(u){return '<option value="'+u+'"'+((u===(existingData?.urgency||'Normal'))?' selected':'')+'>'+u+'</option>';}).join('')+
+      '</select></div></div>'+
+    '</div>'+
+    '<div class="compact-select-row">'+
+      '<div class="form-group compact-dropdown" id="participants-dropdown"><label class="form-label">Participantes</label>'+
+        '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'participants-dropdown\')"><span class="summary" id="participants-summary">Selecionar participantes</span><span>▾</span></button>'+
+        '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div></div>'+
+      (currentTemplate !== 'campanhas' ? (
+        '<div class="form-group compact-dropdown" id="canais-dropdown"><label class="form-label">Canais</label>'+
+          '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'canais-dropdown\')"><span class="summary" id="canais-summary">Selecionar canais</span><span>▾</span></button>'+
+          '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
+          '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div></div>'
+      ) : '<div></div>')+
+      (currentTemplate !== 'campanhas' ? '<div></div>' : '<div></div>')+
+    '</div>'+
     '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
     '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
@@ -3326,6 +3419,7 @@ function renderTplPublicacoesForm() {
   '<div class="tpl-section">'+
     '<div class="tpl-section-title">🎨 Criativo</div>'+
     '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('criativoResponsaveis', participantesSelecionados)+'</div>'+
+    '<div class="form-group"><label class="form-label">Informações do criativo</label><textarea class="form-textarea" placeholder="Direção, referências, observações..." oninput="tplData.gioInfo=this.value;autoResize(this)">'+(d.gioInfo||'')+'</textarea></div>'+
     '<div class="form-group"><label class="form-label">Tipo de peça</label>'+
     '<div style="display:flex;gap:12px;margin-top:4px">'+
     ((editingCampId && tipo) ?
@@ -3545,8 +3639,53 @@ function tplStepRemove(membId, idx) {
   renderTplFields();
 }
 
+
+function toggleCompactDropdown(id){
+  document.querySelectorAll('.compact-dropdown.open').forEach(function(el){
+    if (el.id !== id) el.classList.remove('open');
+  });
+  const box = document.getElementById(id);
+  if (box) box.classList.toggle('open');
+}
+
+function closeCompactDropdowns(){
+  document.querySelectorAll('.compact-dropdown.open').forEach(function(el){
+    el.classList.remove('open');
+  });
+}
+
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.compact-dropdown')) closeCompactDropdowns();
+});
+
+function updateCompactSummaries(){
+  const partSummary = document.getElementById('participants-summary');
+  if (partSummary) {
+    const selected = [...document.querySelectorAll('#multi-participants .multi-item.selected')];
+    if (!selected.length) partSummary.textContent = 'Selecionar participantes';
+    else if (selected.length === 1) partSummary.textContent = selected[0].textContent.trim();
+    else partSummary.textContent = selected.length + ' participantes';
+  }
+
+  const canalSummary = document.getElementById('canais-summary');
+  if (canalSummary) {
+    const selected = [...document.querySelectorAll('#multi-canais .multi-item.selected')];
+    if (!selected.length) canalSummary.textContent = 'Selecionar canais';
+    else if (selected.length === 1) canalSummary.textContent = selected[0].textContent.trim();
+    else canalSummary.textContent = selected.length + ' canais';
+  }
+
+  const parentSelect = document.getElementById('f-parent-campaign');
+  const parentSummary = document.getElementById('parent-summary');
+  if (parentSelect && parentSummary) {
+    const opt = parentSelect.options[parentSelect.selectedIndex];
+    parentSummary.textContent = parentSelect.value ? opt.textContent : 'Selecionar campanha';
+  }
+}
+
 function toggleMulti(el) {
   el.classList.toggle('selected');
+  updateCompactSummaries();
   // Ao mudar participante, sincroniza o template ativo
   if (el.closest('#multi-participants') && currentTemplate) {
     syncTemplateParticipants();
@@ -3669,6 +3808,7 @@ function addNewCanal() {
   container.insertBefore(el, container.querySelector('+ div') || null);
   container.appendChild(el);
   inp.value = '';
+  updateCompactSummaries();
 }
 
 function saveCampaign() {
@@ -3714,6 +3854,7 @@ function saveCampaign() {
     endDate:document.getElementById('f-end').value,
     endTime:document.getElementById('f-end-time')?.value||'',
     owner:document.getElementById('f-owner').value,
+    urgency:document.getElementById('f-urgency')?.value||'Normal',
     participants: participants.length ? participants : [document.getElementById('f-owner').value],
     canais: canais,
     driveLink:document.getElementById('f-drive')?.value?.trim()||'',
