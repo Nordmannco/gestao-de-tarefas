@@ -743,16 +743,8 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
     </div>
     <div style="padding:16px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
       <div>
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Objetivo</div>
-        <textarea id="resumo-objetivo" style="width:100%;min-height:70px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Gerar pico em 24h, aumentar base VIP, liquidar estoque..."></textarea>
-      </div>
-      <div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Resumo estratégico</div>
-        <textarea id="resumo-estrategico" style="width:100%;min-height:80px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Como a campanha está estruturada..."></textarea>
-      </div>
-      <div>
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Oferta</div>
-        <textarea id="resumo-oferta" style="width:100%;min-height:60px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Descontos, brindes, condições especiais..."></textarea>
+        <textarea id="resumo-estrategico" style="width:100%;min-height:220px;border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Resumo geral da campanha, objetivo, estrutura, oferta, observações..."></textarea>
       </div>
     </div>
     <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
@@ -893,20 +885,18 @@ let _db = null;
 function openResumoModal() {
   var bd = document.getElementById('resumo-backdrop');
   if (!bd) return;
-  document.getElementById('resumo-objetivo').value = tplData.objetivos || '';
   document.getElementById('resumo-estrategico').value = tplData.resumoEstrategico || '';
-  document.getElementById('resumo-oferta').value = tplData.ofertas || '';
   bd.style.display = 'flex';
-  setTimeout(function(){ document.getElementById('resumo-objetivo').focus(); }, 100);
+  setTimeout(function(){ document.getElementById('resumo-estrategico').focus(); }, 100);
 }
 function closeResumoModal() {
   var bd = document.getElementById('resumo-backdrop');
   if (bd) bd.style.display = 'none';
 }
 function saveResumoModal() {
-  tplData.objetivos = document.getElementById('resumo-objetivo').value;
-  tplData.resumoEstrategico = document.getElementById('resumo-estrategico').value;
-  tplData.ofertas = document.getElementById('resumo-oferta').value;
+  tplData.resumoEstrategico = document.getElementById('resumo-estrategico').value.trim();
+  if (tplData.objetivos) delete tplData.objetivos;
+  if (tplData.ofertas) delete tplData.ofertas;
   closeResumoModal();
   renderTplFields();
 }
@@ -2066,6 +2056,10 @@ function renderCampaignCard(c) {
 /* CAMPAIGN DETAIL */
 function openCampaignDetail(id) {
   const c = getCampaign(id); if (!c) return;
+  if (c.status === 'Em planejamento') {
+    openEditCampaignPanel(id);
+    return;
+  }
   editingCampId = id;
   const btnDel = document.getElementById('btn-delete');
   if (btnDel) btnDel.style.display='';
@@ -2404,9 +2398,7 @@ function renderTplCampanhasDetail(c,d){
 
   return '<div class="td-section">'+
     '<div class="td-section-title">⚡ Briefing da Campanha</div>'+
-    tdField('Objetivos',esc(d.objetivos))+
     tdField('Resumo estratégico',esc(d.resumoEstrategico))+
-    tdField('Ofertas',esc(d.ofertas))+
     (datasHtml?'<div style="margin-bottom:10px"><div class="td-label">Datas-chave</div>'+datasHtml+'</div>':'')+
     tdField('Cronograma',esc(d.cronograma))+
     metasHtml+
@@ -2567,8 +2559,76 @@ function openEditCampaignPanel(id) {
   openPanel();
 }
 
+function sanitizeChecklistItems(items, includeCanal) {
+  return (items||[])
+    .map(function(it){
+      const texto = (it?.texto||'').trim();
+      if (!texto) return null;
+      const out = { texto:texto, done: !!it?.done };
+      if (includeCanal) out.canal = (it?.canal||'Geral').trim() || 'Geral';
+      return out;
+    })
+    .filter(Boolean);
+}
+
+function sanitizeCampaignTemplateData(data) {
+  const d = JSON.parse(JSON.stringify(data||{}));
+  d.resumoEstrategico = (d.resumoEstrategico||'').trim();
+  delete d.objetivos;
+  delete d.ofertas;
+
+  d.datasChave = (d.datasChave||[]).map(function(item){
+    return {
+      label: (item?.label||'').trim(),
+      date: item?.date || '',
+      time: item?.time || ''
+    };
+  }).filter(function(item){
+    return item.label || item.date || item.time;
+  });
+  if (!d.datasChave.length) {
+    d.datasChave = [
+      {label:'Pré-lançamento Clube',date:'',time:''},
+      {label:'Início oficial',date:'',time:''},
+      {label:'Término',date:'',time:''},
+    ];
+  }
+
+  const cleanExec = {};
+  Object.entries(d.checklistsMembro||{}).forEach(function(entry){
+    const nome = entry[0];
+    const itens = sanitizeChecklistItems(entry[1], true);
+    if (itens.length) cleanExec[nome] = itens;
+  });
+  d.checklistsMembro = cleanExec;
+
+  const cleanEnc = {};
+  Object.entries(d.encMembro||{}).forEach(function(entry){
+    const nome = entry[0];
+    const itens = sanitizeChecklistItems(entry[1], false);
+    if (itens.length) cleanEnc[nome] = itens;
+  });
+  d.encMembro = cleanEnc;
+
+  const cleanNotas = {};
+  Object.entries(d.notasMembro||{}).forEach(function(entry){
+    const texto = (entry[1]||'').trim();
+    if (texto) cleanNotas[entry[0]] = texto;
+  });
+  d.notasMembro = cleanNotas;
+  d._defaultsApplied = true;
+  return d;
+}
+
+function getTemplateDataForSave() {
+  if (!currentTemplate) return null;
+  if (currentTemplate === 'campanhas') return sanitizeCampaignTemplateData(tplData);
+  return JSON.parse(JSON.stringify(tplData||{}));
+}
+
 function updateCampaign(id) {
   const c = getCampaign(id); if (!c) return;
+  const oldStatus = c.status;
   const name = document.getElementById('f-name')?.value?.trim();
   if (!name) { alert('Insira o nome'); return; }
   const participants = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>el.dataset.val);
@@ -2587,9 +2647,9 @@ function updateCampaign(id) {
   }));
   // Keep existing auto subtasks, replace manual ones
   const autoSubs = (c.subtasks||[]).filter(s=>s._auto);
+  const newStatus = document.getElementById('f-status').value;
   c.name = name;
   c.type = document.getElementById('f-type').value;
-  c.status = document.getElementById('f-status').value;
   c.startDate = document.getElementById('f-start').value;
   c.endDate = document.getElementById('f-end').value;
   c.endTime = document.getElementById('f-end-time')?.value||'';
@@ -2600,10 +2660,8 @@ function updateCampaign(id) {
   c.parentCampaignId = document.getElementById('f-parent-campaign')?.value||null;
   c.description = document.getElementById('f-desc')?.value?.trim()||'';
   c.templateType = currentTemplate||null;
-  c.templateData = currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null;
-  // Read oldStatus BEFORE any changes
-  const oldStatus = c.status;
-  const newStatus = document.getElementById('f-status').value;
+  c.templateData = getTemplateDataForSave();
+  c._templateLocked = c.templateType === 'campanhas' ? true : !!c._templateLocked;
   c.subtasks = [...autoSubs, ...manualSubs];
   subForms=[]; currentTemplate=null; tplData={};
   // Apply status rules if status changed
@@ -2670,7 +2728,7 @@ function renderCampaignForm(existingData) {
   // - No template selected: show full picker
   // - Has template but not locked: show picker with current selected
   // - Has template and locked (_templateLocked): show only a tag, no picker
-  const _tplLocked = existingData?._templateLocked === true;
+  const _tplLocked = existingData?._templateLocked === true || existingData?.templateType === 'campanhas';
   const _existingTpl = existingData?.templateType;
 
   // Build template display
@@ -2722,6 +2780,7 @@ function renderCampaignForm(existingData) {
     });
   }
 
+  if (currentTemplate === 'campanhas') ensureCampanhasDefaultsForSelectedParticipants();
   if (currentTemplate) renderTplFields();
 }
 
@@ -2766,147 +2825,128 @@ function renderTplFields() {
 /* -- DEFAULTS de checklist para template Campanhas -- */
 const CL_DEFAULTS = {
   'Eric': [
-    {title:'Estratégia da campanha',        canal:'Geral'},
-    {title:'Planejamento de conteúdos',     canal:'Geral'},
-    {title:'Planilha de preços com desconto',canal:'Geral'},
-    {title:'Configurar Manychat',           canal:'WhatsApp VIP'},
-    {title:'Planejamento de anúncios',      canal:'Meta Ads'},
-    {title:'Aprovar artes design',          canal:'Geral'},
+    {title:'Planejamento de cronograma', canal:'Geral'},
+    {title:'Planilha de preços com desconto', canal:'Site'},
+    {title:'Configurar Manychat', canal:'Geral'},
+    {title:'Planejamento de anúncios', canal:'Meta Ads'},
   ],
   'Giovana': [
-    {title:'Banner site desk: Home (2568 x 1080)',         canal:'Site'},
-    {title:'Banner site mobile: Home (820 x 1200)',        canal:'Site'},
-    {title:'Banner site mobile: Home promocional (820 x 1000)', canal:'Site'},
-    {title:'Banner site desk/mobile: Home duplo (1024 x 815)',  canal:'Site'},
-    {title:'Banner site desk: Categoria (3160 x 440)',     canal:'Site'},
-    {title:'Banner site mobile: Categoria (1200 x 500)',   canal:'Site'},
-    {title:'E-mail marketing (900 x 1000)',                canal:'E-mail'},
-    {title:'Anúncio (1080 x 1080)',                        canal:'Meta Ads'},
-    {title:'Feed (1080 x 1350)',                           canal:'Feed Instagram'},
-    {title:'Story (1080 x 1920)',                          canal:'Stories IG'},
-    {title:'Banner Google Ads (1200 x 628)',               canal:'Google Ads'},
-    {title:'Banner para grupo VIP (1080 x 1350)',          canal:'WhatsApp VIP'},
+    {title:'Banner site', canal:'Site'},
+    {title:'Anúncios', canal:'Meta Ads'},
   ],
   'Bia': [
-    {title:'Configurar anúncios',                          canal:'Meta Ads'},
-    {title:'Aviso grupo WhatsApp Influenciadores',         canal:'Grupo WhatsApp'},
-    {title:'Adicionar Banners site',                       canal:'Site'},
-    {title:'Configurar cupom Nuvem',                       canal:'Site'},
-    {title:'Configurar promoção automática Nuvem ou app',  canal:'Site'},
-    {title:'Atualizar desconto nos produtos Tiny',         canal:'Geral'},
-    {title:'Ativar cronômetro Nuvem',                      canal:'Site'},
-    {title:'Testar checkout antes do lançamento',          canal:'Site'},
-    {title:'Cadastrar produto ou brinde',                  canal:'Geral'},
+    {title:'Configurar anúncios', canal:'Meta Ads'},
+    {title:'Aviso Influenciadores', canal:'Grupo WhatsApp'},
+    {title:'Adicionar Banners', canal:'Site'},
+    {title:'Configurar cupom', canal:'Site'},
+    {title:'Configurar promoção', canal:'Site'},
+    {title:'Atualizar desconto nos produtos', canal:'Site'},
+    {title:'Ativar cronômetro Nuvem', canal:'Site'},
+    {title:'Testar checkout antes do lançamento', canal:'Site'},
+    {title:'Cadastrar produto ou brinde', canal:'Site'},
   ],
   'Tiago': [
-    {title:'Produção de peças finalizadas',  canal:'Geral'},
-    {title:'Conferir e atualizar o estoque', canal:'Geral'},
-    {title:'Orçamento',                      canal:'Geral'},
-    {title:'Comprar brinde',                 canal:'Geral'},
+    {title:'Produção de peças finalizadas', canal:'Geral'},
+    {title:'Conferir e atualizar o estoque', canal:'Site'},
+    {title:'Orçamento', canal:'Geral'},
+    {title:'Comprar de brinde', canal:'Geral'},
   ],
 };
 
 const CL_ENCERRAMENTO_DEFAULTS = [
-  { membro: 'Eric', item: 'Inativar Manychat' },
-  { membro: 'Bia', item: 'Remover postagens da campanha nas redes sociais' },
-  { membro: 'Bia', item: 'Pausar anúncios no Meta Ads' },
-  { membro: 'Bia', item: 'Pausar anúncios no Google Ads' },
-  { membro: 'Bia', item: 'Pausar anúncios no TikTok Ads' },
-  { membro: 'Bia', item: 'Relatório da campanha' },
-  { membro: 'Bia', item: 'Remover banner promocional do site' },
-  { membro: 'Bia', item: 'Desativar promoção' },
-  { membro: 'Bia', item: 'Pausar cupom' },
-  { membro: 'Bia', item: 'Atualizar preços normais' },
+  { membro: 'Bia', item: 'Remover postagens da campanha nas redes sociais', canal:'Feed Instagram' },
+  { membro: 'Bia', item: 'Pausar anúncios no', canal:'Meta Ads' },
+  { membro: 'Bia', item: 'Pausar anúncios no', canal:'Google Ads' },
+  { membro: 'Bia', item: 'Pausar anúncios no', canal:'Tiktok Ads' },
+  { membro: 'Bia', item: 'Remover banner promocional', canal:'Site' },
+  { membro: 'Bia', item: 'Desativar promoção', canal:'Site' },
+  { membro: 'Bia', item: 'Pausar cupom', canal:'Site' },
+  { membro: 'Bia', item: 'Atualizar preços normais', canal:'Site' },
 ];
 
 function campCheckItem(it, idx, path, colorDot) {
-  var wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border-light)';
+  const texto = esc(it?.texto || '');
+  const canalAtual = it?.canal || 'Geral';
+  const inputStyle = 'flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;' + (it?.done ? 'text-decoration:line-through;opacity:.5' : '');
+  const selectStyle = 'font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:2px 4px;cursor:pointer;max-width:120px;flex-shrink:0';
+  const allCanais = ['Geral'].concat(CANAIS.filter(function(c){ return c !== 'Geral'; })).concat(['+ Novo canal']);
+  const optionsHtml = allCanais.map(function(canal){
+    return '<option value="' + esc(canal) + '"' + (canal === canalAtual ? ' selected' : '') + '>' + esc(canal) + '</option>';
+  }).join('');
 
-  // Checkbox
-  var cb = document.createElement('div');
-  cb.className = 'tpl-cl-cb' + (it.done?' checked':'');
-  cb.style.flexShrink = '0';
-  if (it.done) cb.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
-  cb.onclick = (function(p,i){return function(){tplClToggle(p,i);};})(path,idx);
+  return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border-light)">' +
+    '<div class="tpl-cl-cb' + (it?.done ? ' checked' : '') + '" style="flex-shrink:0" onclick="tplClToggle(\'' + path + '\',' + idx + ')">' +
+      (it?.done ? '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>' : '') +
+    '</div>' +
+    '<input style="' + inputStyle + '" value="' + texto + '" placeholder="Tarefa..." oninput="tplClText(\'' + path + '\',' + idx + ',this.value)">' +
+    '<select style="' + selectStyle + '" onchange="tplClSelectCanal(\'' + path + '\',' + idx + ',this)">' + optionsHtml + '</select>' +
+    '<button class="tpl-remove-btn" style="opacity:.4" onclick="tplClRemove(\'' + path + '\',' + idx + ')">×</button>' +
+  '</div>';
+}
 
-  // Text input
-  var inp = document.createElement('input');
-  inp.style.cssText = 'flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;' + (it.done?'text-decoration:line-through;opacity:.5':'');
-  inp.value = it.texto||'';
-  inp.placeholder = 'Tarefa...';
-  inp.oninput = (function(p,i){return function(){tplClText(p,i,this.value);};})(path,idx);
-
-  // Canal select
-  var sel = document.createElement('select');
-  sel.style.cssText = 'font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:2px 4px;cursor:pointer;max-width:120px;flex-shrink:0';
-  var allCanais = ['Geral'].concat(CANAIS.filter(function(c){return c!=='Geral';})).concat(['+ Novo canal']);
-  allCanais.forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c;
-    o.textContent = c;
-    if (c === (it.canal||'Geral')) o.selected = true;
-    sel.appendChild(o);
-  });
-  sel.onchange = (function(p,i,s){return function(){
-    if (this.value === '+ Novo canal') {
-      var novo = prompt('Nome do canal:');
-      if (novo && novo.trim()) {
-        var o = document.createElement('option');
-        o.value = novo.trim(); o.textContent = novo.trim(); o.selected = true;
-        s.insertBefore(o, s.lastChild);
-        tplClCanal(p,i,novo.trim());
-      }
-      this.value = it.canal||'Geral';
+function tplClSelectCanal(path, idx, selectEl) {
+  if (!selectEl) return;
+  if (selectEl.value === '+ Novo canal') {
+    const novo = prompt('Nome do canal:');
+    if (novo && novo.trim()) {
+      const valor = novo.trim();
+      const opt = document.createElement('option');
+      opt.value = valor;
+      opt.textContent = valor;
+      selectEl.insertBefore(opt, selectEl.lastElementChild);
+      selectEl.value = valor;
+      tplClCanal(path, idx, valor);
       return;
     }
-    tplClCanal(p,i,this.value);
-  };})(path,idx,sel);
+    const atual = (((getByPath(tplData, path) || [])[idx] || {}).canal) || 'Geral';
+    selectEl.value = atual;
+    return;
+  }
+  tplClCanal(path, idx, selectEl.value);
+}
 
-  // Remove button
-  var rm = document.createElement('button');
-  rm.className = 'tpl-remove-btn';
-  rm.style.opacity = '.4';
-  rm.textContent = '×';
-  rm.onclick = (function(p,i){return function(){tplClRemove(p,i);};})(path,idx);
 
-  wrap.appendChild(cb);
-  wrap.appendChild(inp);
-  wrap.appendChild(sel);
-  wrap.appendChild(rm);
-  return wrap.outerHTML;
+function ensureCampanhasDefaultsForSelectedParticipants() {
+  if (currentTemplate !== 'campanhas') return;
+  if (!tplData || typeof tplData !== 'object') tplData = {};
+
+  const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
+    const m = MEMBERS.find(x=>x.id===el.dataset.val);
+    return m?.name;
+  }).filter(Boolean);
+
+  if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+  if (!tplData.encMembro) tplData.encMembro = {};
+
+  selectedNames.forEach(nome => {
+    if (CL_DEFAULTS[nome] && (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length)) {
+      tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'
+        ? {texto:t,canal:'Geral',done:false}
+        : {texto:t.title,canal:t.canal||'Geral',done:false}));
+    }
+    if (!tplData.notasMembro[nome]) tplData.notasMembro[nome] = tplData.notasMembro[nome] || '';
+    if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
+      tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS
+        .filter(x=>x.membro===nome)
+        .map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
+    }
+  });
+
+  if (!tplData.datasChave || !tplData.datasChave.length) {
+    tplData.datasChave = [
+      {label:'Pré-lançamento Clube',date:'',time:''},
+      {label:'Início oficial',date:'',time:''},
+      {label:'Término',date:'',time:''},
+    ];
+  }
+
+  tplData._defaultsApplied = true;
 }
 
 function renderTplCampanhasForm() {
+  ensureCampanhasDefaultsForSelectedParticipants();
   const d = tplData;
-
-  /* -- inicializa defaults -- */
-  if (!d._defaultsApplied) {
-    const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
-      const m = MEMBERS.find(x=>x.id===el.dataset.val); return m?.name;
-    }).filter(Boolean);
-    const membros = selectedNames.length ? selectedNames.filter(n=>CL_DEFAULTS[n]) : [];
-    if (!d.checklistsMembro) d.checklistsMembro = {};
-    if (!d.notasMembro) d.notasMembro = {};
-    if (!d.encMembro) d.encMembro = {};
-    membros.forEach(nome => {
-      if (!d.checklistsMembro[nome] || !d.checklistsMembro[nome].length) {
-        d.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
-      }
-      // Init encerramento per member from CL_ENCERRAMENTO_DEFAULTS
-      if (!d.encMembro[nome] || !d.encMembro[nome].length) {
-        d.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
-      }
-    });
-    if (!d.datasChave || !d.datasChave.length) {
-      d.datasChave = [
-        {label:'Pré-lançamento Clube',date:'',time:''},
-        {label:'Início oficial',date:'',time:''},
-        {label:'Término',date:'',time:''},
-      ];
-    }
-    d._defaultsApplied = true;
-  }
 
   /* -- Participantes selecionados -- */
   const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
@@ -2951,25 +2991,8 @@ function renderTplCampanhasForm() {
     // Exec checklist
     const itensHtml = itens.map((it,i)=>campCheckItem(it,i,pathExec,color)).join('');
 
-    // Encerramento checklist — same structure as exec, fully editable
-    const encHtml = encItens.map((it,i)=>{
-      var wrap = document.createElement('div');
-      wrap.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border-light)';
-      var cb = document.createElement('div');
-      cb.className = 'tpl-cl-cb'+(it.done?' checked':'');
-      cb.style.flexShrink='0';
-      if(it.done) cb.innerHTML='<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
-      cb.onclick=(function(p,idx){return function(){tplClToggle(p,idx);};})(pathEnc,i);
-      var inp = document.createElement('input');
-      inp.style.cssText='flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;'+(it.done?'text-decoration:line-through;opacity:.5':'');
-      inp.value=it.texto||''; inp.placeholder='Tarefa de encerramento...';
-      inp.oninput=(function(p,idx){return function(){tplClText(p,idx,this.value);};})(pathEnc,i);
-      var rm = document.createElement('button');
-      rm.className='tpl-remove-btn'; rm.style.opacity='.4'; rm.textContent='×';
-      rm.onclick=(function(p,idx){return function(){tplClRemove(p,idx);};})(pathEnc,i);
-      wrap.appendChild(cb); wrap.appendChild(inp); wrap.appendChild(rm);
-      return wrap.outerHTML;
-    }).join('');
+    // Encerramento checklist — mesma estrutura do checklist de execução
+    const encHtml = encItens.map((it,i)=>campCheckItem(it,i,pathEnc,color)).join('');
 
     return '<div style="margin-bottom:20px">'+
       // Member header
@@ -3005,9 +3028,9 @@ function renderTplCampanhasForm() {
   }).join('');
 
   /* -- Resumo / Cronograma previews -- */
-  const resumoPreview = d.resumoEstrategico||d.objetivos||d.ofertas
-    ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-height:60px;overflow:hidden">'+
-        esc([(d.objetivos?'Objetivo: '+d.objetivos:''),(d.resumoEstrategico||''),(d.ofertas?'Oferta: '+d.ofertas:'')].filter(Boolean).join('\n')).slice(0,200)+
+  const resumoPreview = d.resumoEstrategico
+    ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-height:90px;overflow:hidden;white-space:pre-wrap">'+
+        esc(d.resumoEstrategico).slice(0,280)+(d.resumoEstrategico.length>280?'...':'')+
       '</div>'
     : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum resumo definido — clique em Editar</span>';
 
@@ -3238,8 +3261,7 @@ function tplClAdd(path, inputEl, forceEmpty) {
   for (let k=0;k<parts.length-1;k++) { if(!obj[parts[k]])obj[parts[k]]={};obj=obj[parts[k]]; }
   const key = parts[parts.length-1];
   if (!obj[key]) obj[key]=[];
-  const isEnc = parts[0]==='encMembro';
-  obj[key].push(isEnc ? {texto:forceEmpty?'':val,done:false} : {texto:forceEmpty?'':val,canal:'Geral',done:false});
+  obj[key].push({texto:forceEmpty?'':val,canal:'Geral',done:false});
   if (inputEl) inputEl.value='';
   renderTplFields();
 }
@@ -3347,21 +3369,20 @@ function syncCampanhasChecklist() {
   membrosComDefault.forEach(nome => {
     const isSelected = selected.includes(nome);
     if (isSelected) {
-      // Init exec checklist
       if (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length) {
         tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
       }
-      // Init encerramento per member
       if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
-        tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,done:false}));
+        tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
       }
     } else {
-      // Remove when deselected
       if (tplData.checklistsMembro[nome]) delete tplData.checklistsMembro[nome];
       if (tplData.encMembro[nome]) delete tplData.encMembro[nome];
       if (tplData.notasMembro[nome]) delete tplData.notasMembro[nome];
     }
   });
+
+  ensureCampanhasDefaultsForSelectedParticipants();
 
   const container = document.getElementById('tpl-fields-container');
   if (container && currentTemplate==='campanhas') renderTplFields();
@@ -3467,7 +3488,8 @@ function saveCampaign() {
     description:document.getElementById('f-desc')?.value?.trim()||'',
     subtasks:subs, comments:[],
     templateType: currentTemplate||null,
-    templateData: currentTemplate ? JSON.parse(JSON.stringify(tplData)) : null,
+    templateData: getTemplateDataForSave(),
+    _templateLocked: currentTemplate === 'campanhas',
   });
   subForms=[]; currentTemplate=null; tplData={};
   const newCamp = campaigns[campaigns.length-1];
@@ -3482,84 +3504,62 @@ function saveCampaign() {
 
 
 /* PERSONAL PANEL */
-function getEffectiveTaskCanal(taskWrap) {
-  const s = taskWrap && taskWrap.sub ? taskWrap.sub : null;
-  const c = taskWrap && taskWrap.campaign ? taskWrap.campaign : null;
-  if (s && s.canal && String(s.canal).trim()) return s.canal;
-  if (c && c.canal && String(c.canal).trim()) return c.canal;
-  if (c && Array.isArray(c.canals) && c.canals.length) return c.canals[0];
-  return 'Geral';
-}
-
 function renderPersonalFilters() {
   const bar = document.getElementById('personal-filter-bar');
   if (!bar) return;
 
   function ddBtn(label, key, vals, allVals, colorFn) {
-    const valueList = Array.isArray(vals) ? vals : (vals ? [vals] : []);
-    const hasVal = valueList.length > 0;
-    const labelText = hasVal ? valueList.slice(0,2).join(', ')+(valueList.length>2?'…':'') : label;
+    const hasVal = vals.length > 0;
+    const labelText = hasVal ? vals.slice(0,2).join(', ')+(vals.length>2?'…':'') : label;
     const id = 'dd-'+key;
     const items = allVals.map(v => {
-      const on = valueList.includes(v);
-      const color = colorFn ? colorFn(v) : null;
-      const style = on && color ? 'color:'+color.color+';background:'+color.bg+';border-color:'+color.color+'22' : '';
-      return '<button type="button" class="filter-dd-item'+(on?' sel':'')+'" style="'+style+'" onclick="togglePF(\''+key+'\',\''+String(v).replace(/'/g, "&#39;")+'\')">'+v+'</button>';
+      const on = vals.includes(v);
+      const style = colorFn&&on ? 'color:'+colorFn(v).color+';background:'+colorFn(v).bg : '';
+      return '<div class="filter-dd-item'+(on?' sel':'')+'" style="'+style+'" onclick="togglePF(\''+key+'\',\''+v+'\')">'+v+'</div>';
     }).join('');
     return '<div class="filter-dd">'+
-      '<button type="button" class="filter-dd-btn'+(hasVal?' has-value':'')+'" onclick="toggleDD(\''+id+'\')">'+labelText+' <span style="font-size:10px">▾</span></button>'+
+      '<button class="filter-dd-btn'+(hasVal?' has-value':'')+'" onclick="toggleDD(\''+id+'\')">'+labelText+' ▾</button>'+
       '<div class="filter-dd-list" id="'+id+'">'+items+
-        '<button type="button" class="filter-dd-clear" onclick="clearPF(\''+key+'\')">Limpar</button>'+
+        '<div class="filter-dd-clear" onclick="clearPF(\''+key+'\')">Limpar</div>'+
       '</div></div>';
   }
 
-  bar.innerHTML = [
-    ddBtn('Prioridade','urgency',personalFilter.urgency || [],URGENCIAS,u=>URG_COLOR[u]||{color:'#666',bg:'#f3f4f6'}),
-    ddBtn('Prazo','period',personalFilter.period ? [personalFilter.period] : [],['Hoje','Amanhã','Essa semana'],null),
-    ddBtn('Tipo','tipo',personalFilter.tipo || [],TYPES,null),
-    ddBtn('Canal','canal',personalFilter.canal || [],[...CANAIS].sort((a,b)=>a.localeCompare(b,'pt-BR')),null)
-  ].join('') + ((personalFilter.urgency?.length||personalFilter.canal?.length||personalFilter.tipo?.length||personalFilter.period)
-      ? '<button type="button" class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>' : '');
+  bar.innerHTML =
+    ddBtn('Prioridade','urgency',personalFilter.urgency,URGENCIAS,u=>URG_COLOR[u]) +
+    ddBtn('Prazo','period',personalFilter.period?[personalFilter.period]:[],['Hoje','Amanhã','Essa semana'],null) +
+    ddBtn('Tipo','tipo',personalFilter.tipo,TYPES,null) +
+    ddBtn('Canal','canal',personalFilter.canal,CANAIS,null) +
+    ((personalFilter.urgency.length||personalFilter.canal.length||personalFilter.tipo.length||personalFilter.period)?
+      '<button class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>':'');
 }
 
 function toggleDD(id) {
-  document.querySelectorAll('.filter-dd-list').forEach(el => {
-    if (el.id !== id) el.classList.remove('open');
-  });
-  const el = document.getElementById(id);
-  if (el) el.classList.toggle('open');
+  document.querySelectorAll('.filter-dd-list').forEach(el=>{ if(el.id!==id) el.classList.remove('open'); });
+  document.getElementById(id)?.classList.toggle('open');
 }
 
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.filter-dd')) {
-    document.querySelectorAll('.filter-dd-list').forEach(el => el.classList.remove('open'));
-  }
+document.addEventListener('click', e => {
+  if (!e.target.closest('.filter-dd')) document.querySelectorAll('.filter-dd-list').forEach(el=>el.classList.remove('open'));
 });
 
 function togglePF(key, val) {
-  if (key === 'period') {
-    personalFilter.period = personalFilter.period === val ? null : val;
-  } else {
-    const arr = Array.isArray(personalFilter[key]) ? personalFilter[key] : [];
+  if (key==='period') { personalFilter.period = personalFilter.period===val?null:val; }
+  else {
+    const arr = personalFilter[key];
     const idx = arr.indexOf(val);
-    if (idx === -1) arr.push(val); else arr.splice(idx, 1);
-    personalFilter[key] = arr;
+    if (idx===-1) arr.push(val); else arr.splice(idx,1);
   }
-  renderPersonalFilters();
-  renderPersonal();
+  renderPersonalFilters(); renderPersonal();
 }
 
 function clearPF(key) {
-  if (key === 'period') personalFilter.period = null;
-  else personalFilter[key] = [];
-  renderPersonalFilters();
-  renderPersonal();
+  if (key==='period') personalFilter.period=null; else personalFilter[key]=[];
+  renderPersonalFilters(); renderPersonal();
 }
 
 function clearAllPF() {
-  personalFilter = { urgency: [], canal: [], tipo: [], period: null };
-  renderPersonalFilters();
-  renderPersonal();
+  personalFilter={urgency:[],canal:[],tipo:[],period:null};
+  renderPersonalFilters(); renderPersonal();
 }
 
 function renderPersonal() {
@@ -3567,134 +3567,159 @@ function renderPersonal() {
   const m = getMember(currentMember);
   if (!m) return;
 
+  // Header
   const av = document.getElementById('personal-avatar');
-  if (av) {
-    av.style.background = m.color;
-    if (m.avatar) av.innerHTML = '<img src="'+m.avatar+'" style="width:100%;height:100%;object-fit:cover">';
-    else { av.textContent = m.initials; av.style.color = '#fff'; }
-  }
-  const nameEl = document.getElementById('personal-name');
-  if (nameEl) nameEl.textContent = m.name;
-  const roleEl = document.getElementById('personal-role');
-  if (roleEl) roleEl.textContent = m.role;
+  av.style.background = m.color;
+  if (m.avatar) { av.innerHTML='<img src="'+m.avatar+'" style="width:100%;height:100%;object-fit:cover">'; }
+  else { av.textContent=m.initials; av.style.color='#fff'; }
+  document.getElementById('personal-name').textContent=m.name;
+  document.getElementById('personal-role').textContent=m.role;
 
-  const search = (document.getElementById('personal-search')?.value || '').toLowerCase().trim();
+  const search = document.getElementById('personal-search')?.value?.toLowerCase()||'';
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+  // Collect tasks
   let tasks = [];
-  (campaigns || []).forEach(c => {
-    (c.subtasks || []).forEach(s => {
+  campaigns.forEach(c => {
+    (c.subtasks||[]).forEach(s => {
       if (s.owner !== currentMember) return;
+      // Tarefas de checklist (_auto='checklist') só aparecem quando a campanha está Em andamento ou além
       if (s._auto === 'checklist' && c.status === 'Em planejamento') return;
-      tasks.push({ sub: s, campaign: c });
+      tasks.push({sub:s, campaign:c});
     });
   });
 
-  if (personalFilter.urgency?.length) tasks = tasks.filter(t => personalFilter.urgency.includes(t.sub.urgency));
-  if (personalFilter.canal?.length) tasks = tasks.filter(t => personalFilter.canal.includes(getEffectiveTaskCanal(t)));
-  if (personalFilter.tipo?.length) tasks = tasks.filter(t => personalFilter.tipo.includes(t.campaign.type));
-  if (personalFilter.period === 'Hoje') {
-    tasks = tasks.filter(t => t.sub.due && new Date(t.sub.due).toDateString() === now.toDateString());
-  } else if (personalFilter.period === 'Amanhã') {
-    const tomorrow = new Date(todayStart); tomorrow.setDate(tomorrow.getDate() + 1);
-    tasks = tasks.filter(t => t.sub.due && new Date(t.sub.due).toDateString() === tomorrow.toDateString());
-  } else if (personalFilter.period === 'Essa semana') {
-    const weekStart = new Date(todayStart); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7);
-    tasks = tasks.filter(t => {
-      if (!t.sub.due) return false;
-      const due = new Date(t.sub.due);
-      return due >= weekStart && due < weekEnd;
-    });
+  // Apply filters
+  if (personalFilter.urgency.length) tasks=tasks.filter(t=>personalFilter.urgency.includes(t.sub.urgency));
+  if (personalFilter.canal.length)   tasks=tasks.filter(t=>personalFilter.canal.includes(t.sub.canal));
+  if (personalFilter.tipo.length)    tasks=tasks.filter(t=>personalFilter.tipo.includes(t.campaign.type));
+  if (personalFilter.period==='Hoje') {
+    tasks=tasks.filter(t=>t.sub.due&&new Date(t.sub.due).toDateString()===now.toDateString());
+  } else if (personalFilter.period==='Amanhã') {
+    const tom=new Date(now); tom.setDate(tom.getDate()+1);
+    tasks=tasks.filter(t=>t.sub.due&&new Date(t.sub.due).toDateString()===tom.toDateString());
+  } else if (personalFilter.period==='Essa semana') {
+    const s0=new Date(now); s0.setHours(0,0,0,0); s0.setDate(now.getDate()-now.getDay());
+    const s1=new Date(s0); s1.setDate(s0.getDate()+7);
+    tasks=tasks.filter(t=>t.sub.due&&new Date(t.sub.due)>=s0&&new Date(t.sub.due)<=s1);
   }
-  if (search) {
-    tasks = tasks.filter(t => (t.sub.title || '').toLowerCase().includes(search) || (t.campaign.name || '').toLowerCase().includes(search));
-  }
+  if (search) tasks=tasks.filter(t=>t.sub.title.toLowerCase().includes(search)||t.campaign.name.toLowerCase().includes(search));
 
-  const done = tasks.filter(t => t.sub.status === 'Concluído');
-  const pending = tasks.filter(t => t.sub.status !== 'Concluído');
-  const late = pending.filter(t => isLate(t.sub));
+  const done=tasks.filter(t=>t.sub.status==='Concluído');
+  const pending=tasks.filter(t=>t.sub.status!=='Concluído');
+  const late=pending.filter(t=>isLate(t.sub));
 
-  const stats = document.getElementById('personal-stats');
-  if (stats) {
-    stats.innerHTML =
-      '<div class="stat-chip"><span class="stat-num">'+pending.length+'</span> pendentes</div>'+
-      (late.length ? '<div class="stat-chip" style="border-color:var(--u-urgente);color:var(--u-urgente)"><span class="stat-num">'+late.length+'</span> atrasadas</div>' : '')+
-      '<div class="stat-chip"><span class="stat-num">'+done.length+'</span> concluídas</div>';
-  }
+  // Stats
+  document.getElementById('personal-stats').innerHTML=
+    '<div class="stat-chip"><span class="stat-num">'+pending.length+'</span> pendentes</div>'+
+    (late.length?'<div class="stat-chip" style="border-color:var(--u-urgente);color:var(--u-urgente)"><span class="stat-num">'+late.length+'</span> atrasadas</div>':'')+
+    '<div class="stat-chip"><span class="stat-num">'+done.length+'</span> concluídas</div>';
 
-  const sortTasks = list => [...list].sort((a,b) => {
-    const aDone = a.sub.status === 'Concluído' ? 1 : 0;
-    const bDone = b.sub.status === 'Concluído' ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    const aDue = a.sub.due ? new Date(a.sub.due).getTime() : Number.MAX_SAFE_INTEGER;
-    const bDue = b.sub.due ? new Date(b.sub.due).getTime() : Number.MAX_SAFE_INTEGER;
-    if (aDue !== bDue) return aDue - bDue;
-    return (a.sub.title || '').localeCompare((b.sub.title || ''), 'pt-BR');
-  });
-
+  // Cards
   function taskCard(t, isDone) {
-    const s = t.sub;
-    const c = t.campaign;
-    const uc = URG_COLOR[s.urgency] || {color:'#888', bg:'rgba(136,136,136,.08)'};
-    const sc = STATUS_COLOR[c.status] || {color:'#888', bg:'rgba(136,136,136,.08)'};
-    const effectiveCanal = getEffectiveTaskCanal(t);
-    const templateLabel = c.templateType === 'email' ? 'Email MKT' : c.templateType === 'publicacoes' ? 'Publicação' : c.templateType === 'campanhas' ? 'Campanha' : 'Demanda interna';
-    const card = document.createElement('div');
-    card.className = 'task-block' + (isDone ? ' done' : '');
-    card.style.cssText = 'position:relative;padding:22px 22px 16px 18px;cursor:pointer';
-    card.onclick = function(){ openCampaignDetail(c.id); };
-    card.innerHTML =
-      '<div style="position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:8px 0 0 8px;background:'+uc.color+'"></div>'+
-      '<div style="display:flex;gap:14px;align-items:flex-start">'+
-        '<div class="task-cb '+(isDone?'checked':'')+'" style="margin-top:2px">'+(isDone?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+'</div>'+
-        '<div style="flex:1;min-width:0">'+
-          '<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start">'+
-            '<div style="min-width:0;flex:1">'+
-              '<div class="task-title"'+(isDone?' style="text-decoration:line-through;opacity:.55"':'')+'>'+ (s.title || 'Sem título') +'</div>'+
-              (c.templateType !== 'campanhas' ? '<div class="task-campaign" style="margin-top:6px">'+(c.name || '')+'</div>' : '')+
-            '</div>'+
-            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">'+
-              '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+';border:0.5px solid '+uc.color+'">'+(s.urgency || 'Normal')+'</span>'+
-              '<span style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;color:'+sc.color+';background:'+sc.bg+'">'+(c.status || '')+'</span>'+
-              (effectiveCanal && effectiveCanal !== 'Geral' ? '<span style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;background:#ede9fe;color:#6d28d9">'+effectiveCanal+'</span>' : '')+
-            '</div>'+
-          '</div>'+
-          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px">'+
-            '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+templateLabel+'</span>'+
-            (s.due ? '<span style="font-size:11px;color:var(--text-secondary)">Prazo entrega: '+formatDue(s.due)+'</span>' : '')+
-          '</div>'+
+    const {sub:s, campaign:c} = t;
+    const blocked = isBlocked(s,c);
+    const late = isLate(s);
+    const uc = URG_COLOR[s.urgency] || {color:'#888', bg:'#eee'};
+    const scc = STATUS_COLOR[c.status] || {color:'#888', bg:'rgba(136,136,136,.08)'};
+    const depTask = s.dep ? (c.subtasks||[]).find(x=>x.id===s.dep) : null;
+    const urgOpts = URGENCIAS.map(u =>
+      '<option value="'+u+'"'+(u===s.urgency?' selected':'')+'>'+u+'</option>'
+    ).join('');
+    // Canal color
+    const canalColors = {
+      'E-mail': {bg:'#dbeafe',color:'#1e40af'},
+      'Feed Instagram': {bg:'#fce7f3',color:'#9d174d'},
+      'Stories IG': {bg:'#fce7f3',color:'#9d174d'},
+      'Instagram Reels': {bg:'#fce7f3',color:'#9d174d'},
+      'TikTok': {bg:'#e0e7ff',color:'#3730a3'},
+      'YouTube': {bg:'#fee2e2',color:'#991b1b'},
+      'Pinterest': {bg:'#fee2e2',color:'#991b1b'},
+      'WhatsApp VIP': {bg:'#d1fae5',color:'#065f46'},
+      'WhatsApp lista': {bg:'#d1fae5',color:'#065f46'},
+      'Grupo WhatsApp': {bg:'#d1fae5',color:'#065f46'},
+      'Meta Ads': {bg:'#ede9fe',color:'#5b21b6'},
+      'Google Ads': {bg:'#fef3c7',color:'#92400e'},
+      'Site': {bg:'#f0fdf4',color:'#166534'},
+      'SMS': {bg:'#f3f4f6',color:'#374151'},
+    };
+    // Use subtask canal, fallback to campaign's first canal
+    const effectiveCanal = (s.canal && s.canal !== 'Geral') ? s.canal
+      : (c.canais && c.canais.length && c.canais[0] !== 'Geral') ? c.canais[0] : null;
+    const cc = effectiveCanal && canalColors[effectiveCanal];
+    const canalTag = effectiveCanal
+      ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;background:'+(cc?cc.bg:'#f3f4f6')+';color:'+(cc?cc.color:'#374151')+'">'+effectiveCanal+'</span>'
+      : '';
+    // Template type tag
+    const tplTag = c.templateType
+      ? '<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+
+          (c.templateType==='email'?'Email MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':'Demanda')+
+        '</span>'
+      : '';
+    const metaLine = [
+      '<span class="urgency-badge" style="color:'+uc.color+';background:'+uc.bg+'">'+s.urgency+'</span>',
+      '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;color:'+scc.color+';background:'+scc.bg+'">'+c.status+'</span>',
+      canalTag,
+      tplTag,
+      s.due ? '<span style="font-size:11px;color:var(--text-muted)">\u23F0 '+formatDue(s.due)+'</span>' : '',
+      late ? '<span class="late-badge">\u26A0 Atrasada</span>' : '',
+    ].filter(Boolean).join('');
+    const cbSvg = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
+    const campId = c.id, subId = s.id;
+    const div = document.createElement('div');
+    div.className = 'task-block' + (isDone ? ' done' : '');
+    div.style.cssText = 'padding-left:16px;cursor:pointer';
+    div.onclick = function(){
+      if (s._openEdit) { openEditCampaignPanel(campId); }
+      else { openCampaignDetail(campId); }
+    };
+    div.innerHTML =
+      '<div style="position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:4px 0 0 4px;background:'+uc.color+'"></div>'+
+      '<div class="task-cb '+(isDone?'checked':'')+'" id="cb-'+subId+'">'+
+        (isDone ? cbSvg : '')+
+      '</div>'+
+      '<div class="task-body">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:3px">'+
+          '<div class="task-title"'+(isDone?' style="text-decoration:line-through;opacity:.5"':'')+'>'+s.title+'</div>'+
+          '<select id="urg-'+subId+'" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:0.5px solid '+uc.color+';background:'+uc.bg+';color:'+uc.color+';cursor:pointer;outline:none;font-family:var(--font);appearance:none">'+
+            urgOpts+
+          '</select>'+
         '</div>'+
+        '<div class="task-campaign" style="margin-bottom:5px">'+c.name+'</div>'+
+        '<div class="task-meta-line" style="margin-top:2px;gap:4px">'+metaLine+'</div>'+
+        (blocked&&depTask ? '<div class="task-blocked">\uD83D\uDD12 '+depTask.title+'</div>' : '')+
       '</div>';
-    const cb = card.querySelector('.task-cb');
-    if (cb) cb.onclick = function(e){ e.stopPropagation(); toggleSubtaskPersonal(c.id, s.id); };
-    return card;
+    // Attach events after setting innerHTML
+    const cb = div.querySelector('.task-cb');
+    if (cb) cb.onclick = function(e){ e.stopPropagation(); toggleSubtaskPersonal(campId, subId); };
+    const sel = div.querySelector('#urg-'+subId);
+    if (sel) sel.onchange = function(e){ e.stopPropagation(); changeUrgency(campId, subId, this.value); };
+    return div;
   }
+
+
 
   const container = document.getElementById('personal-tasks');
-  if (!container) return;
   container.innerHTML = '';
-
-  const groups = [
-    { title: 'Campanha', items: sortTasks(tasks.filter(t => t.campaign.templateType === 'campanhas')) },
-    { title: 'Publicação, e-mail mkt e demanda interna', items: sortTasks(tasks.filter(t => t.campaign.templateType !== 'campanhas')) }
-  ];
-
-  const hasAny = groups.some(g => g.items.length);
-  if (!hasAny) {
+  if (!tasks.length) {
     container.innerHTML = '<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:40px 0">Nenhuma tarefa encontrada</div>';
     return;
   }
-
-  groups.forEach(group => {
-    if (!group.items.length) return;
+  if (pending.length) {
     const title = document.createElement('div');
-    title.className = 'task-group-title';
-    title.textContent = group.title;
+    title.className = 'task-section-title';
+    title.textContent = 'Pendentes (' + pending.length + ')';
     container.appendChild(title);
-    group.items.forEach(t => container.appendChild(taskCard(t, t.sub.status === 'Concluído')));
-  });
+    pending.forEach(t => container.appendChild(taskCard(t, false)));
+  }
+  if (done.length) {
+    const title = document.createElement('div');
+    title.className = 'task-section-title';
+    title.style.marginTop = '20px';
+    title.textContent = 'Concluídas (' + done.length + ')';
+    container.appendChild(title);
+    done.forEach(t => container.appendChild(taskCard(t, true)));
+  }
 }
 
 function toggleSubtaskPersonal(campId, subId) {
