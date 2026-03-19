@@ -1,3 +1,18 @@
+
+const templateToType = {
+    campanha: 'Campanha',
+    publicacao: 'Publicação',
+    email: 'Publicação',
+    demanda: 'Demanda interna'
+};
+
+function applyTemplateType(templateType){
+    const tipoInput = document.getElementById('taskType');
+    if (tipoInput && templateToType[templateType]) {
+        tipoInput.value = templateToType[templateType];
+    }
+}
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
