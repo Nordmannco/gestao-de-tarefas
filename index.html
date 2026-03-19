@@ -2307,8 +2307,8 @@ function applyStatusRules(c, oldStatus, newStatus) {
 
       if (c.templateType === 'email') {
         const blocos = [
-          { titulo: 'ENVIAR E-MAIL', responsaveis: c.templateData?.emailCopyResponsaveis || [] },
-          { titulo: 'BANNER E-MAIL', responsaveis: c.templateData?.emailDesignResponsaveis || [] }
+          { titulo: 'Copy do E-mail', responsaveis: c.templateData?.emailCopyResponsaveis || [] },
+          { titulo: 'Banner do E-mail', responsaveis: c.templateData?.emailDesignResponsaveis || [] }
         ];
 
         blocos.forEach(bloco => {
@@ -2570,8 +2570,6 @@ function renderTplPublicacoesDetail(c,d){
 }
 
 function renderTplEmailDetail(c,d){
-  const bannerImg = d.gioBannerB64 ?
-    '<img src="'+d.gioBannerB64+'" class="td-banner-preview">' : '';
   const prodHtml = (d.produtos||[]).map(p=>
     '<div class="td-produto-item">'+
     '<span style="color:var(--c-campanha)">•</span>'+
@@ -2588,7 +2586,7 @@ function renderTplEmailDetail(c,d){
   '</div>'+
   '<div class="td-section">'+
     '<div class="td-section-title">🎨 BANNER E-MAIL</div>'+
-    (bannerImg?'<div style="margin-bottom:10px">'+bannerImg+'</div>':'')+
+    tdField('Informações do design',esc(d.emailDesignInfo))+
     tdRow([['Pré-título',esc(d.gioPretitulo)],['Entrelinha',esc(d.gioEntrelinha)]])+
     tdField('Título',esc(d.gioTitulo))+
     tdField('Subtítulo',esc(d.gioSubtitulo))+
@@ -3357,9 +3355,6 @@ function renderTplEmailForm() {
     '</div>'
   ).join('');
 
-  const bannerPreview = d.gioBannerB64 ?
-    '<div style="margin-top:8px"><img src="'+d.gioBannerB64+'" style="max-width:100%;max-height:140px;border-radius:8px;display:block"></div>' : '';
-
   return '<div class="tpl-section">'+
     '<div class="tpl-section-title">✉️ ENVIAR E-MAIL</div>'+
     '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('emailCopyResponsaveis', participantesSelecionados)+'</div>'+
@@ -3375,11 +3370,8 @@ function renderTplEmailForm() {
   '</div>'+
   '<div class="tpl-section">'+
     '<div class="tpl-section-title">🎨 BANNER E-MAIL</div>'+
-    '<div class="form-group"><div class="form-group"><label class="form-label">Informações do design</label><textarea class="form-textarea" rows="3" placeholder="Referências, direção visual, observações..." oninput="tplData.emailDesignInfo=this.value;autoResize(this)"></textarea></div><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('emailDesignResponsaveis', participantesSelecionados)+'</div>'+
-    '<div class="form-group">'+
-    ''+
-    bannerPreview+
-    '</div>'+
+    '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('emailDesignResponsaveis', participantesSelecionados)+'</div>'+
+    '<div class="form-group"><label class="form-label">Informações do design</label><textarea class="form-textarea" rows="3" placeholder="Referências, direção visual, observações..." oninput="tplData.emailDesignInfo=this.value;autoResize(this)">'+(d.emailDesignInfo||'')+'</textarea></div>'+
     '<div class="tpl-row">'+
     '<div class="form-group" style="margin:0"><label class="form-label">Pré-título</label><input class="form-input" value="'+esc(d.gioPretitulo||'')+'" oninput="tplData.gioPretitulo=this.value"></div>'+
     '<div class="form-group" style="margin:0"><label class="form-label">Entrelinha</label><input class="form-input" value="'+esc(d.gioEntrelinha||'')+'" oninput="tplData.gioEntrelinha=this.value"></div>'+
@@ -3682,10 +3674,15 @@ function saveCampaign() {
     if (currentTemplate === 'campanhas') {
       subs = []; // começa vazio — briefing task será criada por applyStatusRules
     }
-    // For email MKT: do not create fixed subtasks on first save.
-    // Subtasks are created later from the selected responsáveis when status changes.
+    // For email MKT: auto subtasks
     if (currentTemplate === 'email') {
-      subs = [];
+      const giovana = MEMBERS.find(m=>m.name.toLowerCase().includes('giovana'));
+      const bia     = MEMBERS.find(m=>m.name.toLowerCase().includes('bia'));
+      const bannerSub = {id:uid(),title:'Banner do e-mail',canal:'E-mail',urgency:'Normal',
+        owner:giovana?.id||'',due:'',dep:null,note:'',status:'Pendente',checklist:[]};
+      const enviaSub  = {id:uid(),title:'Envio do e-mail',canal:'E-mail',urgency:'Normal',
+        owner:bia?.id||'',due:'',dep:bannerSub.id,note:'',status:'Pendente',checklist:[]};
+      subs = [bannerSub, enviaSub];
     }
   } else {
     subs = subForms.map(sf=>({
