@@ -98,7 +98,7 @@ input,textarea,select{font-family:inherit}
 .tpl-card-desc{display:none}
 .tpl-section{background:transparent;border:none;border-bottom:0.5px solid var(--border);padding:16px 0;margin-bottom:0}
 .tpl-section:last-child{border-bottom:none}
-.tpl-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-primary);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.tpl-section-title{font-size:18px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--text-primary);margin-bottom:14px;display:flex;align-items:center;gap:8px;line-height:1.2}
 .tpl-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .tpl-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
 .tpl-row-5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
@@ -134,7 +134,7 @@ input,textarea,select{font-family:inherit}
   margin-bottom:0;
 }
 .td-section:last-child{border-bottom:none}
-.td-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.td-section-title{font-size:18px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--text-primary);margin-bottom:14px;display:flex;align-items:center;gap:8px;line-height:1.2}
 .td-field{margin-bottom:14px}
 .td-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);display:block;margin-bottom:4px}
 .td-value{font-size:13px;color:var(--text-primary);line-height:1.6;white-space:pre-wrap}
@@ -243,11 +243,25 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .topbar{
   height:44px;background:var(--bg-card);border-bottom:0.5px solid var(--border);
   display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;
+  overflow:visible;
 }
 .topbar-title{font-size:13px;font-weight:500;color:var(--text-primary);white-space:nowrap}
 .topbar-sep{width:0.5px;height:16px;background:var(--border)}
 .topbar-spacer{flex:1}
-.chips{display:flex;gap:5px;overflow-x:auto;flex:1}
+.chips{display:flex;gap:5px;overflow:visible;flex:1;position:relative;z-index:400}
+body.modal-open #topbar-chips{display:none !important}
+body.modal-open #btn-new-campaign{display:none !important}
+.tpl-picker{display:flex;flex-direction:column;gap:10px;position:relative;z-index:5}
+.tpl-card{width:100%;min-height:54px;justify-content:flex-start;padding:0 18px;cursor:pointer;pointer-events:auto;position:relative;z-index:6}
+.tpl-card *{pointer-events:none}
+.tpl-card-name{font-size:18px;font-weight:600}
+.tpl-card-icon{font-size:18px}
+.tpl-selected-banner{
+  display:flex;align-items:center;gap:10px;
+  min-height:54px;padding:0 18px;border:0.5px solid var(--border);
+  border-radius:12px;background:var(--bg-surface);margin-bottom:12px
+}
+.tpl-selected-banner .tpl-card-name{font-size:18px;font-weight:600}
 .chip{
   height:26px;padding:0 10px;border-radius:20px;font-size:11px;border:0.5px solid var(--border);
   background:var(--bg-card);color:var(--text-secondary);white-space:nowrap;
@@ -475,11 +489,32 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .cal-day-header{text-align:center;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);padding:6px 0;background:var(--bg-base)}
 .cal-day-num{font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:4px}
 .cal-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin:1px}
+.cal-mini-list{display:flex;flex-direction:column;gap:2px}
+.cal-mini-item{font-size:9px;line-height:1.2;overflow:hidden}
+.cal-mini-title{font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-mini-sub{color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.cal-mini-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
 .cal-side-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:12px}
 .cal-task-item{padding:8px 10px;background:var(--bg-surface);border-radius:8px;margin-bottom:6px;font-size:12px;cursor:pointer;transition:all .15s}
 .cal-task-item:hover{background:var(--c-campanha-bg)}
 .cal-task-name{font-weight:500;color:var(--text-primary);margin-bottom:2px}
 .cal-task-meta{color:var(--text-muted);font-size:10px}
+.cal-filter-dd{position:relative}
+.cal-filter-btn{
+  height:30px;padding:0 12px;border:0.5px solid var(--border);border-radius:6px;
+  background:var(--bg-card);font-size:12px;color:var(--text-secondary);
+  display:flex;align-items:center;gap:6px;white-space:nowrap
+}
+.cal-filter-btn.has-value{border-color:var(--c-campanha);background:var(--c-campanha-bg);color:var(--c-campanha)}
+.cal-filter-list{
+  display:none;position:absolute;top:34px;left:0;background:var(--bg-card);
+  border:0.5px solid var(--border);border-radius:8px;z-index:300;min-width:150px;
+  max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.1);padding:4px 0
+}
+.cal-filter-list.open{display:block}
+.cal-filter-item{padding:7px 14px;font-size:12px;cursor:pointer;color:var(--text-secondary);transition:background .1s}
+.cal-filter-item:hover,.cal-filter-item.sel{background:var(--c-campanha-bg);color:var(--c-campanha)}
+.cal-filter-clear{padding:6px 14px;font-size:11px;color:var(--text-muted);cursor:pointer;border-top:0.5px solid var(--border)}
 
 /* --- COMENTÁRIOS NO DETALHE --- */
 .comment-section{margin-top:20px;border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
@@ -492,8 +527,17 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 .comment-meta span{font-weight:400;color:var(--text-muted)}
 .comment-text{font-size:12px;color:var(--text-secondary);line-height:1.5}
 .comment-input-row{padding:10px 14px;border-top:0.5px solid var(--border);display:flex;gap:8px}
-.comment-input-row input{flex:1;height:32px;border:0.5px solid var(--border);border-radius:6px;padding:0 10px;font-size:12px;outline:none;background:var(--bg-card)}
+.comment-input-wrap{position:relative;flex:1}
+.comment-input-row input{width:100%;height:32px;border:0.5px solid var(--border);border-radius:6px;padding:0 10px;font-size:12px;outline:none;background:var(--bg-card)}
 .comment-input-row input:focus{border-color:var(--c-campanha)}
+.comment-mention-menu{
+  position:absolute;left:0;right:0;bottom:38px;background:var(--bg-card);border:0.5px solid var(--border);
+  border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.08);padding:6px;display:none;z-index:50;max-height:180px;overflow-y:auto
+}
+.comment-mention-menu.show{display:block}
+.comment-mention-item{padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:8px}
+.comment-mention-item:hover{background:var(--c-campanha-bg);color:var(--c-campanha)}
+.comment-mention-chip{color:var(--c-campanha);font-weight:600}
 
 /* --- PERFIL MODAL --- */
 #profile-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -826,6 +870,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
     <div class="view" id="view-calendar">
       <div class="calendar-wrap">
         <div class="calendar-main">
+          <div class="filter-bar" id="calendar-filter-bar" style="display:none"></div>
           <div class="cal-nav">
             <button class="cal-nav-btn" onclick="calNav(-1)"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L4 7l5 5"/></svg></button>
             <span class="cal-month-title" id="cal-title"></span>
@@ -977,7 +1022,7 @@ body{font-family:var(--font);background:var(--bg-base);color:var(--text-primary)
 
 <script>
 /* CONSTANTS & STATE */
-const TYPES    = ['Campanha','Conteúdo','Tarefa'];
+const TYPES    = ['Campanha','Conteúdo','Demanda interna','TAREFA PESSOAL'];
 const STATUSES = ['Em planejamento','Em andamento','Bloqueado','Aguardando aprovação','Concluído'];
 const CANAIS   = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
 const URGENCIAS = ['Urgente','Importante','Normal'];
@@ -1009,7 +1054,8 @@ let MEMBERS = [];
 let campaigns = [];
 let currentView = 'kanban';
 let currentMember = null;
-let kanbanFilter  = { type: [], member: [] };
+let kanbanFilter  = { type: [], canal: [], pessoa: [] };
+let calendarFilter = { type: [], canal: [], pessoa: [] };
 let personalFilter = { urgency: [], canal: [], tipo: [], periodStart: '', periodEnd: '' };
 let calDate = new Date();
 let calSelectedDay = null;
@@ -2116,7 +2162,7 @@ function setView(view, member) {
     document.getElementById('topbar-title').textContent='Calendário';
     document.getElementById('nav-calendar').classList.add('active');
     btnNew.style.display='none';
-    renderCalendar();
+    renderCalendarFilters(); renderCalendar();
   } else if (view==='overview') {
     document.getElementById('view-overview').classList.add('active');
     document.getElementById('topbar-title').textContent='Carga da equipe';
@@ -2142,19 +2188,51 @@ function setView(view, member) {
 }
 
 /* KANBAN */
+function getKanbanFilterEntries() {
+  return campaigns.map(function(c){
+    let typeLabel = 'Campanha';
+    if (c.templateType === 'publicacoes') typeLabel = 'Conteúdo';
+    else if (c.templateType === 'email') typeLabel = 'E-mail';
+    else if (c.templateType === 'demanda') typeLabel = 'Demanda interna';
+    else if (c.type) typeLabel = c.type;
+    const canalLabel = (c.templateType && c.templateType !== 'campanhas')
+      ? ((c.canais && c.canais.length) ? c.canais[0] : 'Geral')
+      : 'Campanha';
+    return { id:c.id, campaign:c, typeLabel:typeLabel, canalLabel:canalLabel, pessoaIds:[c.owner].concat(c.participants || []).filter(Boolean) };
+  });
+}
+
 function renderKanbanFilters() {
-  const chips = document.getElementById('topbar-chips');
-  let html = '';
-  TYPES.forEach(t => {
-    const on = kanbanFilter.type.includes(t);
-    html += '<button class="chip '+(on?'active':'')+'" onclick="toggleKanbanFilter(\'type\',\''+t+'\')">'+t+'</button>';
-  });
-  html += '<div style="width:0.5px;height:16px;background:var(--border);align-self:center;flex-shrink:0;margin:0 2px"></div>';
-  MEMBERS.forEach(m => {
-    const on = kanbanFilter.member.includes(m.id);
-    html += '<button class="chip '+(on?'active':'')+'" onclick="toggleKanbanFilter(\'member\',\''+m.id+'\')">'+m.name+'</button>';
-  });
-  chips.innerHTML = html;
+  const bar = document.getElementById('topbar-chips');
+  if (!bar) return;
+
+  const entries = getKanbanFilterEntries();
+  const types = [...new Set(entries.map(function(x){ return x.typeLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+  const canais = [...new Set(entries.map(function(x){ return x.canalLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+  const pessoas = MEMBERS.slice().sort(function(a,b){ return a.name.localeCompare(b.name,'pt-BR'); });
+
+  function dd(id, label, selected, items, clickJs, valueGetter, labelGetter){
+    return '<div class="cal-filter-dd">'+
+      '<button type="button" class="cal-filter-btn'+(selected.length?' has-value':'')+'" onclick="toggleCalendarFilterDD(\''+id+'\')">'+calendarFilterSummary(label, selected)+' ▾</button>'+
+      '<div class="cal-filter-list" id="'+id+'">'+
+        items.map(function(item){
+          const value = valueGetter(item);
+          const lbl = labelGetter(item);
+          const sel = selected.includes(value) ? ' sel' : '';
+          return '<div class="cal-filter-item'+sel+'" onclick="'+clickJs.replace('__VAL__', encodeURIComponent(value)).replace('__LBL__', encodeURIComponent(lbl))+'">'+lbl+'</div>';
+        }).join('')+
+        '<div class="cal-filter-clear" onclick="clearKanbanFilter(\''+id.replace('kbf-','')+'\');toggleCalendarFilterDD(\''+id+'\')">Limpar</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  const hasAny = kanbanFilter.type.length || kanbanFilter.canal.length || kanbanFilter.pessoa.length;
+
+  bar.innerHTML =
+    dd('kbf-type','Tipo',kanbanFilter.type,types,"toggleKanbanFilter('type', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
+    dd('kbf-canal','Canal',kanbanFilter.canal,canais,"toggleKanbanFilter('canal', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
+    dd('kbf-pessoa','Pessoa',kanbanFilter.pessoa,pessoas,"toggleKanbanFilter('pessoa', decodeURIComponent('__VAL__'))",function(x){return x.id;},function(x){return x.name;}) +
+    (hasAny ? '<button class="btn-clear-all" onclick="kanbanFilter={type:[],canal:[],pessoa:[]};renderKanbanFilters();renderKanban();">Limpar filtros</button>' : '');
 }
 
 function toggleKanbanFilter(key, val) {
@@ -2164,12 +2242,30 @@ function toggleKanbanFilter(key, val) {
   renderKanbanFilters(); renderKanban();
 }
 
+function clearKanbanFilter(key){
+  kanbanFilter[key] = [];
+  renderKanbanFilters(); renderKanban();
+}
+
 function renderKanban() {
   const board = document.getElementById('kanban-board');
   board.innerHTML = '';
   let filtered = campaigns;
-  if (kanbanFilter.type.length) filtered = filtered.filter(c=>kanbanFilter.type.includes(c.type));
-  if (kanbanFilter.member.length) filtered = filtered.filter(c=>kanbanFilter.member.includes(c.owner)||c.participants.some(p=>kanbanFilter.member.includes(p)));
+
+  filtered = filtered.filter(function(c){
+    let typeLabel = 'Campanha';
+    if (c.templateType === 'publicacoes') typeLabel = 'Conteúdo';
+    else if (c.templateType === 'email') typeLabel = 'E-mail';
+    else if (c.templateType === 'demanda') typeLabel = 'Demanda interna';
+    else if (c.type) typeLabel = c.type;
+    const canalLabel = (c.templateType && c.templateType !== 'campanhas')
+      ? ((c.canais && c.canais.length) ? c.canais[0] : 'Geral')
+      : 'Campanha';
+    const typeOk = !kanbanFilter.type.length || kanbanFilter.type.includes(typeLabel);
+    const canalOk = !kanbanFilter.canal.length || kanbanFilter.canal.includes(canalLabel);
+    const pessoaOk = !kanbanFilter.pessoa.length || [c.owner].concat(c.participants || []).filter(Boolean).some(function(id){ return kanbanFilter.pessoa.includes(id); });
+    return typeOk && canalOk && pessoaOk;
+  });
 
   STATUSES.forEach(status => {
     const sc = STATUS_COLOR[status];
@@ -2265,14 +2361,20 @@ function openCampaignDetail(id) {
       '</div></div>';
   }).join('');
 
-  const commentsHtml = (c.comments||[]).map(cm=>{
+  const commentsHtml = (c.comments||[]).map((cm,i)=>{
     const m = MEMBERS.find(x=>x.name===cm.author);
     const av = (m&&m.avatar)?'<img src="'+m.avatar+'" style="width:100%;height:100%;object-fit:cover">': (m?m.initials:(cm.author||'?')[0]);
     const bg = m?m.color:'#888';
     const dt = cm.at ? new Date(cm.at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-    return '<div class="comment-item"><div class="comment-avatar" style="background:'+bg+'">'+av+'</div>'+
-      '<div><div class="comment-meta">'+cm.author+' <span>'+dt+'</span></div>'+
-      '<div class="comment-text">'+cm.text+'</div></div></div>';
+    const canDelete = cm.author === (window.currentUser?.name||'Equipe');
+    return '<div class="comment-item" style="justify-content:space-between;gap:10px">'+
+      '<div style="display:flex;gap:10px;min-width:0">'+
+        '<div class="comment-avatar" style="background:'+bg+'">'+av+'</div>'+
+        '<div><div class="comment-meta">'+cm.author+' <span>'+dt+'</span></div>'+
+        '<div class="comment-text">'+formatCommentText(cm.text)+'</div></div>'+
+      '</div>'+
+      (canDelete?'<button type="button" onclick="event.stopPropagation();deleteComment(\''+id+'\','+i+')" style="border:none;background:none;color:var(--text-muted);font-size:14px;cursor:pointer;line-height:1;padding:2px 4px">✕</button>':'')+
+      '</div>';
   }).join('') || '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px 0">Nenhum comentário</div>';
 
   document.getElementById('panel-body').innerHTML =
@@ -2309,7 +2411,10 @@ function openCampaignDetail(id) {
       '<div class="comment-header">💬 Comentários'+(c.comments?.length?' ('+c.comments.length+')':'')+'</div>'+
       '<div class="comment-list" id="detail-comments-'+id+'">'+commentsHtml+'</div>'+
       '<div class="comment-input-row">'+
-        '<input id="detail-comment-input-'+id+'" placeholder="Escreva um comentário..." onkeydown="if(event.key===\'Enter\'){addDetailComment(\''+id+'\');event.preventDefault()}">'+
+        '<div class="comment-input-wrap">'+
+          '<div class="comment-mention-menu" id="comment-mention-menu-'+id+'"></div>'+
+          '<input id="detail-comment-input-'+id+'" placeholder="Escreva um comentário... Use @ para mencionar" oninput="handleCommentMentionInput(\''+id+'\')" onkeydown="if(event.key===\'Enter\'){addDetailComment(\''+id+'\');event.preventDefault()}">'+
+        '</div>'+
         '<button class="btn-save" style="height:32px;padding:0 12px;font-size:12px" onclick="addDetailComment(\''+id+'\')">Enviar</button>'+
       '</div>'+
     '</div>';
@@ -2543,6 +2648,107 @@ function addSubtaskToDetail(campId) {
   saveData(); openCampaignDetail(campId);
 }
 
+
+function getCommentMentionCandidates(campId){
+  const c = getCampaign(campId);
+  if (!c) return [];
+  const ids = [...new Set([c.owner, ...(c.participants||[])].filter(Boolean))];
+  return ids.map(function(id){ return getMember(id); }).filter(Boolean);
+}
+
+function closeCommentMentionMenu(campId){
+  const menu = document.getElementById('comment-mention-menu-'+campId);
+  if (menu) {
+    menu.classList.remove('show');
+    menu.innerHTML = '';
+    menu.dataset.start = '';
+    menu.dataset.end = '';
+  }
+}
+
+function handleCommentMentionInput(campId){
+  const inp = document.getElementById('detail-comment-input-'+campId);
+  const menu = document.getElementById('comment-mention-menu-'+campId);
+  if (!inp || !menu) return;
+
+  const value = inp.value || '';
+  const caret = inp.selectionStart || 0;
+  const before = value.slice(0, caret);
+  const match = before.match(/(^|\s)@([^\s@]*)$/);
+
+  if (!match) {
+    closeCommentMentionMenu(campId);
+    return;
+  }
+
+  const query = (match[2] || '').toLowerCase();
+  const atIndex = before.lastIndexOf('@');
+  const start = atIndex;
+  const end = caret;
+
+  const candidates = getCommentMentionCandidates(campId).filter(function(m){
+    return !query || m.name.toLowerCase().includes(query);
+  });
+
+  if (!candidates.length) {
+    closeCommentMentionMenu(campId);
+    return;
+  }
+
+  menu.dataset.start = String(start);
+  menu.dataset.end = String(end);
+  menu.innerHTML = candidates.map(function(m){
+    return '<div class="comment-mention-item" onclick="insertCommentMention(\''+campId+'\',\''+esc(m.name).replace(/'/g,"&#39;")+'\')">' +
+      avatarHtml(m,20) +
+      '<span>@'+esc(m.name)+'</span></div>';
+  }).join('');
+  menu.classList.add('show');
+}
+
+function insertCommentMention(campId, rawName){
+  const name = rawName.replace(/&#39;/g, "'");
+  const inp = document.getElementById('detail-comment-input-'+campId);
+  const menu = document.getElementById('comment-mention-menu-'+campId);
+  if (!inp || !menu) return;
+
+  const start = Number(menu.dataset.start || 0);
+  const end = Number(menu.dataset.end || 0);
+  const value = inp.value || '';
+  const insert = '@' + name + ' ';
+  inp.value = value.slice(0, start) + insert + value.slice(end);
+  const caret = start + insert.length;
+  inp.focus();
+  inp.setSelectionRange(caret, caret);
+  closeCommentMentionMenu(campId);
+}
+
+function formatCommentText(raw){
+  const safe = esc(raw || '');
+  return safe.replace(/(^|\s)@([A-Za-zÀ-ÿ0-9._-]+(?:\s+[A-Za-zÀ-ÿ0-9._-]+)*)/g, function(all, prefix, name){
+    return prefix + '<span class="comment-mention-chip">@' + name + '</span>';
+  });
+}
+
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.comment-input-wrap')) {
+    document.querySelectorAll('.comment-mention-menu.show').forEach(function(el){
+      el.classList.remove('show');
+    });
+  }
+});
+
+
+function deleteComment(campId, index){
+  const c = getCampaign(campId);
+  if (!c || !Array.isArray(c.comments)) return;
+  const cm = c.comments[index];
+  const currentAuthor = window.currentUser?.name || 'Equipe';
+  if (!cm || cm.author !== currentAuthor) return;
+  c.comments.splice(index, 1);
+  saveData();
+  openCampaignDetail(campId);
+}
+
 function addDetailComment(campId) {
   const c = getCampaign(campId); if (!c) return;
   const inp = document.getElementById('detail-comment-input-'+campId);
@@ -2551,17 +2757,24 @@ function addDetailComment(campId) {
   const author = window.currentUser?.name||'Equipe';
   c.comments.push({author, text, at:new Date().toISOString()});
   inp.value='';
+  closeCommentMentionMenu(campId);
   saveData();
   // Refresh comment list
   const list = document.getElementById('detail-comments-'+campId);
   if (list) {
-    list.innerHTML = c.comments.map(cm=>{
+    list.innerHTML = c.comments.map((cm,i)=>{
       const m = MEMBERS.find(x=>x.name===cm.author);
       const av = (m&&m.avatar)?'<img src="'+m.avatar+'" style="width:100%;height:100%;object-fit:cover">':(m?m.initials:(cm.author||'?')[0]);
       const bg = m?m.color:'#888';
       const dt = new Date(cm.at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      return '<div class="comment-item"><div class="comment-avatar" style="background:'+bg+'">'+av+'</div>'+
-        '<div><div class="comment-meta">'+cm.author+' <span>'+dt+'</span></div><div class="comment-text">'+cm.text+'</div></div></div>';
+      const canDelete = cm.author === (window.currentUser?.name||'Equipe');
+      return '<div class="comment-item" style="justify-content:space-between;gap:10px">'+
+        '<div style="display:flex;gap:10px;min-width:0">'+
+          '<div class="comment-avatar" style="background:'+bg+'">'+av+'</div>'+
+          '<div><div class="comment-meta">'+cm.author+' <span>'+dt+'</span></div><div class="comment-text">'+formatCommentText(cm.text)+'</div></div>'+
+        '</div>'+
+        (canDelete?'<button type="button" onclick="event.stopPropagation();deleteComment(\''+campId+'\','+i+')" style="border:none;background:none;color:var(--text-muted);font-size:14px;cursor:pointer;line-height:1;padding:2px 4px">✕</button>':'')+
+      '</div>';
     }).join('');
     list.scrollTop = list.scrollHeight;
   }
@@ -2672,14 +2885,14 @@ function renderTplEmailDetail(c,d){
   ).join('');
 
   return '<div class="td-section">'+
-    '<div class="td-section-title">✉️ ENVIAR E-MAIL</div>'+
+    '<div class="td-section-title">✉️ ENVIAR</div>'+
     tdRow([['Público',esc(d.publico)],['Assunto',esc(d.assunto)]])+
     tdField('Sub-assunto',esc(d.subassunto))+
     tdField('Ordem do layout',esc(d.layoutOrdem))+
     (prodHtml?'<div style="margin-bottom:8px"><div class="td-label">Produtos</div>'+prodHtml+'</div>':'')+
   '</div>'+
   '<div class="td-section">'+
-    '<div class="td-section-title">🎨 BANNER E-MAIL</div>'+
+    '<div class="td-section-title">🎨 BANNER</div>'+
     tdField('Informações do design',esc(d.emailDesignInfo))+
     tdRow([['Pré-título',esc(d.gioPretitulo)],['Entrelinha',esc(d.gioEntrelinha)]])+
     tdField('Título',esc(d.gioTitulo))+
@@ -2737,11 +2950,13 @@ function tplDetailStepToggle(campId, membId, idx) {
 
 /* PANEL OPEN/CLOSE */
 function openPanel() {
+  document.body.classList.add('modal-open');
   document.getElementById('overlay').classList.add('active');
   document.getElementById('slide-panel').classList.add('active');
 }
 
 function closePanel() {
+  document.body.classList.remove('modal-open');
   document.getElementById('overlay').classList.remove('active');
   document.getElementById('slide-panel').classList.remove('active');
   editingCampId=null; subForms=[];
@@ -2906,10 +3121,11 @@ function updateCampaign(id) {
 
 /* --- TEMPLATE DEFINITIONS --- */
 const TEMPLATES = [
-  {id:'campanhas',  icon:'⚡', name:'Campanha',       desc:'Briefing completo com metas, cronograma e checklists'},
+  {id:'tarefa_pessoal', icon:'🧠', name:'Tarefa pessoal', desc:'Tarefa individual sem dependências'},
+  {id:'demanda',    icon:'📋', name:'Demanda interna', desc:'Blocos de passos por membro participante'},
   {id:'publicacoes',icon:'📸', name:'Publicação',      desc:'Brief de post com copy (Bia) e design (Giovana)'},
   {id:'email',      icon:'✉️', name:'E-mail MKT',      desc:'Brief de e-mail + subtarefas automáticas'},
-  {id:'demanda',    icon:'📋', name:'Demanda interna', desc:'Blocos de passos por membro participante'},
+  {id:'campanhas',  icon:'⚡', name:'Campanha',       desc:'Briefing completo com metas, cronograma e checklists'},
 ];
 
 function renderCampaignForm(existingData) {
@@ -2938,7 +3154,7 @@ function renderCampaignForm(existingData) {
   const tplCards = _allTpls.map(function(t) {
     var active = currentTemplate===t.id ? ' active' : '';
     var eid = t.id.replace(/[^a-z0-9_]/gi, '');
-    return '<button type="button" class="tpl-card'+active+'" onclick="selectTemplate(\''+eid+'\')">'+'<div class="tpl-card-icon">'+t.icon+'</div>'+'<div class="tpl-card-name">'+t.name+'</div>'+'</button>';
+    return '<button type="button" class="tpl-card'+active+'" data-template="'+eid+'" onclick="event.preventDefault();event.stopPropagation();selectTemplate(\''+eid+'\')">'+'<div class="tpl-card-icon">'+t.icon+'</div>'+'<div class="tpl-card-name">'+t.name+'</div>'+'</button>';
   }).join('');
 
   // Campanha mãe — só mostra para tipos que não são Campanha
@@ -2953,33 +3169,24 @@ function renderCampaignForm(existingData) {
 
   // Template display:
   // - No template selected: show full picker
-  // - Has template but not locked: show picker with current selected
-  // - Has template and locked (_templateLocked): show only a tag, no picker
-  const _tplLocked = existingData?._templateLocked === true || existingData?.templateType === 'campanhas';
-  const _existingTpl = existingData?.templateType;
-
-  // Build template display
+  // - Has template selected: show only the selected template as a fixed banner
+  const _selectedTpl = _allTpls.find(t=>t.id===currentTemplate) || TEMPLATES.find(t=>t.id===currentTemplate);
   let tplDisplay = '';
-  if (_tplLocked && _existingTpl) {
-    // Locked: show only a fixed tag
-    const tplInfo = _allTpls.find(t=>t.id===_existingTpl) || TEMPLATES.find(t=>t.id===_existingTpl);
-    tplDisplay = tplInfo
-      ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--c-campanha-bg);border:0.5px solid var(--c-campanha);border-radius:8px">'+
-          '<span style="font-size:14px">'+tplInfo.icon+'</span>'+
-          '<span style="font-size:12px;font-weight:500;color:var(--c-campanha)">'+tplInfo.name+'</span>'+
-          '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">Template fixo</span>'+
-        '</div>'
-      : '';
+  if (currentTemplate && _selectedTpl) {
+    tplDisplay = '<div class="tpl-selected-banner">' +
+      '<div class="tpl-card-icon">'+_selectedTpl.icon+'</div>' +
+      '<div class="tpl-card-name">'+_selectedTpl.name+'</div>' +
+      '</div>';
   } else {
-    // Show picker (allows change)
-    tplDisplay = '<div style="margin-bottom:4px"><div class="tpl-picker">'+tplCards+'</div></div>';
+    tplDisplay = '<div style="margin-bottom:12px"><div class="tpl-picker">'+tplCards+'</div></div>';
   }
 
   document.getElementById('panel-body').innerHTML =
     tplDisplay+
+    (currentTemplate ? (
     '<div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-name" placeholder="Nome da campanha ou tarefa" value="'+(existingData?.name||'')+'"></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
-      '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){return '<option'+(existingData?.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
+      '<div class="form-group"><label class="form-label">Tipo</label><div class="select-wrap"><select class="form-select" id="f-type">'+TYPES.map(function(t){const currentType=(existingData?.type||(!currentTemplate?'TAREFA PESSOAL':''));return '<option'+(currentType===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'+
       '<div class="form-group"><label class="form-label">Status</label><div class="select-wrap"><select class="form-select" id="f-status">'+STATUSES.map(function(s){return '<option'+(existingData?.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div></div>'+
       '<div class="form-group"><label class="form-label">Início</label><input class="form-input" type="date" id="f-start" value="'+(existingData?.startDate||new Date().toISOString().slice(0,10))+'"></div>'+
       '<div class="form-group"><label class="form-label">Entrega</label><div style="display:grid;grid-template-columns:1fr auto;gap:6px"><input class="form-input" type="date" id="f-end" value="'+(existingData?.endDate||'')+'"><input class="form-input" type="time" id="f-end-time" style="width:82px" value="'+(existingData?.endTime||'')+'"></div></div>'+
@@ -2992,26 +3199,25 @@ function renderCampaignForm(existingData) {
         URGENCIAS.map(function(u){return '<option value="'+u+'"'+((u===(existingData?.urgency||'Normal'))?' selected':'')+'>'+u+'</option>';}).join('')+
       '</select></div></div>'+
     '</div>'+
-    '<div class="compact-select-row">'+
+    '<div class="compact-select-row"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
       '<div class="form-group compact-dropdown" id="participants-dropdown"><label class="form-label">Participantes</label>'+
         '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'participants-dropdown\')"><span class="summary" id="participants-summary">Selecionar participantes</span><span>▾</span></button>'+
         '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div></div>'+
-      (currentTemplate !== 'campanhas' ? (
+      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' ? (
         '<div class="form-group compact-dropdown" id="canais-dropdown"><label class="form-label">Canais</label>'+
           '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'canais-dropdown\')"><span class="summary" id="canais-summary">Selecionar canais</span><span>▾</span></button>'+
           '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
           '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div></div>'
       ) : '<div></div>')+
-      (currentTemplate !== 'campanhas' ? '<div></div>' : '<div></div>')+
+      '<div></div>'+
     '</div>'+
-    '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
+    '<div class="form-group"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
-    '<div class="form-group"><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
-    '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubForm()">+ Subtarefa</button></div>'+
-    '<div id="sub-forms-container"></div>';
-
-  // pre-select participants
-  if (existingData?.participants) {
+    '<div class="form-group"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
+    '<div class="form-section-title"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>Subtarefas <button class="btn-add-sub" onclick="addSubForm()">+ Subtarefa</button></div>'+
+    '<div id="sub-forms-container"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'></div>'
+    ) : '');  // pre-select participants
+  if (currentTemplate && existingData?.participants) {
     document.querySelectorAll('#multi-participants .multi-item').forEach(el=>{
       if (existingData.participants.includes(el.dataset.val)) el.classList.add('selected');
       else el.classList.remove('selected');
@@ -3019,8 +3225,10 @@ function renderCampaignForm(existingData) {
   }
 
   if (currentTemplate === 'campanhas') ensureCampanhasDefaultsForSelectedParticipants();
-  syncTemplateCanalRules();
+  if (currentTemplate) syncTemplateCanalRules();
   if (currentTemplate) renderTplFields();
+
+
 }
 
 
@@ -3045,52 +3253,80 @@ function syncTemplateCanalRules() {
 }
 
 function selectTemplate(id) {
-  if (currentTemplate === id) { currentTemplate = null; tplData = {}; }
-  else { currentTemplate = id; tplData = {}; }
-  document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('active'));
+  currentTemplate = (currentTemplate === id) ? null : id;
+  tplData = {};
 
-  // Hide/show canais e vincular baseado no template
-  const parentGroup = document.getElementById('parent-camp-group');
-  const typeField = document.getElementById('f-type');
-  const isCamp = currentTemplate === 'campanhas';
-  syncTemplateCanalRules();
-  if (parentGroup) parentGroup.style.display = isCamp ? 'none' : '';
+  const templateToType = {
+    campanhas: 'Campanha',
+    publicacoes: 'Conteúdo',
+    email: 'Conteúdo',
+    demanda: 'Demanda interna',
+    tarefa_pessoal: 'TAREFA PESSOAL'
+  };
 
-  if (typeField) {
-    const templateToType = {
-      campanhas: 'Campanha',
-      publicacoes: 'Conteúdo',
-      email: 'Conteúdo',
-      demanda: 'Tarefa'
-    };
-    if (currentTemplate && templateToType[currentTemplate]) {
-      typeField.value = templateToType[currentTemplate];
-    }
-  }
+  const draft = {
+    templateType: currentTemplate || null,
+    type: currentTemplate ? (templateToType[currentTemplate] || '') : '',
+    owner: window.currentUser?.id || '',
+    urgency: 'Normal',
+    status: 'Em planejamento',
+    startDate: new Date().toISOString().slice(0,10)
+  };
 
-  if (currentTemplate) {
-    document.querySelector('.tpl-card[onclick="selectTemplate(\''+currentTemplate+'\')"')?.classList.add('active');
-    if (document.querySelector('#multi-participants')) syncTemplateParticipants();
-    renderTplFields();
-  } else {
-    document.getElementById('tpl-fields-container').innerHTML='';
-    const canalGroup = document.querySelector('#multi-canais')?.closest('.form-group');
-    const canalAdd = document.querySelector('#f-canal-novo')?.closest('div[style*="margin-top:6px"]');
-    if (canalGroup) canalGroup.style.display = '';
-    if (canalAdd) canalAdd.style.display = '';
-    if (parentGroup) parentGroup.style.display = '';
-  }
+  renderCampaignForm(draft);
+
+  document.querySelectorAll('.tpl-card[data-template]').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-template') === currentTemplate);
+  });
 }
-
 /* TEMPLATE FIELD RENDERERS */
 function renderTplFields() {
   const c = document.getElementById('tpl-fields-container');
   if (!c) return;
-  if (currentTemplate==='campanhas')   c.innerHTML = renderTplCampanhasForm();
+  c.innerHTML = '';
+  if (currentTemplate==='campanhas') c.innerHTML = renderTplCampanhasForm();
   else if (currentTemplate==='publicacoes') c.innerHTML = renderTplPublicacoesForm();
-  else if (currentTemplate==='email')  c.innerHTML = renderTplEmailForm();
+  else if (currentTemplate==='email') c.innerHTML = renderTplEmailForm();
   else if (currentTemplate==='demanda') c.innerHTML = renderTplDemandaForm();
+  else if (currentTemplate==='tarefa_pessoal') c.innerHTML = renderTplTarefaPessoalForm();
+  syncTarefaPessoalVisibility();
   autoResizeAll();
+}
+
+
+function renderTplTarefaPessoalForm(){
+  const d = tplData || {};
+  return '<div class="tpl-section">'+
+    '<div class="tpl-section-title">Tarefa pessoal</div>'+
+    '<div class="tpl-row">'+
+      '<div class="form-group" style="margin:0"><label class="form-label">Categoria</label><div class="select-wrap"><select class="form-select" id="pt-category" onchange="tplData.ptCategory=this.value">'+
+        ['Administrativo','Conteúdo','Financeiro','Operacional','Ideia','Estudo'].map(function(opt){
+          return '<option'+(((d.ptCategory||'Administrativo')===opt)?' selected':'')+'>'+opt+'</option>';
+        }).join('')+
+      '</select></div></div>'+
+      '<div class="form-group" style="margin:0"><label class="form-label">Estimativa</label><div class="select-wrap"><select class="form-select" id="pt-estimate" onchange="tplData.ptEstimate=this.value">'+
+        ['15 min','30 min','1h','2h+'].map(function(opt){
+          return '<option'+(((d.ptEstimate||'30 min')===opt)?' selected':'')+'>'+opt+'</option>';
+        }).join('')+
+      '</select></div></div>'+
+    '</div>'+
+    '<div class="form-group"><label class="form-label">Descrição</label><textarea class="form-textarea" id="pt-desc" placeholder="O que precisa ser feito?" oninput="tplData.ptDesc=this.value;autoResize(this)">'+(d.ptDesc||'')+'</textarea></div>'+
+    '<div class="form-group"><label class="form-label">Checklist</label><textarea class="form-textarea" id="pt-checklist" placeholder="Um item por linha" oninput="tplData.ptChecklist=this.value;autoResize(this)">'+(d.ptChecklist||'')+'</textarea></div>'+
+  '</div>';
+}
+
+function syncTarefaPessoalVisibility(){
+  const isPersonal = currentTemplate === 'tarefa_pessoal';
+  const compactRow = document.querySelector('.compact-select-row');
+  const driveField = document.getElementById('f-drive')?.closest('.form-group');
+  const descField = document.getElementById('f-desc')?.closest('.form-group');
+  const subTitle = document.querySelector('.form-section-title');
+  const subContainer = document.getElementById('sub-forms-container');
+  if (compactRow) compactRow.style.display = isPersonal ? 'none' : '';
+  if (driveField) driveField.style.display = isPersonal ? 'none' : '';
+  if (descField) descField.style.display = isPersonal ? 'none' : '';
+  if (subTitle) subTitle.style.display = isPersonal ? 'none' : '';
+  if (subContainer) subContainer.style.display = isPersonal ? 'none' : '';
 }
 
 /* -- CAMPANHAS form -- */
@@ -3463,7 +3699,7 @@ function renderTplEmailForm() {
   ).join('');
 
   return '<div class="tpl-section">'+
-    '<div class="tpl-section-title">✉️ ENVIAR E-MAIL</div>'+
+    '<div class="tpl-section-title">✉️ ENVIAR</div>'+
     '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('emailCopyResponsaveis', participantesSelecionados)+'</div>'+
     '<div class="tpl-row">'+
     '<div class="form-group" style="margin:0"><label class="form-label">Público-alvo</label><input class="form-input" value="'+esc(d.publico||'')+'" oninput="tplData.publico=this.value"></div>'+
@@ -3476,7 +3712,7 @@ function renderTplEmailForm() {
     '<div id="tpl-dyn-produtos">'+prodHtml+'</div>'+
   '</div>'+
   '<div class="tpl-section">'+
-    '<div class="tpl-section-title">🎨 BANNER E-MAIL</div>'+
+    '<div class="tpl-section-title">🎨 BANNER</div>'+
     '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('emailDesignResponsaveis', participantesSelecionados)+'</div>'+
     '<div class="form-group"><label class="form-label">Informações do design</label><textarea class="form-textarea" rows="3" placeholder="Referências, direção visual, observações..." oninput="tplData.emailDesignInfo=this.value;autoResize(this)">'+(d.emailDesignInfo||'')+'</textarea></div>'+
     '<div class="tpl-row">'+
@@ -3537,6 +3773,16 @@ function renderTplDemandaForm() {
 }
 
 /* -- TEMPLATE HELPER FUNCTIONS -- */
+
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.tpl-card[data-template]');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const tpl = btn.getAttribute('data-template');
+  if (tpl) selectTemplate(tpl);
+});
+
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function autoResizeAll(){
@@ -4181,6 +4427,126 @@ function renderOverview() {
   }).join('');
 }
 
+
+
+function getCalendarTagColor(label){
+  const map = {
+    'Campanha': '#7c6af7',
+    'Conteúdo': '#10b981',
+    'E-mail': '#3b82f6',
+    'E-mail MKT': '#3b82f6',
+    'Meta Ads': '#8b5cf6',
+    'Google Ads': '#f59e0b',
+    'TikTok': '#3730a3',
+    'Instagram Reels': '#ec4899',
+    'Feed Instagram': '#ec4899',
+    'Stories IG': '#ec4899',
+    'Site': '#16a34a',
+    'Geral': '#6b7280'
+  };
+  return map[label] || '#9ca3af';
+}
+
+function getCalendarEntries() {
+  const allowedTemplates = ['campanhas','publicacoes','email'];
+  const items = [];
+  campaigns.forEach(function(c){
+    if (!allowedTemplates.includes(c.templateType || '')) return;
+    const rawDate = c.startDate || c.endDate || '';
+    if (!rawDate) return;
+    const date = new Date(rawDate);
+    if (Number.isNaN(date.getTime())) return;
+    items.push({
+      id: c.id,
+      date: date,
+      campaign: c,
+      typeLabel: c.templateType === 'campanhas' ? 'Campanha' : (c.type || 'Conteúdo'),
+      canalLabel: c.templateType === 'campanhas' ? 'Campanha' : ((c.canais && c.canais.length) ? c.canais[0] : 'Geral'),
+      pessoaId: c.owner || '',
+      pessoaNome: (getMember(c.owner)?.name || ''),
+      urgency: c.urgency || 'Normal',
+      parentName: c.parentCampaignId ? (campaigns.find(function(x){ return x.id === c.parentCampaignId; })?.name || '') : '',
+      dateLabel: formatDate(rawDate)
+    });
+  });
+
+  return items.filter(function(item){
+    const typeOk = !calendarFilter.type.length || calendarFilter.type.includes(item.typeLabel);
+    const canalOk = !calendarFilter.canal.length || calendarFilter.canal.includes(item.canalLabel);
+    const pessoaOk = !calendarFilter.pessoa.length || calendarFilter.pessoa.includes(item.pessoaId);
+    return typeOk && canalOk && pessoaOk;
+  });
+}
+
+function toggleCalendarFilterDD(id){
+  document.querySelectorAll('.cal-filter-list.open').forEach(function(el){
+    if (el.id !== id) el.classList.remove('open');
+  });
+  const box = document.getElementById(id);
+  if (box) box.classList.toggle('open');
+}
+
+
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.cal-filter-dd')) {
+    document.querySelectorAll('.cal-filter-list.open').forEach(function(el){
+      el.classList.remove('open');
+    });
+  }
+});
+
+function calendarFilterSummary(label, values){
+  return values.length ? (label + ' (' + values.length + ')') : label;
+}
+
+function toggleCalendarFilter(kind, value){
+  const arr = calendarFilter[kind];
+  const idx = arr.indexOf(value);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push(value);
+  renderCalendarFilters();
+  renderCalendar();
+}
+
+function clearCalendarFilter(kind){
+  calendarFilter[kind] = [];
+  renderCalendarFilters();
+  renderCalendar();
+}
+
+function renderCalendarFilters(){
+  const bar = document.getElementById('topbar-chips');
+  if (!bar) return;
+
+  const entries = getCalendarEntries();
+  const types = [...new Set(entries.map(function(x){ return x.typeLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+  const canais = [...new Set(entries.map(function(x){ return x.canalLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+  const pessoas = [...new Set(entries.filter(function(x){ return x.pessoaId; }).map(function(x){ return JSON.stringify({id:x.pessoaId,name:x.pessoaNome||'Sem nome'}); }))].map(JSON.parse).sort(function(a,b){ return a.name.localeCompare(b.name,'pt-BR'); });
+
+  function dd(id, label, selected, items, clickJs, valueGetter, labelGetter){
+    return '<div class="cal-filter-dd">'+
+      '<button type="button" class="cal-filter-btn'+(selected.length?' has-value':'')+'" onclick="toggleCalendarFilterDD(\''+id+'\')">'+calendarFilterSummary(label, selected)+' ▾</button>'+
+      '<div class="cal-filter-list" id="'+id+'">'+
+        items.map(function(item){
+          const value = valueGetter(item);
+          const lbl = labelGetter(item);
+          const sel = selected.includes(value) ? ' sel' : '';
+          return '<div class="cal-filter-item'+sel+'" onclick="'+clickJs.replace('__VAL__', encodeURIComponent(value)).replace('__LBL__', encodeURIComponent(lbl))+'">'+lbl+'</div>';
+        }).join('')+
+        '<div class="cal-filter-clear" onclick="clearCalendarFilter(\''+id.replace('calf-','')+'\');toggleCalendarFilterDD(\''+id+'\')">Limpar</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  const hasAny = calendarFilter.type.length || calendarFilter.canal.length || calendarFilter.pessoa.length;
+
+  bar.innerHTML =
+    dd('calf-type','Tipo',calendarFilter.type,types,"toggleCalendarFilter('type', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
+    dd('calf-canal','Canal',calendarFilter.canal,canais,"toggleCalendarFilter('canal', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
+    dd('calf-pessoa','Pessoa',calendarFilter.pessoa,pessoas,"toggleCalendarFilter('pessoa', decodeURIComponent('__VAL__'))",function(x){return x.id;},function(x){return x.name;}) +
+    (hasAny ? '<button class="btn-clear-all" onclick="calendarFilter={type:[],canal:[],pessoa:[]};renderCalendarFilters();renderCalendar();">Limpar filtros</button>' : '');
+}
+
 /* CALENDAR */
 function calNav(dir) {
   calDate = new Date(calDate.getFullYear(), calDate.getMonth()+dir, 1);
@@ -4200,28 +4566,30 @@ function renderCalendar() {
   const lastDate=new Date(year,month+1,0).getDate();
   const today=new Date();
 
-  // Collect tasks by date
-  const tasksByDate={};
-  campaigns.forEach(c=>{
-    (c.subtasks||[]).forEach(s=>{
-      if (!s.due) return;
-      const d=new Date(s.due);
-      if (d.getFullYear()===year&&d.getMonth()===month) {
-        const key=d.getDate();
-        if (!tasksByDate[key]) tasksByDate[key]=[];
-        tasksByDate[key].push({sub:s,campaign:c});
-      }
-    });
+  const entriesByDate={};
+  getCalendarEntries().forEach(function(item){
+    const dt = item.date;
+    if (dt.getFullYear()===year && dt.getMonth()===month) {
+      const key = dt.getDate();
+      if (!entriesByDate[key]) entriesByDate[key] = [];
+      entriesByDate[key].push(item);
+    }
   });
 
   for (let i=0;i<firstDay;i++) html+='<div class="cal-cell other-month"></div>';
   for (let d=1;d<=lastDate;d++) {
     const isToday=today.getDate()===d&&today.getMonth()===month&&today.getFullYear()===year;
     const isSelected=calSelectedDay===d;
-    const tasks=tasksByDate[d]||[];
-    const dots=tasks.slice(0,5).map(t=>{const uc=URG_COLOR[t.sub.urgency]||{color:'#888'};return '<span class="cal-dot" style="background:'+uc.color+'"></span>';}).join('');
+    const items=entriesByDate[d]||[];
+    const dots=items.slice(0,3).map(function(item){
+      const tagColor = getCalendarTagColor(item.canalLabel);
+      return '<div class="cal-mini-item">'+
+        '<div class="cal-mini-title">'+item.campaign.name+'</div>'+
+        '<div class="cal-mini-sub"><span class="cal-mini-dot" style="background:'+tagColor+'"></span><span>'+item.canalLabel+'</span></div>'+
+      '</div>';
+    }).join('');
     html+='<div class="cal-cell'+(isToday?' today':'')+(isSelected?' selected':'')+'" onclick="calSelectDay('+d+','+year+','+month+')">'+
-      '<div class="cal-day-num">'+d+'</div>'+dots+'</div>';
+      '<div class="cal-day-num">'+d+'</div><div class="cal-mini-list">'+dots+'</div></div>';
   }
   grid.innerHTML=html;
 
@@ -4233,22 +4601,18 @@ function calSelectDay(d,y,m) {
   const date=new Date(y,m,d);
   const label=date.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
   document.getElementById('cal-side-title').textContent=label;
-  const tasks=[];
-  campaigns.forEach(c=>{
-    (c.subtasks||[]).forEach(s=>{
-      if (!s.due) return;
-      const sd=new Date(s.due);
-      if (sd.getDate()===d&&sd.getMonth()===m&&sd.getFullYear()===y) tasks.push({sub:s,campaign:c});
-    });
+  const items=getCalendarEntries().filter(function(item){
+    const dt=item.date;
+    return dt.getDate()===d&&dt.getMonth()===m&&dt.getFullYear()===y;
   });
   const el=document.getElementById('cal-side-tasks');
-  if (!tasks.length){el.innerHTML='<div style="color:var(--text-muted);font-size:13px">Nenhuma tarefa</div>';return;}
-  el.innerHTML=tasks.map(t=>{
-    const uc=URG_COLOR[t.sub.urgency]||{color:'#888'};
-    const m2=getMember(t.sub.owner);
-    return '<div class="cal-task-item" onclick="openCampaignDetail(\''+t.campaign.id+'\')">'+
-      '<div class="cal-task-name" style="border-left:3px solid '+uc.color+';padding-left:7px">'+t.sub.title+'</div>'+
-      '<div class="cal-task-meta">'+t.campaign.name+(m2?' · '+m2.name:'')+'</div></div>';
+  if (!items.length){el.innerHTML='<div style="color:var(--text-muted);font-size:13px">Nenhum item</div>';renderCalendar();return;}
+  el.innerHTML=items.map(function(item){
+    return '<div class="cal-task-item" onclick="openCampaignDetail(\''+item.campaign.id+'\')">'+
+      '<div class="cal-task-name">'+item.campaign.name+'</div>'+
+      '<div class="cal-task-meta">'+(item.parentName || '')+'</div>'+
+      '<div class="cal-task-meta">'+item.typeLabel+' · '+item.canalLabel+' · '+(item.pessoaNome || 'Sem responsável')+' · '+item.dateLabel+'</div>'+
+      '</div>';
   }).join('');
   renderCalendar();
 }
