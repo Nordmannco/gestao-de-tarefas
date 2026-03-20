@@ -390,7 +390,73 @@ body.modal-open #btn-new-campaign{display:none !important}
 .add-sub-input:focus{border-color:var(--c-campanha)}
 
 /* --- PAINEL PESSOAL --- */
-.personal-panel{max-width:680px;margin:0 auto}
+.personal-layout{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:18px;align-items:start}
+.personal-panel{max-width:none;margin:0}
+.personal-notes-panel{
+  position:sticky;top:16px;background:transparent;border:none;
+  border-radius:0;padding:0;box-shadow:none
+}
+.personal-notes-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px}
+.personal-notes-eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px}
+.personal-notes-title{font-size:14px;font-weight:600;color:var(--text-primary)}
+.notes-toolbar{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  padding:6px 0 10px;margin-bottom:8px;border:none;background:transparent
+}
+.notes-tool-btn{
+  min-width:28px;height:28px;padding:0 8px;border:none;border-radius:8px;background:transparent;
+  color:var(--text-muted);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px
+}
+.notes-tool-btn:hover,.notes-tool-select:hover{background:var(--bg-surface);color:var(--text-primary)}
+.notes-tool-select{
+  height:28px;border:none;border-radius:8px;background:transparent;padding:0 8px;
+  color:var(--text-muted);font-size:11px;cursor:pointer;font-family:var(--font)
+}
+.notes-color-input{
+  width:28px;height:28px;padding:2px;border:none;border-radius:8px;background:transparent;cursor:pointer
+}
+.notes-editor-wrap{
+  min-height:420px;border:0.5px solid rgba(15,23,42,.08);border-radius:14px;background:rgba(15,23,42,.025);
+  padding:14px;resize:vertical;overflow:auto
+}
+.notes-editor{
+  min-height:392px;outline:none;color:var(--text-primary);font-size:14px;line-height:1.7;
+  text-align:left;white-space:normal
+}
+.notes-editor:empty:before{
+  content:attr(data-placeholder);color:var(--text-muted)
+}
+.notes-editor div,.notes-editor p,.notes-editor ul{margin:0 0 6px 0}
+.notes-editor ul{padding-left:18px;margin-left:0;list-style-position:outside}
+.notes-editor li{margin-left:0;padding-left:0}
+.notes-tool-btn.is-active{
+  background:var(--bg-surface);color:var(--text-primary);box-shadow:inset 0 0 0 0.5px var(--border)
+}
+
+.notes-editor-wrap::-webkit-scrollbar{
+  width:6px;
+}
+.notes-editor-wrap::-webkit-scrollbar-track{
+  background:transparent;
+}
+.notes-editor-wrap::-webkit-scrollbar-thumb{
+  background:rgba(15,23,42,.10);
+  border-radius:6px;
+}
+.notes-editor-wrap:hover::-webkit-scrollbar-thumb{
+  background:rgba(15,23,42,.18);
+}
+
+.notes-expand-row{display:flex;justify-content:flex-end;margin-top:8px}
+.notes-expand-btn{
+  height:28px;padding:0 10px;border:none;border-radius:8px;background:transparent;
+  color:var(--text-muted);font-size:11px;cursor:pointer
+}
+.notes-expand-btn:hover{background:var(--bg-surface);color:var(--text-primary)}
+@media (max-width: 1100px){
+  .personal-layout{grid-template-columns:1fr}
+  .personal-notes-panel{position:static}
+}
 .admin-tab{height:34px;padding:0 16px;background:transparent;border:none;border-bottom:2px solid transparent;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all var(--transition)}
 .admin-tab.active{color:var(--c-campanha);border-bottom-color:var(--c-campanha)}
 .admin-tab:hover{color:var(--text-primary)}
@@ -887,21 +953,50 @@ body.modal-open #btn-new-campaign{display:none !important}
     </div>
     <!-- PERSONAL -->
     <div class="view" id="view-personal">
-      <div class="personal-panel">
-        <div class="panel-header">
-          <div class="panel-avatar" id="personal-avatar"></div>
-          <div>
-            <div class="panel-name" id="personal-name"></div>
-            <div class="panel-role" id="personal-role"></div>
+      <div class="personal-layout">
+        <aside class="personal-notes-panel">
+          <div class="personal-notes-head">
+            <div>
+              <div class="personal-notes-eyebrow">Anotações</div>
+              <div class="personal-notes-title">Bloco pessoal</div>
+            </div>
           </div>
+          <div class="notes-toolbar">
+            <button type="button" class="notes-tool-btn" id="notes-btn-bold" onclick="notesExec('bold')" title="Negrito"><strong>B</strong></button>
+            <button type="button" class="notes-tool-btn" id="notes-btn-italic" onclick="notesExec('italic')" title="Itálico"><em>I</em></button>
+            <button type="button" class="notes-tool-btn" id="notes-btn-list" onclick="notesExec('insertUnorderedList')" title="Lista">•</button>
+            <button type="button" class="notes-tool-btn" onclick="insertChecklistItem()" title="Checklist">☐</button>
+            <select class="notes-tool-select" id="notes-size" onchange="applyNotesFontSize(this.value)" title="Tamanho">
+              <option value="">Aa</option>
+              <option value="2">P</option>
+              <option value="3">M</option>
+              <option value="5">G</option>
+            </select>
+            <input type="color" class="notes-color-input" id="notes-color" value="#111827" onchange="applyNotesColor(this.value)" title="Cor">
+          </div>
+          <div class="notes-editor-wrap" id="notes-editor-wrap">
+            <div id="personal-notes-editor" class="notes-editor" contenteditable="true" spellcheck="true" oninput="savePersonalNotes();updateNotesToolbarState()" onmouseup="updateNotesToolbarState()" onkeyup="updateNotesToolbarState()" data-placeholder="Escreva ideias, prioridades, lembretes e observações..."></div>
+          </div>
+          <div class="notes-expand-row">
+            <button type="button" class="notes-expand-btn" onclick="expandNotesEditor()">Expandir</button>
+          </div>
+        </aside>
+        <div class="personal-panel">
+          <div class="panel-header">
+            <div class="panel-avatar" id="personal-avatar"></div>
+            <div>
+              <div class="panel-name" id="personal-name"></div>
+              <div class="panel-role" id="personal-role"></div>
+            </div>
+          </div>
+          <div class="panel-search">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M10 10l3.5 3.5"/></svg>
+            <input type="text" placeholder="Buscar tarefa..." id="personal-search" oninput="renderPersonal()">
+          </div>
+          <div class="filter-bar" id="personal-filter-bar"></div>
+          <div class="panel-stats" id="personal-stats"></div>
+          <div id="personal-tasks"></div>
         </div>
-        <div class="panel-search">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M10 10l3.5 3.5"/></svg>
-          <input type="text" placeholder="Buscar tarefa..." id="personal-search" oninput="renderPersonal()">
-        </div>
-        <div class="filter-bar" id="personal-filter-bar"></div>
-        <div class="panel-stats" id="personal-stats"></div>
-        <div id="personal-tasks"></div>
       </div>
     </div>
     <!-- ADMIN -->
@@ -1065,6 +1160,7 @@ let mmAvatarB64 = null;
 let pmAvatarB64 = null;
 let currentTemplate = null; // 'campanhas'|'publicacoes'|'email'|'demanda'
 let tplData = {}; // working copy of template-specific data
+const PERSONAL_NOTES_KEY = 'nordmann_personal_notes_v1';
 
 window.currentUser = null;
 
@@ -1078,6 +1174,72 @@ async function refreshAllFromCloud() {
   await loadData();
 }
 
+
+
+
+function updateNotesToolbarState(){
+  const boldBtn = document.getElementById('notes-btn-bold');
+  const italicBtn = document.getElementById('notes-btn-italic');
+  const listBtn = document.getElementById('notes-btn-list');
+  if (boldBtn) boldBtn.classList.toggle('is-active', !!document.queryCommandState('bold'));
+  if (italicBtn) italicBtn.classList.toggle('is-active', !!document.queryCommandState('italic'));
+  if (listBtn) listBtn.classList.toggle('is-active', !!document.queryCommandState('insertUnorderedList'));
+}
+function expandNotesEditor(){
+  const wrap = document.getElementById('notes-editor-wrap');
+  const editor = document.getElementById('personal-notes-editor');
+  if (!wrap || !editor) return;
+  const current = parseInt(getComputedStyle(wrap).minHeight || '420', 10);
+  const next = current + 180;
+  wrap.style.minHeight = next + 'px';
+  editor.style.minHeight = (next - 28) + 'px';
+}
+function getPersonalNotesStore(){
+  try { return JSON.parse(localStorage.getItem(PERSONAL_NOTES_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function savePersonalNotesStore(store){
+  localStorage.setItem(PERSONAL_NOTES_KEY, JSON.stringify(store || {}));
+}
+function loadPersonalNotes(){
+  if (!currentMember) return;
+  const editor = document.getElementById('personal-notes-editor');
+  if (!editor) return;
+  const store = getPersonalNotesStore();
+  editor.innerHTML = store[currentMember] || '';
+  updateNotesToolbarState();
+}
+function savePersonalNotes(){
+  if (!currentMember) return;
+  const editor = document.getElementById('personal-notes-editor');
+  if (!editor) return;
+  const store = getPersonalNotesStore();
+  store[currentMember] = editor.innerHTML;
+  savePersonalNotesStore(store);
+}
+function focusNotesEditor(){
+  const editor = document.getElementById('personal-notes-editor');
+  if (editor) editor.focus();
+}
+function notesExec(cmd, value){
+  focusNotesEditor();
+  document.execCommand(cmd, false, value || null);
+  savePersonalNotes();
+  updateNotesToolbarState();
+}
+function applyNotesColor(color){
+  if (!color) return;
+  notesExec('foreColor', color);
+}
+function applyNotesFontSize(size){
+  if (!size) return;
+  notesExec('fontSize', size);
+}
+function insertChecklistItem(){
+  focusNotesEditor();
+  document.execCommand('insertHTML', false, '<div>☐ Item</div>');
+  savePersonalNotes();
+}
 
 function openResumoModal() {
   var bd = document.getElementById('resumo-backdrop');
@@ -1549,6 +1711,7 @@ function bootApp() {
       migrated++;
     });
     if (migrated > 0) saveData();
+    if (window.currentUser?.id) kanbanFilter.pessoa = [window.currentUser.id];
     setView('kanban');
     updateStorageInfo();
     updateSidebarMembers();
@@ -2100,6 +2263,19 @@ function isBlocked(s, c) {
   return dep && dep.status!=='Concluído';
 }
 
+
+function startOfTodayLocal(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d;
+}
+function isHiddenFromPersonalPanelByDate(status, completedAt){
+  if (status !== 'Concluído' || !completedAt) return false;
+  const done = new Date(completedAt);
+  if (Number.isNaN(done.getTime())) return false;
+  return done < startOfTodayLocal();
+}
+
 function typeTag(type) {
   const c = TYPE_COLOR[type]||{color:'#888',bg:'rgba(136,136,136,.1)'};
   return '<span class="type-tag" style="color:'+c.color+';background:'+c.bg+'">'+type+'</span>';
@@ -2134,6 +2310,8 @@ function toggleSubtask(campId, subId) {
   const c = getCampaign(campId); if (!c) return;
   const s = (c.subtasks||[]).find(x=>x.id===subId); if (!s) return;
   s.status = s.status==='Concluído' ? 'Pendente' : 'Concluído';
+  if (s.status === 'Concluído') s.completedAt = new Date().toISOString();
+  else delete s.completedAt;
   if ((c.subtasks||[]).every(x=>x.status==='Concluído') && c.status!=='Concluído') c.status='Concluído';
   saveData();
   if (currentView==='kanban') renderKanban();
@@ -2156,6 +2334,9 @@ function setView(view, member) {
     document.getElementById('topbar-title').textContent='Kanban';
     document.getElementById('nav-kanban').classList.add('active');
     btnNew.style.display='';
+    if ((!kanbanFilter.pessoa || !kanbanFilter.pessoa.length) && window.currentUser?.id) {
+      kanbanFilter.pessoa = [window.currentUser.id];
+    }
     renderKanbanFilters(); renderKanban();
   } else if (view==='calendar') {
     document.getElementById('view-calendar').classList.add('active');
@@ -2621,6 +2802,8 @@ function c_updateStatus(id, status) {
   const c = getCampaign(id); if (!c) return;
   const oldStatus = c.status;
   c.status = status;
+  if (status === 'Concluído') c.completedAt = new Date().toISOString();
+  else delete c.completedAt;
   applyStatusRules(c, oldStatus, status);
   saveData();
   closePanel();
@@ -4222,6 +4405,7 @@ function renderPersonal() {
   else { av.textContent=m.initials; av.style.color='#fff'; }
   document.getElementById('personal-name').textContent=m.name;
   document.getElementById('personal-role').textContent=m.role;
+  loadPersonalNotes();
 
   const search = document.getElementById('personal-search')?.value?.toLowerCase()||'';
   const now = new Date();
@@ -4229,10 +4413,32 @@ function renderPersonal() {
   // Collect tasks
   let tasks = [];
   campaigns.forEach(c => {
+    // Tarefa pessoal aparece apenas no painel da própria pessoa
+    if (c.templateType === 'tarefa_pessoal' && c.owner === currentMember) {
+      const synthetic = {
+        id: 'personal-'+c.id,
+        title: c.name || 'Tarefa pessoal',
+        canal: 'Geral',
+        urgency: c.urgency || 'Normal',
+        owner: c.owner,
+        due: c.endDate ? (c.endDate + (c.endTime ? ('T' + c.endTime) : '')) : '',
+        status: c.status || 'Pendente',
+        checklist: [],
+        note: c.personalDescription || '',
+        completedAt: c.completedAt || null,
+        _personalCard: true
+      };
+      if (!isHiddenFromPersonalPanelByDate(synthetic.status, synthetic.completedAt)) {
+        tasks.push({sub:synthetic, campaign:c});
+      }
+    }
+
     (c.subtasks||[]).forEach(s => {
       if (s.owner !== currentMember) return;
+      if (c.type === 'TAREFA PESSOAL' && c.owner !== currentMember) return;
       // Tarefas de checklist (_auto='checklist') só aparecem quando a campanha está Em andamento ou além
       if (s._auto === 'checklist' && c.status === 'Em planejamento') return;
+      if (isHiddenFromPersonalPanelByDate(s.status, s.completedAt)) return;
       tasks.push({sub:s, campaign:c});
     });
   });
@@ -4271,7 +4477,7 @@ function renderPersonal() {
     const status = c.status || 'Pendente';
     const urgency = s.urgency || 'Normal';
     const effectiveCanal = getEffectiveTaskCanal(t);
-    const typeLabel = c.templateType==='email' ? 'E-mail MKT' : c.templateType==='publicacoes' ? 'Publicação' : c.templateType==='campanhas' ? 'Campanha' : 'Demanda interna';
+    const typeLabel = c.templateType==='email' ? 'E-mail MKT' : c.templateType==='publicacoes' ? 'Publicação' : c.templateType==='campanhas' ? 'Campanha' : c.templateType==='tarefa_pessoal' ? 'Tarefa pessoal' : 'Demanda interna';
     const dueSource = s.due || (c.endDate ? (c.endDate + (c.endTime ? (' ' + c.endTime) : '')) : '');
     const dueText = dueSource ? 'Prazo de entrega: ' + formatDue(dueSource) : 'Prazo de entrega: —';
 
@@ -4300,8 +4506,8 @@ function renderPersonal() {
     const cbSvg = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
     const campId = c.id, subId = s.id;
 
-    const mainName = c.templateType === 'campanhas' ? c.name : ((s.note && String(s.note).trim()) || c.name || '');
-    const titleText = c.templateType === 'campanhas'
+    const mainName = (c.templateType === 'campanhas' || c.templateType === 'tarefa_pessoal') ? c.name : ((s.note && String(s.note).trim()) || c.name || '');
+    const titleText = (c.templateType === 'campanhas' || c.templateType === 'tarefa_pessoal')
       ? (s.title || c.name || 'Tarefa')
       : ((s.title || 'Tarefa') + ' | ' + mainName);
 
