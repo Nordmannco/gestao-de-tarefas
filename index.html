@@ -121,6 +121,21 @@ input,textarea,select{font-family:inherit}
 .tpl-member-toggle input[type=checkbox]{width:14px;height:14px;accent-color:var(--c-campanha);cursor:pointer}
 .tpl-member-block{background:var(--bg-card);border:0.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
 .tpl-member-block-title{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.tpl-pauta-box{background:transparent;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.tpl-pauta-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.tpl-pauta-title{font-size:15px;font-weight:700;color:var(--text-primary);line-height:1.3}
+.tpl-pauta-name-input{font-size:15px !important;font-weight:700 !important;height:38px !important;border:none !important;background:transparent !important;padding-left:0 !important}
+.tpl-idea-item{background:rgba(15,23,42,0.04);border:none;border-radius:10px;padding:12px 12px 10px;margin-bottom:10px}
+.tpl-idea-meta{font-size:11px;color:var(--text-muted);margin-bottom:8px}
+.tpl-idea-ref{font-size:11px;color:var(--c-campanha);margin-top:8px;word-break:break-all}
+.tpl-add-idea-box{margin-top:10px;padding-top:2px}
+.tpl-add-idea-box .form-textarea{min-height:88px;background:var(--bg-card)}
+.tpl-add-idea-box .form-input{height:34px;font-size:12px;background:var(--bg-card)}
+.tpl-add-idea-actions{display:flex;gap:8px;align-items:center;margin-top:8px}
+.tpl-add-idea-actions .form-input{flex:1}
+.tpl-add-idea-actions .btn-add-sub{height:34px}
+.tpl-empty-note{font-size:12px;color:var(--text-muted);padding:4px 0 2px}
+
 .tpl-step-box{background:var(--bg-surface);border:0.5px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px;position:relative}
 .tpl-step-num{font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:6px}
 
@@ -1175,8 +1190,6 @@ async function refreshAllFromCloud() {
 }
 
 
-
-
 function updateNotesToolbarState(){
   const boldBtn = document.getElementById('notes-btn-bold');
   const italicBtn = document.getElementById('notes-btn-italic');
@@ -1711,7 +1724,6 @@ function bootApp() {
       migrated++;
     });
     if (migrated > 0) saveData();
-    if (window.currentUser?.id) kanbanFilter.pessoa = [window.currentUser.id];
     setView('kanban');
     updateStorageInfo();
     updateSidebarMembers();
@@ -2263,19 +2275,6 @@ function isBlocked(s, c) {
   return dep && dep.status!=='Concluído';
 }
 
-
-function startOfTodayLocal(){
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  return d;
-}
-function isHiddenFromPersonalPanelByDate(status, completedAt){
-  if (status !== 'Concluído' || !completedAt) return false;
-  const done = new Date(completedAt);
-  if (Number.isNaN(done.getTime())) return false;
-  return done < startOfTodayLocal();
-}
-
 function typeTag(type) {
   const c = TYPE_COLOR[type]||{color:'#888',bg:'rgba(136,136,136,.1)'};
   return '<span class="type-tag" style="color:'+c.color+';background:'+c.bg+'">'+type+'</span>';
@@ -2310,8 +2309,6 @@ function toggleSubtask(campId, subId) {
   const c = getCampaign(campId); if (!c) return;
   const s = (c.subtasks||[]).find(x=>x.id===subId); if (!s) return;
   s.status = s.status==='Concluído' ? 'Pendente' : 'Concluído';
-  if (s.status === 'Concluído') s.completedAt = new Date().toISOString();
-  else delete s.completedAt;
   if ((c.subtasks||[]).every(x=>x.status==='Concluído') && c.status!=='Concluído') c.status='Concluído';
   saveData();
   if (currentView==='kanban') renderKanban();
@@ -2334,9 +2331,6 @@ function setView(view, member) {
     document.getElementById('topbar-title').textContent='Kanban';
     document.getElementById('nav-kanban').classList.add('active');
     btnNew.style.display='';
-    if ((!kanbanFilter.pessoa || !kanbanFilter.pessoa.length) && window.currentUser?.id) {
-      kanbanFilter.pessoa = [window.currentUser.id];
-    }
     renderKanbanFilters(); renderKanban();
   } else if (view==='calendar') {
     document.getElementById('view-calendar').classList.add('active');
@@ -2802,8 +2796,6 @@ function c_updateStatus(id, status) {
   const c = getCampaign(id); if (!c) return;
   const oldStatus = c.status;
   c.status = status;
-  if (status === 'Concluído') c.completedAt = new Date().toISOString();
-  else delete c.completedAt;
   applyStatusRules(c, oldStatus, status);
   saveData();
   closePanel();
@@ -3308,6 +3300,7 @@ const TEMPLATES = [
   {id:'demanda',    icon:'📋', name:'Demanda interna', desc:'Blocos de passos por membro participante'},
   {id:'publicacoes',icon:'📸', name:'Publicação',      desc:'Brief de post com copy (Bia) e design (Giovana)'},
   {id:'email',      icon:'✉️', name:'E-mail MKT',      desc:'Brief de e-mail + subtarefas automáticas'},
+  {id:'reuniao_planejamento', icon:'🧭', name:'Reunião / Planejamento', desc:'Coleta de ideias e alinhamento antes da reunião'},
   {id:'campanhas',  icon:'⚡', name:'Campanha',       desc:'Briefing completo com metas, cronograma e checklists'},
 ];
 
@@ -3444,7 +3437,8 @@ function selectTemplate(id) {
     publicacoes: 'Conteúdo',
     email: 'Conteúdo',
     demanda: 'Demanda interna',
-    tarefa_pessoal: 'TAREFA PESSOAL'
+    tarefa_pessoal: 'TAREFA PESSOAL',
+    reuniao_planejamento: 'Campanha'
   };
 
   const draft = {
@@ -3472,8 +3466,100 @@ function renderTplFields() {
   else if (currentTemplate==='email') c.innerHTML = renderTplEmailForm();
   else if (currentTemplate==='demanda') c.innerHTML = renderTplDemandaForm();
   else if (currentTemplate==='tarefa_pessoal') c.innerHTML = renderTplTarefaPessoalForm();
-  syncTarefaPessoalVisibility();
+  else if (currentTemplate==='reuniao_planejamento') c.innerHTML = renderTplReuniaoPlanejamentoForm();
+  syncSpecialTemplateVisibility();
   autoResizeAll();
+}
+
+
+
+
+function ensureMeetingTemplateData(){
+  if (!tplData.pautas) tplData.pautas = [];
+}
+function tplMeetingAddPauta(){
+  ensureMeetingTemplateData();
+  tplData.pautas.push({id:uid(), titulo:'', ideias:[]});
+  renderTplFields();
+}
+function tplMeetingRemovePauta(idx){
+  ensureMeetingTemplateData();
+  tplData.pautas.splice(idx,1);
+  renderTplFields();
+}
+function tplMeetingUpdatePautaTitle(idx, value){
+  ensureMeetingTemplateData();
+  if (!tplData.pautas[idx]) return;
+  tplData.pautas[idx].titulo = value;
+}
+function tplMeetingAddIdea(idx){
+  ensureMeetingTemplateData();
+  const pauta = tplData.pautas[idx];
+  if (!pauta) return;
+  const ideaInput = document.getElementById('rp-idea-input-'+idx);
+  const refInput = document.getElementById('rp-ref-input-'+idx);
+  const idea = (ideaInput?.value || '').trim();
+  const ref = (refInput?.value || '').trim();
+  if (!idea) return;
+  const nome = window.currentUser?.name || 'Equipe';
+  const data = new Date().toLocaleDateString('pt-BR');
+  if (!pauta.ideias) pauta.ideias = [];
+  pauta.ideias.push({id:uid(), autor:nome, data:data, texto:idea, ref:ref});
+  if (ideaInput) ideaInput.value = '';
+  if (refInput) refInput.value = '';
+  renderTplFields();
+}
+function tplMeetingRemoveIdea(pautaIdx, ideaIdx){
+  ensureMeetingTemplateData();
+  const pauta = tplData.pautas[pautaIdx];
+  if (!pauta || !pauta.ideias) return;
+  pauta.ideias.splice(ideaIdx,1);
+  renderTplFields();
+}
+
+function renderTplReuniaoPlanejamentoForm(){
+  const d = tplData || {};
+  ensureMeetingTemplateData();
+
+  const pautasHtml = (d.pautas||[]).map(function(pauta, pautaIdx){
+    const ideiasHtml = (pauta.ideias||[]).map(function(ideia, ideaIdx){
+      return '<div class="tpl-idea-item">'+
+        '<div class="tpl-pauta-head" style="margin-bottom:6px">'+
+          '<div class="tpl-idea-meta">'+esc(ideia.autor||'Equipe')+' • '+esc(ideia.data||'')+'</div>'+
+          '<button class="tpl-remove-btn" type="button" onclick="tplMeetingRemoveIdea('+pautaIdx+','+ideaIdx+')">×</button>'+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--text-primary);white-space:pre-wrap;line-height:1.6">'+esc(ideia.texto||'')+'</div>'+
+        ((ideia.ref||'').trim() ? '<div class="tpl-idea-ref">Ref.: '+esc(ideia.ref)+'</div>' : '')+
+      '</div>';
+    }).join('') || '<div class="tpl-empty-note">Nenhuma ideia adicionada ainda.</div>';
+
+    return '<div class="tpl-pauta-box">'+
+      '<div class="tpl-pauta-head">'+
+        '<input class="form-input tpl-pauta-name-input" style="flex:1" placeholder="Nome da pauta" value="'+esc(pauta.titulo||'')+'" oninput="tplMeetingUpdatePautaTitle('+pautaIdx+', this.value)">'+
+        '<button class="tpl-remove-btn" type="button" onclick="tplMeetingRemovePauta('+pautaIdx+')">×</button>'+
+      '</div>'+
+      ideiasHtml+
+      '<div class="tpl-add-idea-box">'+
+        '<textarea class="form-textarea" id="rp-idea-input-'+pautaIdx+'" placeholder="Adicionar nova ideia" oninput="autoResize(this)"></textarea>'+
+        '<div class="tpl-add-idea-actions">'+
+          '<input class="form-input" id="rp-ref-input-'+pautaIdx+'" placeholder="Ref. (link opcional)">'+
+          '<button type="button" class="btn-add-sub" onclick="tplMeetingAddIdea('+pautaIdx+')">+ Nova ideia</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="tpl-section">'+
+    '<div class="tpl-section-title">🧭 Reunião / Planejamento</div>'+
+    '<div class="form-group"><label class="form-label">Objetivo da reunião</label><textarea class="form-textarea" id="rp-objetivo" placeholder="O que precisa sair decidido nessa reunião?" oninput="tplData.objetivo=this.value;autoResize(this)">'+(d.objetivo||'')+'</textarea></div>'+
+    '<div class="form-group">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">'+
+        '<label class="form-label" style="margin:0">Pautas</label>'+
+        '<button type="button" class="btn-add-sub" onclick="tplMeetingAddPauta()">+ Nova pauta</button>'+
+      '</div>'+
+      (pautasHtml || '<div class="tpl-empty-note">Adicione uma pauta para começar a organizar as ideias da reunião.</div>')+
+    '</div>'+
+  '</div>';
 }
 
 
@@ -3498,18 +3584,24 @@ function renderTplTarefaPessoalForm(){
   '</div>';
 }
 
-function syncTarefaPessoalVisibility(){
+function syncSpecialTemplateVisibility(){
   const isPersonal = currentTemplate === 'tarefa_pessoal';
+  const isMeeting = currentTemplate === 'reuniao_planejamento';
   const compactRow = document.querySelector('.compact-select-row');
   const driveField = document.getElementById('f-drive')?.closest('.form-group');
   const descField = document.getElementById('f-desc')?.closest('.form-group');
   const subTitle = document.querySelector('.form-section-title');
   const subContainer = document.getElementById('sub-forms-container');
+  const canaisWrap = document.getElementById('canais-dropdown')?.closest('.form-group');
+  const emptyThird = document.querySelector('.compact-select-row > div:last-child');
+
   if (compactRow) compactRow.style.display = isPersonal ? 'none' : '';
-  if (driveField) driveField.style.display = isPersonal ? 'none' : '';
-  if (descField) descField.style.display = isPersonal ? 'none' : '';
-  if (subTitle) subTitle.style.display = isPersonal ? 'none' : '';
-  if (subContainer) subContainer.style.display = isPersonal ? 'none' : '';
+  if (driveField) driveField.style.display = (isPersonal || isMeeting) ? 'none' : '';
+  if (descField) descField.style.display = (isPersonal || isMeeting) ? 'none' : '';
+  if (subTitle) subTitle.style.display = (isPersonal || isMeeting) ? 'none' : '';
+  if (subContainer) subContainer.style.display = (isPersonal || isMeeting) ? 'none' : '';
+  if (canaisWrap) canaisWrap.style.display = isMeeting ? 'none' : '';
+  if (emptyThird) emptyThird.style.display = isMeeting ? 'none' : '';
 }
 
 /* -- CAMPANHAS form -- */
@@ -4413,32 +4505,10 @@ function renderPersonal() {
   // Collect tasks
   let tasks = [];
   campaigns.forEach(c => {
-    // Tarefa pessoal aparece apenas no painel da própria pessoa
-    if (c.templateType === 'tarefa_pessoal' && c.owner === currentMember) {
-      const synthetic = {
-        id: 'personal-'+c.id,
-        title: c.name || 'Tarefa pessoal',
-        canal: 'Geral',
-        urgency: c.urgency || 'Normal',
-        owner: c.owner,
-        due: c.endDate ? (c.endDate + (c.endTime ? ('T' + c.endTime) : '')) : '',
-        status: c.status || 'Pendente',
-        checklist: [],
-        note: c.personalDescription || '',
-        completedAt: c.completedAt || null,
-        _personalCard: true
-      };
-      if (!isHiddenFromPersonalPanelByDate(synthetic.status, synthetic.completedAt)) {
-        tasks.push({sub:synthetic, campaign:c});
-      }
-    }
-
     (c.subtasks||[]).forEach(s => {
       if (s.owner !== currentMember) return;
-      if (c.type === 'TAREFA PESSOAL' && c.owner !== currentMember) return;
       // Tarefas de checklist (_auto='checklist') só aparecem quando a campanha está Em andamento ou além
       if (s._auto === 'checklist' && c.status === 'Em planejamento') return;
-      if (isHiddenFromPersonalPanelByDate(s.status, s.completedAt)) return;
       tasks.push({sub:s, campaign:c});
     });
   });
@@ -4477,7 +4547,7 @@ function renderPersonal() {
     const status = c.status || 'Pendente';
     const urgency = s.urgency || 'Normal';
     const effectiveCanal = getEffectiveTaskCanal(t);
-    const typeLabel = c.templateType==='email' ? 'E-mail MKT' : c.templateType==='publicacoes' ? 'Publicação' : c.templateType==='campanhas' ? 'Campanha' : c.templateType==='tarefa_pessoal' ? 'Tarefa pessoal' : 'Demanda interna';
+    const typeLabel = c.templateType==='email' ? 'E-mail MKT' : c.templateType==='publicacoes' ? 'Publicação' : c.templateType==='campanhas' ? 'Campanha' : 'Demanda interna';
     const dueSource = s.due || (c.endDate ? (c.endDate + (c.endTime ? (' ' + c.endTime) : '')) : '');
     const dueText = dueSource ? 'Prazo de entrega: ' + formatDue(dueSource) : 'Prazo de entrega: —';
 
@@ -4506,8 +4576,8 @@ function renderPersonal() {
     const cbSvg = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>';
     const campId = c.id, subId = s.id;
 
-    const mainName = (c.templateType === 'campanhas' || c.templateType === 'tarefa_pessoal') ? c.name : ((s.note && String(s.note).trim()) || c.name || '');
-    const titleText = (c.templateType === 'campanhas' || c.templateType === 'tarefa_pessoal')
+    const mainName = c.templateType === 'campanhas' ? c.name : ((s.note && String(s.note).trim()) || c.name || '');
+    const titleText = c.templateType === 'campanhas'
       ? (s.title || c.name || 'Tarefa')
       : ((s.title || 'Tarefa') + ' | ' + mainName);
 
