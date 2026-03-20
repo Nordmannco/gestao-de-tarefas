@@ -405,11 +405,49 @@ body.modal-open #btn-new-campaign{display:none !important}
 .add-sub-input:focus{border-color:var(--c-campanha)}
 
 /* --- PAINEL PESSOAL --- */
-.personal-layout{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:18px;align-items:start}
+.personal-layout{display:grid;grid-template-columns:minmax(250px,320px) minmax(0,1fr) minmax(220px,260px);gap:18px;align-items:start}
 .personal-panel{max-width:none;margin:0}
-.personal-notes-panel{
+.personal-notes-panel,
+.personal-meetings-panel{
   position:sticky;top:16px;background:transparent;border:none;
   border-radius:0;padding:0;box-shadow:none
+}
+.personal-meetings-panel{align-self:start}
+.meeting-mini-card{
+  background:rgba(15,23,42,.025);
+  border:0.5px solid rgba(15,23,42,.06);
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:8px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.meeting-mini-card:hover{
+  background:rgba(15,23,42,.04);
+  border-color:rgba(15,23,42,.10);
+}
+.meeting-mini-title{
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-primary);
+  line-height:1.45;
+  margin-bottom:5px;
+}
+.meeting-mini-meta{
+  font-size:10px;
+  color:var(--text-muted);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.meeting-mini-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(124,106,247,.55);
+  flex-shrink:0
+}
+.meeting-mini-empty{
+  font-size:12px;color:var(--text-muted);padding:4px 0
 }
 .personal-notes-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px}
 .personal-notes-eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px}
@@ -470,7 +508,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 .notes-expand-btn:hover{background:var(--bg-surface);color:var(--text-primary)}
 @media (max-width: 1100px){
   .personal-layout{grid-template-columns:1fr}
-  .personal-notes-panel{position:static}
+  .personal-notes-panel,.personal-meetings-panel{position:static}
 }
 .admin-tab{height:34px;padding:0 16px;background:transparent;border:none;border-bottom:2px solid transparent;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all var(--transition)}
 .admin-tab.active{color:var(--c-campanha);border-bottom-color:var(--c-campanha)}
@@ -1012,6 +1050,15 @@ body.modal-open #btn-new-campaign{display:none !important}
           <div class="panel-stats" id="personal-stats"></div>
           <div id="personal-tasks"></div>
         </div>
+        <aside class="personal-meetings-panel">
+          <div class="personal-notes-head">
+            <div>
+              <div class="personal-notes-eyebrow">Reuniões</div>
+              <div class="personal-notes-title">Reuniões</div>
+            </div>
+          </div>
+          <div id="personal-meetings-list"></div>
+        </aside>
       </div>
     </div>
     <!-- ADMIN -->
@@ -1132,7 +1179,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 
 <script>
 /* CONSTANTS & STATE */
-const TYPES    = ['Campanha','Conteúdo','Demanda interna','TAREFA PESSOAL'];
+const TYPES    = ['Campanha','Conteúdo','Demanda interna','Reuniões / Planejamento','TAREFA PESSOAL'];
 const STATUSES = ['Em planejamento','Em andamento','Bloqueado','Aguardando aprovação','Concluído'];
 const CANAIS   = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
 const URGENCIAS = ['Urgente','Importante','Normal'];
@@ -2369,6 +2416,7 @@ function getKanbanFilterEntries() {
     if (c.templateType === 'publicacoes') typeLabel = 'Conteúdo';
     else if (c.templateType === 'email') typeLabel = 'E-mail';
     else if (c.templateType === 'demanda') typeLabel = 'Demanda interna';
+    else if (c.templateType === 'reuniao_planejamento') typeLabel = 'Reuniões / Planejamento';
     else if (c.type) typeLabel = c.type;
     const canalLabel = (c.templateType && c.templateType !== 'campanhas')
       ? ((c.canais && c.canais.length) ? c.canais[0] : 'Geral')
@@ -2428,10 +2476,12 @@ function renderKanban() {
   let filtered = campaigns;
 
   filtered = filtered.filter(function(c){
+    if (c.templateType === 'reuniao_planejamento') return false;
     let typeLabel = 'Campanha';
     if (c.templateType === 'publicacoes') typeLabel = 'Conteúdo';
     else if (c.templateType === 'email') typeLabel = 'E-mail';
     else if (c.templateType === 'demanda') typeLabel = 'Demanda interna';
+    else if (c.templateType === 'reuniao_planejamento') typeLabel = 'Reuniões / Planejamento';
     else if (c.type) typeLabel = c.type;
     const canalLabel = (c.templateType && c.templateType !== 'campanhas')
       ? ((c.canais && c.canais.length) ? c.canais[0] : 'Geral')
@@ -3438,7 +3488,7 @@ function selectTemplate(id) {
     email: 'Conteúdo',
     demanda: 'Demanda interna',
     tarefa_pessoal: 'TAREFA PESSOAL',
-    reuniao_planejamento: 'Campanha'
+    reuniao_planejamento: 'Reuniões / Planejamento'
   };
 
   const draft = {
@@ -4485,6 +4535,38 @@ function getEffectiveTaskCanal(task) {
   return s.canal || (c.canais && c.canais[0]) || 'Geral';
 }
 
+
+function renderPersonalMeetings(){
+  const el = document.getElementById('personal-meetings-list');
+  if (!el || !currentMember) return;
+
+  const meetings = campaigns.filter(function(c){
+    if (c.templateType !== 'reuniao_planejamento') return false;
+    const ids = [c.owner].concat(c.participants || []).filter(Boolean);
+    return ids.includes(currentMember);
+  });
+
+  meetings.sort(function(a,b){
+    const da = (a.startDate || a.endDate || '');
+    const db = (b.startDate || b.endDate || '');
+    return (db || '').localeCompare(da || '');
+  });
+
+  if (!meetings.length){
+    el.innerHTML = '<div class="meeting-mini-empty">Nenhuma reunião aberta.</div>';
+    return;
+  }
+
+  el.innerHTML = meetings.map(function(c){
+    const pautas = (c.templateData?.pautas || []).length;
+    const ideias = (c.templateData?.pautas || []).reduce(function(acc,p){ return acc + ((p.ideias || []).length); }, 0);
+    const dateText = c.startDate ? formatDate(c.startDate) : (c.endDate ? formatDate(c.endDate) : 'Sem data');
+    return '<div class="meeting-mini-card" onclick="openEditCampaignPanel(\''+c.id+'\')">'+
+      '<div class="meeting-mini-title">'+esc(c.name || 'Reunião')+'</div>'+
+      '<div class="meeting-mini-meta"><span>'+dateText+'</span><span class="meeting-mini-dot"></span><span>'+pautas+' pautas</span><span class="meeting-mini-dot"></span><span>'+ideias+' ideias</span></div>'+
+    '</div>';
+  }).join('');
+}
 function renderPersonal() {
   if (!currentMember) return;
   const m = getMember(currentMember);
@@ -4498,6 +4580,7 @@ function renderPersonal() {
   document.getElementById('personal-name').textContent=m.name;
   document.getElementById('personal-role').textContent=m.role;
   loadPersonalNotes();
+  renderPersonalMeetings();
 
   const search = document.getElementById('personal-search')?.value?.toLowerCase()||'';
   const now = new Date();
@@ -4724,7 +4807,7 @@ function getCalendarTagColor(label){
 }
 
 function getCalendarEntries() {
-  const allowedTemplates = ['campanhas','publicacoes','email'];
+  const allowedTemplates = ['campanhas','publicacoes','email','reuniao_planejamento'];
   const items = [];
   campaigns.forEach(function(c){
     if (!allowedTemplates.includes(c.templateType || '')) return;
@@ -4736,8 +4819,8 @@ function getCalendarEntries() {
       id: c.id,
       date: date,
       campaign: c,
-      typeLabel: c.templateType === 'campanhas' ? 'Campanha' : (c.type || 'Conteúdo'),
-      canalLabel: c.templateType === 'campanhas' ? 'Campanha' : ((c.canais && c.canais.length) ? c.canais[0] : 'Geral'),
+      typeLabel: c.templateType === 'campanhas' ? 'Campanha' : c.templateType === 'reuniao_planejamento' ? 'Reuniões / Planejamento' : (c.type || 'Conteúdo'),
+      canalLabel: c.templateType === 'campanhas' ? 'Campanha' : c.templateType === 'reuniao_planejamento' ? 'Reunião' : ((c.canais && c.canais.length) ? c.canais[0] : 'Geral'),
       pessoaId: c.owner || '',
       pessoaNome: (getMember(c.owner)?.name || ''),
       urgency: c.urgency || 'Normal',
