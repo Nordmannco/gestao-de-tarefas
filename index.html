@@ -567,9 +567,11 @@ body.modal-open #btn-new-campaign{display:none !important}
 .filter-dd-item:hover,.filter-dd-item.sel{background:var(--c-campanha-bg);color:var(--c-campanha)}
 .filter-dd-clear{padding:6px 14px;font-size:11px;color:var(--text-muted);cursor:pointer;border-top:0.5px solid var(--border)}
 .btn-clear-all{height:30px;padding:0 12px;border:0.5px solid var(--u-urgente);border-radius:6px;background:var(--u-urgente-bg);color:var(--u-urgente);font-size:11px}
-.filter-period{display:flex;align-items:center;gap:6px;padding:6px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-card);flex-wrap:wrap}
-.filter-period-label{font-size:12px;color:var(--text-secondary);font-weight:500}
-.filter-date{height:30px;padding:0 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-base);font-size:12px;color:var(--text-primary);outline:none}
+.filter-period-custom{display:none;padding:8px 10px 10px;border-top:0.5px solid var(--border);margin-top:4px}
+.filter-period-custom.open{display:block}
+.filter-period-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center}
+.filter-period-label{font-size:11px;color:var(--text-muted);font-weight:500}
+.filter-date{height:30px;padding:0 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-base);font-size:12px;color:var(--text-primary);outline:none;width:100%;box-sizing:border-box}
 .filter-date:focus{border-color:var(--c-campanha)}
 .task-group-title{font-size:20px;font-weight:700;color:var(--text-primary);margin:28px 0 14px}
 .task-group-title:first-child{margin-top:6px}
@@ -666,6 +668,22 @@ body.modal-open #btn-new-campaign{display:none !important}
 .admin-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:8px}
 .admin-badge-active{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--c-conteudo-bg,rgba(16,185,129,.08));color:var(--c-conteudo);font-weight:500}
 .btn-revoke{height:28px;padding:0 12px;background:transparent;color:var(--u-urgente);border:0.5px solid var(--u-urgente);border-radius:6px;font-size:11px}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.settings-card{background:var(--bg-card);border:0.5px solid var(--border);padding:14px}
+.settings-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.settings-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+.settings-sub{font-size:11px;color:var(--text-muted);margin-top:3px}
+.settings-add-row{display:flex;gap:8px;margin-bottom:10px}
+.settings-list{display:flex;flex-direction:column;gap:8px}
+.settings-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-surface);border:0.5px solid var(--border)}
+.settings-item-name{flex:1;min-width:0;font-size:12px;color:var(--text-primary)}
+.settings-item-name input{width:100%;height:30px;border:0.5px solid var(--border);background:var(--bg-card);padding:0 8px;font-size:12px;color:var(--text-primary);outline:none;font-family:var(--font)}
+.settings-empty{font-size:12px;color:var(--text-muted);padding:8px 0}
+.settings-btn{height:28px;padding:0 10px;border:0.5px solid var(--border);background:var(--bg-card);font-size:11px;color:var(--text-secondary);cursor:pointer;font-family:var(--font)}
+.settings-btn.danger{color:var(--u-urgente);border-color:rgba(239,68,68,.25);background:transparent}
+.settings-btn.primary{color:var(--c-campanha);border-color:rgba(124,106,247,.25);background:var(--c-campanha-bg)}
+@media (max-width: 980px){.settings-grid{grid-template-columns:1fr}}
+
 
 /* --- TOAST --- */
 .toast{
@@ -969,6 +987,14 @@ body.modal-open #btn-new-campaign{display:none !important}
 </style>
 
 
+
+<style id="notes-resize-keep">
+.notes-editor-wrap textarea,
+.personal-notes-panel textarea{
+  resize: vertical;
+}
+</style>
+
 </head>
 <body>
 
@@ -1161,9 +1187,7 @@ body.modal-open #btn-new-campaign{display:none !important}
           <div class="notes-editor-wrap" id="notes-editor-wrap">
             <div id="personal-notes-editor" class="notes-editor" contenteditable="true" spellcheck="true" oninput="savePersonalNotes();updateNotesToolbarState()" onmouseup="updateNotesToolbarState()" onkeyup="updateNotesToolbarState()" data-placeholder="Escreva ideias, prioridades, lembretes e observações..."></div>
           </div>
-          <div class="notes-expand-row">
-            <button type="button" class="notes-expand-btn" onclick="expandNotesEditor()">Expandir</button>
-          </div>
+          
         </aside>
         <div class="personal-panel">
           <div class="panel-header">
@@ -1199,6 +1223,7 @@ body.modal-open #btn-new-campaign{display:none !important}
         <div style="display:flex;gap:8px;margin-bottom:24px;border-bottom:0.5px solid var(--border);padding-bottom:0">
           <button onclick="adminTab('members')" id="atab-members" class="admin-tab active">👥 Membros</button>
           <button onclick="adminTab('templates')" id="atab-templates" class="admin-tab">📋 Templates</button>
+          <button onclick="adminTab('settings')" id="atab-settings" class="admin-tab">⚙️ Configurações</button>
         </div>
         <div id="admin-tab-members">
           <div class="task-section-title">Membros ativos</div>
@@ -1206,6 +1231,9 @@ body.modal-open #btn-new-campaign{display:none !important}
         </div>
         <div id="admin-tab-templates" style="display:none">
           <div id="admin-templates-list"></div>
+        </div>
+        <div id="admin-tab-settings" style="display:none">
+          <div id="admin-settings-content"></div>
         </div>
       </div>
     </div>
@@ -1312,7 +1340,10 @@ body.modal-open #btn-new-campaign{display:none !important}
 /* CONSTANTS & STATE */
 const TYPES    = ['Campanha','Conteúdo','Demanda interna','Reuniões / Planejamento','TAREFA PESSOAL'];
 const STATUSES = ['Em planejamento','Em andamento','Bloqueado','Aguardando aprovação','Concluído'];
-const CANAIS   = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
+const DEFAULT_CANAIS = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
+const DEFAULT_CATEGORIAS = ['Administrativo','Conteúdo','Financeiro','Operacional','Ideia','Estudo'];
+let CANAIS = [...DEFAULT_CANAIS];
+let CATEGORIAS = [...DEFAULT_CATEGORIAS];
 const URGENCIAS = ['Urgente','Importante','Normal'];
 const MEMBER_COLORS = ['#7c6af7','#3ecf8e','#f5a623','#f07070','#06b6d4','#8b5cf6','#10b981','#f43f5e','#e11d48','#0ea5e9'];
 
@@ -1336,6 +1367,7 @@ const URG_COLOR = {
 
 const STORAGE_KEY  = 'nordmann_campaigns_v2';
 const MEMBERS_KEY  = 'nordmann_members_v1';
+const SETTINGS_KEY = 'nordmann_settings_v1';
 const SESSION_KEY  = 'nordmann_current_user';
 
 let MEMBERS = [];
@@ -1344,7 +1376,7 @@ let currentView = 'kanban';
 let currentMember = null;
 let kanbanFilter  = { type: [], canal: [], pessoa: [] };
 let calendarFilter = { type: [], canal: [], pessoa: [] };
-let personalFilter = { urgency: [], canal: [], tipo: [], periodStart: '', periodEnd: '' };
+let personalFilter = { urgency: [], canal: [], tipo: [], periodStart: '', periodEnd: '', periodPreset: '' };
 let calDate = new Date();
 let calSelectedDay = null;
 let editingCampId = null;
@@ -1354,6 +1386,23 @@ let pmAvatarB64 = null;
 let currentTemplate = null; // 'campanhas'|'publicacoes'|'email'|'demanda'
 let tplData = {}; // working copy of template-specific data
 const PERSONAL_NOTES_KEY = 'nordmann_personal_notes_v1';
+
+
+function getSettingsStore(){
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveSettingsStore(store){
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(store || {}));
+}
+function loadAdminSettings(){
+  const s = getSettingsStore();
+  CANAIS = Array.isArray(s.canais) && s.canais.length ? [...s.canais] : [...DEFAULT_CANAIS];
+  CATEGORIAS = Array.isArray(s.categorias) && s.categorias.length ? [...s.categorias] : [...DEFAULT_CATEGORIAS];
+}
+function persistAdminSettings(){
+  saveSettingsStore({ canais:[...CANAIS], categorias:[...CATEGORIAS] });
+}
 
 window.currentUser = null;
 
@@ -2044,9 +2093,151 @@ function renderAdmin() {
 function adminTab(tab) {
   document.getElementById('admin-tab-members').style.display = tab==='members' ? '' : 'none';
   document.getElementById('admin-tab-templates').style.display = tab==='templates' ? '' : 'none';
+  document.getElementById('admin-tab-settings').style.display = tab==='settings' ? '' : 'none';
   document.getElementById('atab-members').classList.toggle('active', tab==='members');
   document.getElementById('atab-templates').classList.toggle('active', tab==='templates');
+  document.getElementById('atab-settings').classList.toggle('active', tab==='settings');
   if (tab==='templates') renderTemplatesAdmin();
+  if (tab==='settings') renderAdminSettings();
+}
+
+
+function countChannelUsage(name){
+  let count = 0;
+  campaigns.forEach(function(c){
+    if ((c.canais||[]).includes(name)) count++;
+    (c.subtasks||[]).forEach(function(s){ if (s.canal === name) count++; });
+    const td = c.templateData || {};
+    ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
+      (td[path]||[]).forEach(function(item){ if (item?.canal === name) count++; });
+    });
+  });
+  return count;
+}
+function renderSettingsSection(title, sub, items, key){
+  const rows = items.map(function(item, idx){
+    return '<div class="settings-item">'+
+      '<div class="settings-item-name" id="settings-'+key+'-name-'+idx+'">'+esc(item)+'</div>'+
+      '<button class="settings-btn" onclick="startEditSettingItem(\''+key+'\','+idx+')">Editar</button>'+
+      '<button class="settings-btn danger" onclick="removeSettingItem(\''+key+'\','+idx+')">Excluir</button>'+
+    '</div>';
+  }).join('') || '<div class="settings-empty">Nenhum item cadastrado.</div>';
+
+  return '<div class="settings-card">'+
+    '<div class="settings-head"><div><div class="settings-title">'+title+'</div><div class="settings-sub">'+sub+'</div></div></div>'+
+    '<div class="settings-add-row">'+
+      '<input class="form-input" id="settings-new-'+key+'" placeholder="Adicionar novo">'+
+      '<button class="settings-btn primary" onclick="addSettingItem(\''+key+'\')">+ Adicionar</button>'+
+    '</div>'+
+    '<div class="settings-list">'+rows+'</div>'+
+  '</div>';
+}
+function renderAdminSettings(){
+  const el = document.getElementById('admin-settings-content');
+  if (!el) return;
+  el.innerHTML = '<div class="settings-grid">'+
+    renderSettingsSection('Canais','Edita as tags usadas nos templates, filtros e cartões.', CANAIS, 'canais')+
+    renderSettingsSection('Categorias','Edita as categorias usadas em tarefa pessoal.', CATEGORIAS, 'categorias')+
+  '</div>';
+}
+function getSettingsArray(key){
+  return key === 'canais' ? CANAIS : CATEGORIAS;
+}
+function setSettingsArray(key, arr){
+  if (key === 'canais') CANAIS = arr;
+  else CATEGORIAS = arr;
+  persistAdminSettings();
+  renderAdminSettings();
+}
+function addSettingItem(key){
+  const input = document.getElementById('settings-new-'+key);
+  const value = (input?.value || '').trim();
+  if (!value) return;
+  const arr = getSettingsArray(key);
+  if (arr.some(function(x){ return String(x).toLowerCase() === value.toLowerCase(); })) {
+    alert('Esse item já existe.');
+    return;
+  }
+  arr.push(value);
+  if (input) input.value = '';
+  setSettingsArray(key, [...arr]);
+}
+function startEditSettingItem(key, idx){
+  const arr = getSettingsArray(key);
+  const holder = document.getElementById('settings-'+key+'-name-'+idx);
+  if (!holder) return;
+  const current = arr[idx] || '';
+  holder.innerHTML = '<input value="'+esc(current)+'" onkeydown="handleSettingsEditKey(event, \''+key+'\','+idx+')" onblur="commitSettingEdit(\''+key+'\','+idx+', this.value)" autofocus>';
+  const inp = holder.querySelector('input');
+  if (inp) inp.select();
+}
+function handleSettingsEditKey(e, key, idx){
+  if (e.key === 'Enter') commitSettingEdit(key, idx, e.target.value);
+  if (e.key === 'Escape') renderAdminSettings();
+}
+function commitSettingEdit(key, idx, value){
+  const next = String(value || '').trim();
+  if (!next) { renderAdminSettings(); return; }
+  const arr = [...getSettingsArray(key)];
+  const current = arr[idx];
+  if (arr.some(function(x,i){ return i!==idx && String(x).toLowerCase() === next.toLowerCase(); })) {
+    alert('Esse item já existe.');
+    renderAdminSettings();
+    return;
+  }
+
+  if (key === 'canais' && current !== next){
+    campaigns.forEach(function(c){
+      c.canais = (c.canais||[]).map(function(v){ return v === current ? next : v; });
+      (c.subtasks||[]).forEach(function(s){ if (s.canal === current) s.canal = next; });
+      const td = c.templateData || {};
+      ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
+        (td[path]||[]).forEach(function(item){ if (item?.canal === current) item.canal = next; });
+      });
+    });
+    saveData();
+  }
+
+  if (key === 'categorias' && current !== next){
+    campaigns.forEach(function(c){
+      if (c.templateType === 'tarefa_pessoal' && c.templateData?.ptCategory === current) c.templateData.ptCategory = next;
+    });
+    saveData();
+  }
+
+  arr[idx] = next;
+  setSettingsArray(key, arr);
+}
+function removeSettingItem(key, idx){
+  const arr = [...getSettingsArray(key)];
+  const item = arr[idx];
+  if (!item) return;
+
+  if (key === 'canais'){
+    const usage = countChannelUsage(item);
+    const ok = usage ? confirm('Esse canal está sendo usado em '+usage+' item(ns). Deseja excluir mesmo assim?') : confirm('Excluir esse canal?');
+    if (!ok) return;
+
+    campaigns.forEach(function(c){
+      c.canais = (c.canais||[]).filter(function(v){ return v !== item; });
+      (c.subtasks||[]).forEach(function(s){ if (s.canal === item) s.canal = 'Geral'; });
+      const td = c.templateData || {};
+      ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
+        (td[path]||[]).forEach(function(entry){ if (entry?.canal === item) entry.canal = 'Geral'; });
+      });
+    });
+    saveData();
+  }
+
+  if (key === 'categorias'){
+    campaigns.forEach(function(c){
+      if (c.templateType === 'tarefa_pessoal' && c.templateData?.ptCategory === item) c.templateData.ptCategory = CATEGORIAS[0] || DEFAULT_CATEGORIAS[0];
+    });
+    saveData();
+  }
+
+  arr.splice(idx,1);
+  setSettingsArray(key, arr);
 }
 
 // Templates are stored as customizable user data
@@ -2536,7 +2727,7 @@ function setView(view, member) {
     btnNew.style.display='none';
     const nb = document.getElementById('nav-'+member); if (nb) nb.classList.add('active');
     document.getElementById('personal-search').value='';
-    personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:''};
+    personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:'',periodPreset:''};
     renderPersonalFilters(); renderPersonal();
   } else if (view==='admin') {
     document.getElementById('view-admin').classList.add('active');
@@ -3762,7 +3953,7 @@ function renderTplTarefaPessoalForm(){
     '<div class="tpl-section-title">Tarefa pessoal</div>'+
     '<div class="tpl-row">'+
       '<div class="form-group" style="margin:0"><label class="form-label">Categoria</label><div class="select-wrap"><select class="form-select" id="pt-category" onchange="tplData.ptCategory=this.value">'+
-        ['Administrativo','Conteúdo','Financeiro','Operacional','Ideia','Estudo'].map(function(opt){
+        CATEGORIAS.map(function(opt){
           return '<option'+(((d.ptCategory||'Administrativo')===opt)?' selected':'')+'>'+opt+'</option>';
         }).join('')+
       '</select></div></div>'+
@@ -4613,13 +4804,27 @@ function renderPersonalFilters() {
   }
 
   const canaisOrdenados = [...CANAIS].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  const hasPeriod = !!(personalFilter.periodStart || personalFilter.periodEnd);
+  const hasPeriod = !!(personalFilter.periodStart || personalFilter.periodEnd || personalFilter.periodPreset);
+  const periodId = 'dd-period';
+  const periodLabel = getPersonalPeriodLabel();
+  const customOpen = personalFilter.periodPreset === 'custom' ? ' open' : '';
+
   const periodHtml =
-    '<div class="filter-period">'+
-      '<span class="filter-period-label">Período</span>'+
-      '<input type="date" class="filter-date" value="'+(personalFilter.periodStart||'')+'" onchange="setPFPeriod(\'start\', this.value)">'+
-      '<span class="filter-period-label">até</span>'+
-      '<input type="date" class="filter-date" value="'+(personalFilter.periodEnd||'')+'" onchange="setPFPeriod(\'end\', this.value)">'+
+    '<div class="filter-dd">'+
+      '<button class="filter-dd-btn'+(hasPeriod?' has-value':'')+'" onclick="toggleDD(\''+periodId+'\')">'+periodLabel+' ▾</button>'+
+      '<div class="filter-dd-list" id="'+periodId+'" style="min-width:260px;max-height:none;overflow:visible">'+
+        '<div class="filter-dd-item'+(personalFilter.periodPreset==='today'?' sel':'')+'" onclick="setPFPeriodPreset(\'today\')">Hoje</div>'+
+        '<div class="filter-dd-item'+(personalFilter.periodPreset==='yesterday'?' sel':'')+'" onclick="setPFPeriodPreset(\'yesterday\')">Ontem</div>'+
+        '<div class="filter-dd-item'+(personalFilter.periodPreset==='week'?' sel':'')+'" onclick="setPFPeriodPreset(\'week\')">Esta semana</div>'+
+        '<div class="filter-dd-item'+(personalFilter.periodPreset==='custom'?' sel':'')+'" onclick="setPFPeriodPreset(\'custom\')">Período</div>'+
+        '<div class="filter-period-custom'+customOpen+'">'+
+          '<div class="filter-period-grid">'+
+            '<div><div class="filter-period-label">De</div><input type="date" class="filter-date" value="'+(personalFilter.periodStart||'')+'" onchange="setPFPeriod(\'start\', this.value)"></div>'+
+            '<div><div class="filter-period-label">Até</div><input type="date" class="filter-date" value="'+(personalFilter.periodEnd||'')+'" onchange="setPFPeriod(\'end\', this.value)"></div>'+
+          '</div>'+
+        '</div>'+
+        (hasPeriod?'<div class="filter-dd-clear" onclick="clearPF(\'period\')">Limpar</div>':'')+
+      '</div>'+
     '</div>';
 
   bar.innerHTML =
@@ -4631,6 +4836,54 @@ function renderPersonalFilters() {
       '<button class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>':'');
 }
 
+
+function fmtDateISO(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function getPersonalPeriodLabel(){
+  if (personalFilter.periodPreset === 'today') return 'Hoje';
+  if (personalFilter.periodPreset === 'yesterday') return 'Ontem';
+  if (personalFilter.periodPreset === 'week') return 'Esta semana';
+  if (personalFilter.periodPreset === 'custom') return 'Período';
+  return 'Período';
+}
+function setPFPeriodPreset(preset){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let start = '', end = '';
+
+  if (preset === 'today'){
+    start = fmtDateISO(today);
+    end = fmtDateISO(today);
+  } else if (preset === 'yesterday'){
+    const y = new Date(today);
+    y.setDate(y.getDate()-1);
+    start = fmtDateISO(y);
+    end = fmtDateISO(y);
+  } else if (preset === 'week'){
+    const startWeek = new Date(today);
+    const day = startWeek.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    startWeek.setDate(startWeek.getDate() + diff);
+    const endWeek = new Date(startWeek);
+    endWeek.setDate(endWeek.getDate() + 6);
+    start = fmtDateISO(startWeek);
+    end = fmtDateISO(endWeek);
+  } else if (preset === 'custom'){
+    personalFilter.periodPreset = 'custom';
+    renderPersonalFilters(); renderPersonal();
+    setTimeout(function(){ document.getElementById('dd-period')?.classList.add('open'); }, 0);
+    return;
+  }
+
+  personalFilter.periodPreset = preset || '';
+  personalFilter.periodStart = start;
+  personalFilter.periodEnd = end;
+  renderPersonalFilters(); renderPersonal();
+}
 function toggleDD(id) {
   document.querySelectorAll('.filter-dd-list').forEach(el=>{ if(el.id!==id) el.classList.remove('open'); });
   document.getElementById(id)?.classList.toggle('open');
@@ -4651,18 +4904,24 @@ function togglePF(key, val) {
 }
 
 function setPFPeriod(edge, value) {
+  personalFilter.periodPreset = 'custom';
   if (edge==='start') personalFilter.periodStart = value || '';
   if (edge==='end') personalFilter.periodEnd = value || '';
   renderPersonalFilters(); renderPersonal();
+  setTimeout(function(){ document.getElementById('dd-period')?.classList.add('open'); }, 0);
 }
 
 function clearPF(key) {
-  if (key==='period') { personalFilter.periodStart=''; personalFilter.periodEnd=''; } else personalFilter[key]=[];
+  if (key==='period') {
+    personalFilter.periodStart='';
+    personalFilter.periodEnd='';
+    personalFilter.periodPreset='';
+  } else personalFilter[key]=[];
   renderPersonalFilters(); renderPersonal();
 }
 
 function clearAllPF() {
-  personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:''};
+  personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:'',periodPreset:''};
   renderPersonalFilters(); renderPersonal();
 }
 
