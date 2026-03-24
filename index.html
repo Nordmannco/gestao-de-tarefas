@@ -3755,18 +3755,33 @@ function renderTplCampanhasDetail(c,d){
       metas[k]?'<div class="td-meta-box"><div class="td-meta-val">'+esc(metas[k])+'</div><div class="td-meta-lbl">'+l+'</div></div>':''
     ).join('')+'</div>' : '';
 
-  const membrosFixos = ['Eric','Giovana','Bia','Tiago'];
   const checklistsMembro = d.checklistsMembro||{};
-  const clMembrosHtml = membrosFixos.map(nome=>{
+  const membrosChecklist = Array.from(new Set([
+    ...(c.participants||[]).map(function(pid){
+      const m = getMember(pid);
+      return m ? m.name : null;
+    }).filter(Boolean),
+    ...Object.keys(checklistsMembro||{})
+  ]));
+
+  const clMembrosHtml = membrosChecklist.map(function(nome){
     const itens = checklistsMembro[nome]||[];
     if(!itens.length) return '';
+    const membro = MEMBERS.find(function(m){ return m.name===nome; });
+    const head = membro
+      ? '<div style="display:flex;align-items:center;gap:6px">'+avatarHtml(membro,18)+'<span>'+nome+'</span></div>'
+      : nome;
+
     return '<div style="margin-bottom:14px">'+
-      '<div style="font-size:11px;font-weight:600;color:var(--text-primary);padding:4px 8px;background:var(--bg-card);border-radius:6px;margin-bottom:6px">'+nome+'</div>'+
-      itens.map((it,i)=>
-        '<div class="td-cl-item" onclick="tplDetailClToggle(\''+c.id+'\',\'checklistsMembro.'+nome+'\','+i+')">'+
+      '<div style="font-size:11px;font-weight:600;color:var(--text-primary);padding:4px 8px;background:var(--bg-card);border-radius:6px;margin-bottom:6px">'+head+'</div>'+
+      (d.notasMembro && d.notasMembro[nome] ? 
+        '<div style="margin:2px 0 10px 0;padding:8px 10px;font-size:12px;color:var(--text-primary);line-height:1.65;white-space:pre-wrap;border:1px solid var(--border);border-radius:8px;background:var(--bg-card)">'+esc(d.notasMembro[nome])+'</div>'
+      : '')+
+      itens.map(function(it,i){
+        return '<div class="td-cl-item" onclick="tplDetailClToggle(\''+c.id+'\',\'checklistsMembro.'+nome+'\','+i+')">'+
         '<div class="td-cl-cb'+(it.done?' checked':'')+'">'+(it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
-        '</div><span class="td-cl-text'+(it.done?' done':'')+'">'+esc(it.texto)+'</span></div>'
-      ).join('')+
+        '</div><span class="td-cl-text'+(it.done?' done':'')+'">'+esc(it.texto)+(it.canal?' <span style="font-size:10px;color:var(--text-muted)">· '+esc(it.canal)+'</span>':'')+'</span></div>';
+      }).join('')+
     '</div>';
   }).join('');
 
