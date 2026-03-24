@@ -3322,8 +3322,10 @@ function openCampaignDetail(id) {
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">ENTREGA</div><div style="font-size:13px">'+formatDate(c.endDate)+(c.endTime?'<span style="font-size:11px;color:var(--text-muted);margin-left:5px">'+c.endTime+'</span>':'')+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">RESPONSÁVEL</div><div style="display:flex;align-items:center;gap:5px;font-size:13px">'+avatarHtml(owner,18)+(owner?owner.name:'—')+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">PARTICIPANTES</div><div style="display:flex;gap:3px">'+participants+'</div></div>'+
+        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">PRIORIDADE</div><div style="font-size:13px">'+esc(c.urgency || 'Normal')+'</div></div>'+
+        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">CANAIS</div><div style="font-size:13px;line-height:1.5">'+(((c.canais||[]).length ? esc((c.canais||[]).join(', ')) : '—'))+'</div></div>'+
       '</div>'+
-      (c.driveLink?'<a href="'+c.driveLink+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--c-campanha);text-decoration:none;padding:5px 10px;border:0.5px solid var(--c-campanha);border-radius:var(--radius);background:var(--c-campanha-bg);margin-bottom:12px">🔗 Pasta no Drive</a>':'')+
+      (c.driveLink?'<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">PASTA DO DRIVE</div><a href="'+c.driveLink+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--c-campanha);text-decoration:none;padding:5px 10px;border:0.5px solid var(--c-campanha);border-radius:var(--radius);background:var(--c-campanha-bg)">🔗 Abrir pasta</a></div>':'')+
       (c.parentCampaignId ? (function(){const p=getCampaign(c.parentCampaignId);return p?'<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span>📎 Parte de:</span><button onclick="openCampaignDetail(\''+p.id+'\')" style="font-size:11px;color:var(--c-campanha);background:var(--c-campanha-bg);border:0.5px solid var(--c-campanha);border-radius:4px;padding:2px 8px;cursor:pointer">'+p.name+'</button></div>':''})() : '')+
       '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px"><span>Progresso</span><span>'+prog.done+'/'+prog.total+' — '+prog.pct+'%</span></div>'+
         '<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:'+prog.pct+'%;background:'+progColor+'"></div></div></div>'+
@@ -3811,8 +3813,10 @@ function renderTplPublicacoesDetail(c,d){
   '</div>'+
   '<div class="td-section">'+
     '<div class="td-section-title">🎨 Criativo <span style="font-size:10px;background:var(--bg-card);padding:2px 7px;border-radius:10px;margin-left:6px">'+
-      (tipo==='carrossel'?'Carrossel':'Banner único')+'</span></div>'+
+      (tipo==='carrossel'?'Carrossel':(tipo==='video'?'Vídeo':'Banner único'))+'</span></div>'+
+    tdField('Informações do design',esc(d.gioInfo))+
     slidesHtml+
+    (tipo==='video' ? tdField('Roteiro',esc(d.videoRoteiro)) : '')+
   '</div>';
 }
 
