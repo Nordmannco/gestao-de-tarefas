@@ -3314,9 +3314,14 @@ function openCampaignDetail(id) {
 
   document.getElementById('panel-body').innerHTML =
     '<div style="margin-bottom:14px">'+
-      '<select class="status-select" onchange="c_updateStatus(\''+id+'\',this.value)">'+
-        STATUSES.map(s=>'<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>').join('')+
-      '</select>'+
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">'+
+        '<select class="status-select" style="margin-bottom:0;flex:1" onchange="c_updateStatus(\''+id+'\',this.value)">'+
+          STATUSES.map(s=>'<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>').join('')+
+        '</select>'+
+        (c.status==='Em andamento'
+          ? '<button type="button" onclick="openEditCampaignPanel(\''+id+'\')" style="height:32px;padding:0 12px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg-card);font-size:12px;color:var(--text-primary);cursor:pointer;white-space:nowrap">Editar</button>'
+          : '')+
+      '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">INÍCIO</div><div style="font-size:13px">'+formatDate(c.startDate)+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">ENTREGA</div><div style="font-size:13px">'+formatDate(c.endDate)+(c.endTime?'<span style="font-size:11px;color:var(--text-muted);margin-left:5px">'+c.endTime+'</span>':'')+'</div></div>'+
@@ -3898,13 +3903,21 @@ function tplDetailClToggle(campId, path, idx) {
   for (let i=0;i<parts.length-1;i++) { if(!obj[parts[i]])obj[parts[i]]={};obj=obj[parts[i]]; }
   const arr = obj[parts[parts.length-1]];
   if (arr&&arr[idx]) arr[idx].done=!arr[idx].done;
-  saveData(); openCampaignDetail(campId);
+  saveData();
+  renderKanban();
+  renderPersonal();
+  if (currentView==='overview') renderOverview();
+  openCampaignDetail(campId);
 }
 function tplDetailStepToggle(campId, membId, idx) {
   const c = getCampaign(campId); if(!c||!c.templateData) return;
   const passos = c.templateData.blocosMembros?.[membId]?.passos;
   if(passos&&passos[idx]) passos[idx].done=!passos[idx].done;
-  saveData(); openCampaignDetail(campId);
+  saveData();
+  renderKanban();
+  renderPersonal();
+  if (currentView==='overview') renderOverview();
+  openCampaignDetail(campId);
 }
 
 /* PANEL OPEN/CLOSE */
