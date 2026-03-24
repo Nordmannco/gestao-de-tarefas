@@ -135,6 +135,32 @@ input,textarea,select{font-family:inherit}
 .tpl-add-idea-actions .form-input{flex:1}
 .tpl-add-idea-actions .btn-add-sub{height:34px}
 .tpl-empty-note{font-size:12px;color:var(--text-muted);padding:4px 0 2px}
+.crono-day-box{background:transparent;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.crono-day-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.crono-day-title-row{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.crono-day-date{width:132px;height:32px;border:0.5px solid var(--border);background:var(--bg-card);padding:0 10px;font-size:12px;color:var(--text-primary);outline:none;font-family:var(--font)}
+.crono-day-title{flex:1;height:32px;border:none;background:transparent;padding:0;font-size:18px;font-weight:700;color:var(--text-primary);outline:none;font-family:var(--font);text-transform:uppercase}
+.crono-line-item{background:rgba(15,23,42,.04);border:none;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.crono-line-grid{display:grid;grid-template-columns:72px 122px minmax(0,1fr) auto;gap:8px;align-items:start}
+.crono-input,.crono-select,.crono-text{border:0.5px solid var(--border);background:var(--bg-card);font-family:var(--font);color:var(--text-primary);outline:none}
+.crono-input,.crono-select{height:30px;padding:0 8px;font-size:11px}
+.crono-text{min-height:42px;padding:8px 10px;font-size:12px;resize:vertical;line-height:1.5}
+.crono-item-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px}
+.crono-add-row{display:grid;grid-template-columns:72px 122px minmax(0,1fr) auto;gap:8px;align-items:start;margin-top:8px}
+.crono-add-row .crono-text{background:var(--bg-card);min-height:42px}
+.crono-add-row .btn-add-sub{height:30px;padding:0 10px;font-size:11px}
+.crono-mini-label{font-size:10px;color:var(--text-muted);margin-bottom:4px;font-weight:500}
+.crono-inline-title{font-size:18px;font-weight:700;color:var(--text-primary);line-height:1.2;text-transform:uppercase}
+@media (max-width: 860px){
+  .crono-line-grid,.crono-add-row{grid-template-columns:1fr}
+  .crono-day-title-row{flex-direction:column;align-items:stretch}
+  .crono-day-date{width:100%}
+}
+@media (max-width: 860px){
+  .crono-line-grid,.crono-add-row{grid-template-columns:1fr}
+  .crono-day-date{width:100%}
+}
+
 
 .tpl-step-box{background:var(--bg-surface);border:0.5px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px;position:relative}
 .tpl-step-num{font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:6px}
@@ -669,20 +695,19 @@ body.modal-open #btn-new-campaign{display:none !important}
 .admin-badge-active{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--c-conteudo-bg,rgba(16,185,129,.08));color:var(--c-conteudo);font-weight:500}
 .btn-revoke{height:28px;padding:0 12px;background:transparent;color:var(--u-urgente);border:0.5px solid var(--u-urgente);border-radius:6px;font-size:11px}
 .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.settings-card{background:var(--bg-card);border:0.5px solid var(--border);padding:14px}
-.settings-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.settings-title{font-size:13px;font-weight:600;color:var(--text-primary)}
-.settings-sub{font-size:11px;color:var(--text-muted);margin-top:3px}
-.settings-add-row{display:flex;gap:8px;margin-bottom:10px}
+.settings-card{background:var(--bg-card);border:0.5px solid var(--border);padding:14px;border-radius:10px}
+.settings-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+.settings-sub{font-size:11px;color:var(--text-muted);margin-bottom:12px}
+.settings-add-row{display:flex;gap:8px;margin-bottom:12px}
 .settings-list{display:flex;flex-direction:column;gap:8px}
-.settings-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-surface);border:0.5px solid var(--border)}
-.settings-item-name{flex:1;min-width:0;font-size:12px;color:var(--text-primary)}
-.settings-item-name input{width:100%;height:30px;border:0.5px solid var(--border);background:var(--bg-card);padding:0 8px;font-size:12px;color:var(--text-primary);outline:none;font-family:var(--font)}
-.settings-empty{font-size:12px;color:var(--text-muted);padding:8px 0}
-.settings-btn{height:28px;padding:0 10px;border:0.5px solid var(--border);background:var(--bg-card);font-size:11px;color:var(--text-secondary);cursor:pointer;font-family:var(--font)}
+.settings-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-surface);border:0.5px solid var(--border);border-radius:8px}
+.settings-item-name{flex:1;font-size:12px;color:var(--text-primary)}
+.settings-item-name input{width:100%;height:30px;border:0.5px solid var(--border);background:var(--bg-card);padding:0 8px;font-size:12px;font-family:var(--font);outline:none}
+.settings-btn{height:28px;padding:0 10px;border:0.5px solid var(--border);background:var(--bg-card);font-size:11px;color:var(--text-secondary);cursor:pointer;border-radius:6px}
+.settings-btn.primary{background:var(--c-campanha);color:#fff;border-color:var(--c-campanha)}
 .settings-btn.danger{color:var(--u-urgente);border-color:rgba(239,68,68,.25);background:transparent}
-.settings-btn.primary{color:var(--c-campanha);border-color:rgba(124,106,247,.25);background:var(--c-campanha-bg)}
-@media (max-width: 980px){.settings-grid{grid-template-columns:1fr}}
+.settings-empty{font-size:12px;color:var(--text-muted);padding:8px 0}
+@media (max-width:900px){.settings-grid{grid-template-columns:1fr}}
 
 
 /* --- TOAST --- */
@@ -995,6 +1020,80 @@ body.modal-open #btn-new-campaign{display:none !important}
 }
 </style>
 
+
+<style id="crono-final-override">
+.crono-day-box{
+  background: rgba(15,23,42,.03) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 16px 18px !important;
+  margin: 0 0 10px !important;
+  position: relative !important;
+}
+.crono-day-remove{
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  opacity: .45 !important;
+  border-radius: 0 !important;
+}
+.crono-line-list{
+  background: transparent !important;
+  padding: 0 !important;
+  min-height: auto !important;
+}
+.crono-line-edit{
+  background: transparent !important;
+  padding: 6px 0 8px !important;
+}
+.crono-input,.crono-select,.crono-text,
+.crono-day-date,.btn-add-sub{
+  border-radius: 0 !important;
+}
+.crono-add-toggle{
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: 6px 0 22px !important;
+}
+.crono-add-row{
+  margin: 8px 0 22px !important;
+}
+.crono-add-toggle .btn-add-sub,
+.crono-add-row .btn-add-sub{
+  background: var(--c-campanha) !important;
+  color: #fff !important;
+  border: none !important;
+}
+</style>
+
+
+<style id="crono-polish-final">
+#cronograma-backdrop .btn-add-sub{
+  background: var(--c-campanha) !important;
+  color: #fff !important;
+  border: none !important;
+}
+#cronograma-backdrop [id="crono-preview"]{
+  display:none !important;
+}
+#cronograma-backdrop [id="crono-preview"] + *{
+  display:none !important;
+}
+#cronograma-backdrop .crono-main-wide{
+  width:100% !important;
+}
+.crono-row-display{
+  font-size:15px !important;
+  line-height:1.65 !important;
+  padding-bottom:8px !important;
+}
+.crono-row-time{
+  color: var(--c-campanha) !important;
+  font-weight: 600 !important;
+  margin-right: 8px !important;
+}
+</style>
+
 </head>
 <body>
 
@@ -1223,7 +1322,7 @@ body.modal-open #btn-new-campaign{display:none !important}
         <div style="display:flex;gap:8px;margin-bottom:24px;border-bottom:0.5px solid var(--border);padding-bottom:0">
           <button onclick="adminTab('members')" id="atab-members" class="admin-tab active">👥 Membros</button>
           <button onclick="adminTab('templates')" id="atab-templates" class="admin-tab">📋 Templates</button>
-          <button onclick="adminTab('settings')" id="atab-settings" class="admin-tab">⚙️ Configurações</button>
+          <button onclick="adminTab('settings')" id="atab-settings" class="admin-tab">🏷️ Tags</button>
         </div>
         <div id="admin-tab-members">
           <div class="task-section-title">Membros ativos</div>
@@ -1233,7 +1332,7 @@ body.modal-open #btn-new-campaign{display:none !important}
           <div id="admin-templates-list"></div>
         </div>
         <div id="admin-tab-settings" style="display:none">
-          <div id="admin-settings-content"></div>
+          <div id="admin-settings-list"></div>
         </div>
       </div>
     </div>
@@ -1261,26 +1360,21 @@ body.modal-open #btn-new-campaign{display:none !important}
 </div>
 
 <div id="cronograma-backdrop" onclick="if(event.target===this)closeCronogramaModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
-  <div style="background:var(--bg-card);border-radius:12px;width:min(740px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div style="background:var(--bg-card);border-radius:12px;width:min(860px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border)">
       <span style="font-size:14px;font-weight:600">📋 Cronograma da campanha</span>
       <button onclick="closeCronogramaModal()" style="width:28px;height:28px;border:none;background:var(--bg-surface);border-radius:6px;cursor:pointer;font-size:16px;color:var(--text-muted)">×</button>
     </div>
     <div style="padding:14px 20px;flex:1;overflow-y:auto;display:flex;gap:16px">
-      <!-- Left: editor -->
-      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:11px;color:var(--text-muted);line-height:1.5">
-          Use o formato abaixo para criar tarefas automaticamente ao salvar:<br>
-          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px;border-radius:4px">17.03.2026 - Início da divulgação</code><br>
-          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px;border-radius:4px">* 10:00 - Email mkt: Se prepare</code><br>
-          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px;border-radius:4px">* 10:00 - Grupo whats: Vem aí</code>
+      <div class="crono-main-wide" style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--text-muted)">Crie os blocos por data e adicione os conteúdos logo abaixo.</div>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn-add-sub" onclick="openCronogramaPasteModal()">Colar</button>
+            <button type="button" class="btn-add-sub" onclick="cronoAddDay()">+ Novo dia</button>
+          </div>
         </div>
-        <textarea id="cronograma-textarea" style="flex:1;width:100%;min-height:280px;border:0.5px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-family:var(--font-mono);line-height:1.8;resize:none;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="17.03.2026 - Início da divulgação&#10;* 10:00 - Email mkt: Se prepare&#10;* 10:00 - Grupo whats: Vem aí&#10;&#10;18.03.2026 - Lançamento oficial&#10;* 09:00 - Post feed: Começou!&#10;* 19:00 - Email: Últimas horas"></textarea>
-      </div>
-      <!-- Right: preview of tasks to be created -->
-      <div style="width:220px;flex-shrink:0">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Tarefas que serão criadas</div>
-        <div id="crono-preview" style="font-size:11px;color:var(--text-secondary);line-height:1.7;max-height:320px;overflow-y:auto"></div>
+        <div id="cronograma-editor-root"></div>
       </div>
     </div>
     <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -1291,7 +1385,40 @@ body.modal-open #btn-new-campaign{display:none !important}
       </div>
     </div>
   </div>
+</div></div>
+
+
+<div id="cronograma-paste-backdrop" onclick="if(event.target===this)closeCronogramaPasteModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2100;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:12px;width:min(760px,94vw);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border)">
+      <span style="font-size:14px;font-weight:600">📋 Colar cronograma em massa</span>
+      <button onclick="closeCronogramaPasteModal()" style="width:28px;height:28px;border:none;background:var(--bg-surface);cursor:pointer;font-size:16px;color:var(--text-muted)">×</button>
+    </div>
+    <div style="padding:14px 20px;flex:1;overflow-y:auto;display:flex;gap:16px">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.5">
+          Cole no formato abaixo para criar os blocos automaticamente.<br>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">17.03.2026 - Início da divulgação</code><br>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">* 10:00 - Stories IG: abertura</code><br>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">* 19:00 - E-mail: últimas horas</code>
+        </div>
+        <textarea id="cronograma-paste-textarea" style="flex:1;width:100%;min-height:300px;border:0.5px solid var(--border);padding:12px;font-size:13px;font-family:var(--font-mono);line-height:1.7;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="17.03.2026 - Início da divulgação&#10;* 10:00 - Stories IG: abertura&#10;* 19:00 - E-mail: últimas horas"></textarea>
+      </div>
+      <div style="width:220px;flex-shrink:0">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Prévia</div>
+        <div id="cronograma-paste-preview" style="font-size:11px;color:var(--text-secondary);line-height:1.7;max-height:340px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="font-size:11px;color:var(--text-muted)" id="cronograma-paste-count"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeCronogramaPasteModal()" style="height:34px;padding:0 16px;border:0.5px solid var(--border);background:transparent;font-size:13px;cursor:pointer;color:var(--text-secondary)">Cancelar</button>
+        <button onclick="applyCronogramaPasteModal()" style="height:34px;padding:0 16px;border:none;background:var(--c-campanha);color:#fff;font-size:13px;cursor:pointer;font-weight:500">Aplicar</button>
+      </div>
+    </div>
+  </div>
 </div>
+
 
 <!-- OVERLAY + SLIDE PANEL -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
@@ -1340,7 +1467,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 /* CONSTANTS & STATE */
 const TYPES    = ['Campanha','Conteúdo','Demanda interna','Reuniões / Planejamento','TAREFA PESSOAL'];
 const STATUSES = ['Em planejamento','Em andamento','Bloqueado','Aguardando aprovação','Concluído'];
-const DEFAULT_CANAIS = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
+const DEFAULT_CANAIS   = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
 const DEFAULT_CATEGORIAS = ['Administrativo','Conteúdo','Financeiro','Operacional','Ideia','Estudo'];
 let CANAIS = [...DEFAULT_CANAIS];
 let CATEGORIAS = [...DEFAULT_CATEGORIAS];
@@ -1395,15 +1522,30 @@ function getSettingsStore(){
 function saveSettingsStore(store){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(store || {}));
 }
-function loadAdminSettings(){
+function loadTagSettings(){
   const s = getSettingsStore();
   CANAIS = Array.isArray(s.canais) && s.canais.length ? [...s.canais] : [...DEFAULT_CANAIS];
   CATEGORIAS = Array.isArray(s.categorias) && s.categorias.length ? [...s.categorias] : [...DEFAULT_CATEGORIAS];
 }
-function persistAdminSettings(){
-  saveSettingsStore({ canais:[...CANAIS], categorias:[...CATEGORIAS] });
+function persistTagSettings(){
+  const payload = { canais:[...CANAIS], categorias:[...CATEGORIAS] };
+  saveSettingsStore(payload);
+  if (_db) {
+    try {
+      _db.from('nordmann_data').upsert(
+        {key:'settings_tags', payload:JSON.stringify(payload), updated_at:new Date().toISOString()},
+        {onConflict:'key'}
+      );
+    } catch(e) {}
+  }
 }
-
+function refreshTagDependentUI(){
+  try { renderKanbanFilters?.(); } catch(e){}
+  try { if (currentView==='calendar') renderCalendar?.(); } catch(e){}
+  try { renderPersonalFilters?.(); } catch(e){}
+  try { if (document.getElementById('overlay')?.classList.contains('active') || document.getElementById('slide-panel')?.classList.contains('open')) renderCampaignForm?.(editingCampId ? getCampaign(editingCampId) : null); } catch(e){}
+  try { if (currentTemplate==='campanhas' || document.getElementById('cronograma-backdrop')?.style.display==='flex') renderCronogramaEditor?.(); } catch(e){}
+}
 window.currentUser = null;
 
 /* SUPABASE DATA SYNC (dados apenas, sem auth) */
@@ -1412,10 +1554,59 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 let _db = null;
 
 async function refreshAllFromCloud() {
+  loadTagSettings();
   await loadMembers();
   await loadData();
 }
 
+
+
+
+
+
+function bindNotesTabBehavior(){
+  const editor = document.getElementById('personal-notes-editor');
+  if (!editor || editor.dataset.tabBound === '1') return;
+  editor.dataset.tabBound = '1';
+
+  editor.addEventListener('keydown', function(e){
+    if (e.key !== 'Tab') return;
+
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const anchorNode = sel.anchorNode;
+    if (!anchorNode || !editor.contains(anchorNode)) return;
+
+    e.preventDefault();
+
+    // Se estiver dentro de uma lista, TAB vira sublista (mais natural)
+    let node = anchorNode.nodeType === 3 ? anchorNode.parentNode : anchorNode;
+    let li = null;
+    while (node && node !== editor) {
+      if (node.nodeName === 'LI') { li = node; break; }
+      node = node.parentNode;
+    }
+
+    if (li) {
+      try {
+        document.execCommand(e.shiftKey ? 'outdent' : 'indent', false, null);
+      } catch(err) {}
+      savePersonalNotes();
+      return;
+    }
+
+    // Fora de lista: recuo simples no texto
+    const range = sel.getRangeAt(0);
+    const spacer = document.createTextNode('\u00A0\u00A0\u00A0\u00A0');
+    range.deleteContents();
+    range.insertNode(spacer);
+    range.setStartAfter(spacer);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    savePersonalNotes();
+  });
+}
 
 function updateNotesToolbarState(){
   const boldBtn = document.getElementById('notes-btn-bold');
@@ -1447,6 +1638,7 @@ function loadPersonalNotes(){
   if (!editor) return;
   const store = getPersonalNotesStore();
   editor.innerHTML = store[currentMember] || '';
+  bindNotesTabBehavior();
   updateNotesToolbarState();
 }
 function savePersonalNotes(){
@@ -1502,106 +1694,234 @@ function saveResumoModal() {
 
 
 
-function parseCronograma(text) {
-  // Parse structured cronograma into task list
-  // Format:
-  //   DD.MM.YYYY - Título do dia (or just a title line)
-  //   * HH:MM - Tipo: Descrição
-  const lines = text.split('\n');
+
+function normalizeCronoDate(value){
+  if (!value) return '';
+  const m = String(value).match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+  if (m) return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return value;
+}
+function formatCronoDateBr(value){
+  if (!value) return '';
+  const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return value;
+  return m[3]+'.'+m[2]+'.'+m[1];
+}
+function ensureCronogramaBlocks(){
+  if (Array.isArray(tplData.cronogramaBlocos)) return;
+  tplData.cronogramaBlocos = [];
+}
+function buildCronogramaTasksFromBlocks(blocks){
   const tasks = [];
-  let currentDate = '';
-  let currentTitle = '';
+  (blocks||[]).forEach(function(day){
+    const date = normalizeCronoDate(day.date || '');
+    const dayTitle = (day.title || '').trim();
+    (day.items||[]).forEach(function(item){
+      const texto = (item.text || '').trim();
+      if (!texto) return;
 
-  lines.forEach(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
+      let canal = (item.canal || 'Geral').trim() || 'Geral';
+      let type = 'Conteúdo';
+      if (canal === 'E-mail') type = 'Campanha';
+      else if (['Meta Ads','Google Ads'].includes(canal)) type = 'Campanha';
+      else if (['Site','Geral','SMS'].includes(canal)) type = 'Demanda interna';
 
-    // Date line: DD.MM.YYYY - Título or just Título
-    const dateMatch = trimmed.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{4})\s*[-–]\s*(.+)$/);
-    if (dateMatch) {
-      currentDate = dateMatch[3]+'-'+dateMatch[2].padStart(2,'0')+'-'+dateMatch[1].padStart(2,'0');
-      currentTitle = dateMatch[4].trim();
-      return;
-    }
-
-    // Task line: * HH:MM - Tipo: Descrição
-    const taskMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*(.+)$/);
-    if (taskMatch) {
-      const time = taskMatch[1];
-      const rest = taskMatch[2].trim();
-
-      // Detect type from prefix
-      const restLower = rest.toLowerCase();
-      let type = 'Conteúdo'; // default
-      let canal = 'Geral';
-      let name = rest;
-
-      if (restLower.startsWith('email mkt:') || restLower.startsWith('e-mail mkt:') || restLower.startsWith('email:') || restLower.startsWith('e-mail:')) {
-        type = 'Campanha'; canal = 'E-mail';
-        name = rest.replace(/^e?-?mail\s*m?k?t?\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('post feed:') || restLower.startsWith('feed:')) {
-        type = 'Conteúdo'; canal = 'Feed Instagram';
-        name = rest.replace(/^(post\s*)?feed\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('stories:') || restLower.startsWith('story:')) {
-        type = 'Conteúdo'; canal = 'Stories IG';
-        name = rest.replace(/^stor(ies|y)\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('reels:') || restLower.startsWith('reel:')) {
-        type = 'Conteúdo'; canal = 'Instagram Reels';
-        name = rest.replace(/^reels?\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('tiktok:')) {
-        type = 'Conteúdo'; canal = 'TikTok';
-        name = rest.replace(/^tiktok\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('whatsapp vip:') || restLower.startsWith('vip:')) {
-        type = 'Conteúdo'; canal = 'WhatsApp VIP';
-        name = rest.replace(/^(whatsapp\s*)?vip\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('grupo whats:') || restLower.startsWith('grupo:') || restLower.startsWith('whatsapp:')) {
-        type = 'Conteúdo'; canal = 'Grupo WhatsApp';
-        name = rest.replace(/^(grupo\s*whats(app)?\s*|grupo\s*|whatsapp\s*):\s*/i, '').trim();
-      } else if (restLower.startsWith('meta ads:') || restLower.startsWith('anuncio:') || restLower.startsWith('anúncio:')) {
-        type = 'Campanha'; canal = 'Meta Ads';
-        name = rest.replace(/^(meta\s*ads|an[uú]ncios?)\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('site:')) {
-        type = 'Tarefa'; canal = 'Site';
-        name = rest.replace(/^site\s*:\s*/i, '').trim();
-      } else if (restLower.startsWith('demanda:') || restLower.startsWith('tarefa:')) {
-        type = 'Tarefa'; canal = 'Geral';
-        name = rest.replace(/^(demanda|tarefa)\s*:\s*/i, '').trim();
-      } else {
-        // Try to extract colon-separated type
-        const colonMatch = rest.match(/^([^:]{3,20}):\s*(.+)$/);
-        if (colonMatch) { name = colonMatch[2].trim(); }
-      }
-
-      // Determine templateType from canal
-      let templateType = null;
-      const canalLower = canal.toLowerCase();
-      if (canalLower === 'e-mail' || canalLower === 'email') {
-        templateType = 'email';
-      } else if (['feed instagram','stories ig','instagram reels','tiktok','youtube','pinterest',
-                  'whatsapp vip','whatsapp lista','grupo whatsapp'].includes(canalLower)) {
-        templateType = 'publicacoes';
-      } else {
-        templateType = 'demanda';
-      }
+      let templateType = 'demanda';
+      if (canal === 'E-mail') templateType = 'email';
+      else if (['Feed Instagram','Stories IG','Instagram Reels','TikTok','YouTube','Pinterest','WhatsApp VIP','WhatsApp lista','Grupo WhatsApp'].includes(canal)) templateType = 'publicacoes';
 
       tasks.push({
-        name: name || rest,
+        name: texto,
         type: type,
         canal: canal,
         templateType: templateType,
-        date: currentDate,
-        time: time,
-        dayTitle: currentTitle,
+        date: date,
+        time: item.time || '',
+        dayTitle: dayTitle
       });
-    }
+    });
   });
-
   return tasks;
 }
+function cronogramaBlocksToText(blocks){
+  const parts = [];
+  (blocks||[]).forEach(function(day){
+    const date = formatCronoDateBr(normalizeCronoDate(day.date || ''));
+    const title = (day.title || '').trim();
+    if (date || title) parts.push((date ? (date + ' - ') : '') + title);
+    (day.items||[]).forEach(function(item){
+      const texto = (item.text || '').trim();
+      if (!texto) return;
+      const time = item.time || '';
+      const canal = item.canal || 'Geral';
+      parts.push('* ' + (time || '--:--') + ' - ' + canal + ': ' + texto);
+    });
+    parts.push('');
+  });
+  return parts.join('\n').trim();
+}
 
+function cronoDayTitlePreview(day){
+  const date = day?.date ? formatCronoDateBr(normalizeCronoDate(day.date)) : '';
+  const title = (day?.title || '').trim();
+  return (date ? date : '') + (title ? (date ? ' - ' : '') + title.toUpperCase() : '');
+}
+function cronoOpenDay(dayIdx){
+  ensureCronogramaBlocks();
+  if (!tplData.cronoUi) tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  tplData.cronoUi.openDays[dayIdx] = true;
+  renderCronogramaEditor();
+}
+function cronoCloseDay(dayIdx){
+  ensureCronogramaBlocks();
+  if (!tplData.cronoUi) tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  tplData.cronoUi.openDays[dayIdx] = false;
+  renderCronogramaEditor();
+}
+function cronoOpenAdd(dayIdx){
+  ensureCronogramaBlocks();
+  if (!tplData.cronoUi) tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  tplData.cronoUi.addRows[dayIdx] = true;
+  renderCronogramaEditor();
+}
+function cronoOpenItem(dayIdx, itemIdx){
+  ensureCronogramaBlocks();
+  if (!tplData.cronoUi) tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  tplData.cronoUi.openItems[dayIdx+'-'+itemIdx] = true;
+  renderCronogramaEditor();
+}
+function cronoCloseItem(dayIdx, itemIdx){
+  ensureCronogramaBlocks();
+  if (!tplData.cronoUi) tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  delete tplData.cronoUi.openItems[dayIdx+'-'+itemIdx];
+  renderCronogramaEditor();
+}
+
+
+
+function renderCronogramaEditor(){
+  ensureCronogramaBlocks();
+  const root = document.getElementById('cronograma-editor-root');
+  if (!root) return;
+
+  if (!tplData.cronogramaBlocos.length){
+    root.innerHTML = '<div class="tpl-empty-note" style="padding:12px 0">Adicione um dia para começar o cronograma.</div>';
+    updateCronoPreview();
+    return;
+  }
+
+  root.innerHTML = tplData.cronogramaBlocos.map(function(day, dayIdx){
+    const isDayOpen = !!tplData.cronoUi.openDays[dayIdx];
+    const titlePreview = cronoDayTitlePreview(day);
+
+    const itemsHtml = (day.items||[]).map(function(item, itemIdx){
+      const key = dayIdx+'-'+itemIdx;
+      const isItemOpen = !!tplData.cronoUi.openItems[key];
+
+      if (isItemOpen){
+        return '<div class="crono-line-edit">'+
+          '<div class="crono-line-grid">'+
+            '<input class="crono-input" type="time" value="'+esc(item.time||'')+'" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'time\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}">'+
+            '<select class="crono-select" onchange="cronoUpdateItem('+dayIdx+','+itemIdx+',\'canal\', this.value)">'+
+              CANAIS.map(function(canal){ return '<option value="'+esc(canal)+'"'+((item.canal||'Geral')===canal?' selected':'')+'>'+esc(canal)+'</option>'; }).join('')+
+            '</select>'+
+            '<textarea class="crono-text" placeholder="Escrever conteúdo" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'text\', this.value)" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}">'+esc(item.text||'')+'</textarea>'+
+            '<button class="tpl-remove-btn" type="button" onclick="cronoRemoveItem('+dayIdx+','+itemIdx+')">×</button>'+
+          '</div>'+
+        '</div>';
+      }
+
+      return '<div class="crono-line-summary" onclick="cronoOpenItem('+dayIdx+','+itemIdx+')">'+
+        '<div class="crono-line-left">'+
+          '<div class="crono-row-display"><span class="crono-row-time">'+esc(item.time||'--:--')+'</span>'+esc(item.canal||'Geral')+' · '+esc(item.text||'')+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('') || '<div class="crono-empty">Nenhum conteúdo adicionado ainda.</div>';
+
+    const addOpen = !!tplData.cronoUi.addRows[dayIdx];
+    const addHtml = addOpen
+      ? '<div class="crono-add-row">'+
+          '<input class="crono-input" type="time" id="crono-new-time-'+dayIdx+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoAddItem('+dayIdx+')}">'+
+          '<select class="crono-select" id="crono-new-canal-'+dayIdx+'">'+
+            CANAIS.map(function(canal){ return '<option value="'+esc(canal)+'">'+esc(canal)+'</option>'; }).join('')+
+          '</select>'+
+          '<textarea class="crono-text" id="crono-new-text-'+dayIdx+'" placeholder="Escrever conteúdo" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoAddItem('+dayIdx+')}"></textarea>'+
+          '<button type="button" class="btn-add-sub" onclick="cronoAddItem('+dayIdx+')">Novo</button>'+
+        '</div>'
+      : '<div class="crono-add-toggle"><button type="button" class="btn-add-sub" onclick="cronoOpenAdd('+dayIdx+')">Novo</button></div>';
+
+    const headerHtml = isDayOpen
+      ? '<div class="crono-edit-wrap"><button class="tpl-remove-btn crono-day-remove" type="button" onclick="cronoRemoveDay('+dayIdx+')">×</button><div class="crono-day-head">'+
+          '<div class="crono-day-edit">'+
+            '<input class="crono-day-date" type="date" value="'+esc(normalizeCronoDate(day.date||''))+'" oninput="cronoUpdateDay('+dayIdx+',\'date\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoCloseDay('+dayIdx+')}">'+
+            '<input class="crono-day-title" placeholder="Inicio" value="'+esc(day.title||'')+'" oninput="cronoUpdateDay('+dayIdx+',\'title\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoCloseDay('+dayIdx+')}">'+
+          '</div>'+
+        '</div></div>'
+      : '<div class="crono-day-summary" onclick="cronoOpenDay('+dayIdx+')">'+
+          '<div class="crono-inline-title">'+esc(titlePreview || 'Novo dia')+'</div>'+
+          '<button class="tpl-remove-btn crono-day-remove" type="button" onclick="event.stopPropagation();cronoRemoveDay('+dayIdx+')">×</button>'+
+        '</div>';
+
+    return '<div class="crono-day-box">'+
+      headerHtml+
+      '<div class="crono-line-list">'+itemsHtml+'</div>'+
+    '</div>'+addHtml;
+  }).join('');
+
+  updateCronoPreview();
+}
+
+function cronoAddDay(){
+  ensureCronogramaBlocks();
+  if (!tplData.cronoUi) tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  const idx = tplData.cronogramaBlocos.length;
+  tplData.cronogramaBlocos.push({ id:uid(), date:'', title:'', items:[] });
+  tplData.cronoUi.openDays[idx] = true;
+  tplData.cronoUi.addRows[idx] = true;
+  renderCronogramaEditor();
+}
+function cronoRemoveDay(dayIdx){
+  ensureCronogramaBlocks();
+  tplData.cronogramaBlocos.splice(dayIdx,1);
+  renderCronogramaEditor();
+}
+function cronoUpdateDay(dayIdx, key, value){
+  ensureCronogramaBlocks();
+  if (!tplData.cronogramaBlocos[dayIdx]) return;
+  tplData.cronogramaBlocos[dayIdx][key] = value;
+  updateCronoPreview();
+}
+function cronoAddItem(dayIdx){
+  ensureCronogramaBlocks();
+  if (!tplData.cronoUi) tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  const day = tplData.cronogramaBlocos[dayIdx];
+  if (!day) return;
+  const time = document.getElementById('crono-new-time-'+dayIdx)?.value || '';
+  const canal = document.getElementById('crono-new-canal-'+dayIdx)?.value || 'Geral';
+  const text = (document.getElementById('crono-new-text-'+dayIdx)?.value || '').trim();
+  if (!text) return;
+  day.items = day.items || [];
+  day.items.push({ id:uid(), time:time, canal:canal, text:text });
+  tplData.cronoUi.addRows[dayIdx] = false;
+  renderCronogramaEditor();
+}
+function cronoUpdateItem(dayIdx, itemIdx, key, value){
+  ensureCronogramaBlocks();
+  const item = tplData.cronogramaBlocos?.[dayIdx]?.items?.[itemIdx];
+  if (!item) return;
+  item[key] = value;
+  updateCronoPreview();
+}
+function cronoRemoveItem(dayIdx, itemIdx){
+  ensureCronogramaBlocks();
+  const items = tplData.cronogramaBlocos?.[dayIdx]?.items;
+  if (!items) return;
+  items.splice(itemIdx,1);
+  renderCronogramaEditor();
+}
 function updateCronoPreview() {
-  const text = document.getElementById('cronograma-textarea')?.value || '';
-  const tasks = parseCronograma(text);
+  ensureCronogramaBlocks();
+  const tasks = buildCronogramaTasksFromBlocks(tplData.cronogramaBlocos || []);
   const preview = document.getElementById('crono-preview');
   const count = document.getElementById('crono-count');
   if (!preview) return;
@@ -1613,75 +1933,159 @@ function updateCronoPreview() {
   }
 
   let html = '';
-  let lastDate = '';
-  tasks.forEach(t => {
-    if (t.date !== lastDate) {
-      lastDate = t.date;
-      if (t.dayTitle) {
-        html += '<div style="font-weight:600;font-size:10px;color:var(--text-primary);margin-top:8px;margin-bottom:4px">'+esc(t.dayTitle)+'</div>';
-      }
+  let lastHead = '';
+  tasks.forEach(function(t){
+    const head = (t.date || '') + '|' + (t.dayTitle || '');
+    if (head !== lastHead) {
+      lastHead = head;
+      html += '<div style="font-weight:600;font-size:10px;color:var(--text-primary);margin-top:8px;margin-bottom:4px">'+esc((t.date ? formatDate(t.date)+' — ' : '') + (t.dayTitle || 'Sem título'))+'</div>';
     }
     const typeColor = t.type==='Campanha'?'var(--c-campanha)':t.type==='Conteúdo'?'var(--c-conteudo)':'var(--c-tarefa)';
     html += '<div style="display:flex;gap:6px;align-items:baseline;padding:2px 0">'+
-      '<span style="font-size:9px;font-weight:600;color:'+typeColor+';flex-shrink:0">'+t.time+'</span>'+
-      '<span style="font-size:11px;color:var(--text-secondary)">'+esc(t.name)+'</span>'+
+      '<span style="font-size:9px;font-weight:600;color:'+typeColor+';flex-shrink:0">'+esc(t.time||'--:--')+'</span>'+
+      '<span style="font-size:11px;color:var(--text-secondary)">'+esc((t.canal||'Geral')+' · '+(t.name||''))+'</span>'+
     '</div>';
   });
-
   preview.innerHTML = html;
   if (count) count.textContent = tasks.length + ' tarefa' + (tasks.length>1?'s':'') + ' serão criadas';
 }
 
-function openCronogramaModal() {
-  var backdrop = document.getElementById('cronograma-backdrop');
-  var ta = document.getElementById('cronograma-textarea');
+function parseCronogramaPasteText(raw){
+  const lines = String(raw || '').split('\n');
+  const blocks = [];
+  let current = null;
+
+  lines.forEach(function(line){
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    const dayMatch = trimmed.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})\s*[-–]\s*(.+)$/);
+    if (dayMatch){
+      current = {
+        id: uid(),
+        date: dayMatch[3] + '-' + dayMatch[2].padStart(2,'0') + '-' + dayMatch[1].padStart(2,'0'),
+        title: dayMatch[4].trim(),
+        items: []
+      };
+      blocks.push(current);
+      return;
+    }
+
+    const itemMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*([^:]+):\s*(.+)$/);
+    if (itemMatch){
+      if (!current){
+        current = { id: uid(), date:'', title:'', items: [] };
+        blocks.push(current);
+      }
+      current.items.push({
+        id: uid(),
+        time: itemMatch[1],
+        canal: itemMatch[2].trim(),
+        text: itemMatch[3].trim()
+      });
+      return;
+    }
+  });
+
+  return blocks;
+}
+function updateCronogramaPastePreview(){
+  const raw = document.getElementById('cronograma-paste-textarea')?.value || '';
+  const blocks = parseCronogramaPasteText(raw);
+  const preview = document.getElementById('cronograma-paste-preview');
+  const count = document.getElementById('cronograma-paste-count');
+  if (!preview) return;
+
+  const taskCount = blocks.reduce(function(sum, b){ return sum + (b.items||[]).length; }, 0);
+  if (!blocks.length){
+    preview.innerHTML = '<span style="color:var(--text-muted);font-style:italic">Nenhum bloco detectado</span>';
+    if (count) count.textContent = '';
+    return;
+  }
+
+  let html = '';
+  blocks.forEach(function(day){
+    html += '<div style="font-weight:600;font-size:10px;color:var(--text-primary);margin-top:8px;margin-bottom:4px">'+esc(cronoDayTitlePreview(day) || 'Sem título')+'</div>';
+    (day.items||[]).forEach(function(item){
+      html += '<div style="padding:2px 0"><span style="color:var(--c-campanha);font-weight:600">'+esc(item.time||'--:--')+'</span> ' + esc(item.canal||'Geral') + ' · ' + esc(item.text||'') + '</div>';
+    });
+  });
+  preview.innerHTML = html;
+  if (count) count.textContent = blocks.length + ' bloco' + (blocks.length>1?'s':'') + ' · ' + taskCount + ' item' + (taskCount>1?'s':'');
+}
+function openCronogramaPasteModal(){
+  const backdrop = document.getElementById('cronograma-paste-backdrop');
+  const ta = document.getElementById('cronograma-paste-textarea');
   if (!backdrop || !ta) return;
-  ta.value = tplData.cronograma || '';
+  ta.value = '';
   backdrop.style.display = 'flex';
-  updateCronoPreview();
-  ta.addEventListener('input', updateCronoPreview);
-  setTimeout(function(){ ta.focus(); }, 100);
+  updateCronogramaPastePreview();
+  ta.addEventListener('input', updateCronogramaPastePreview);
+  setTimeout(function(){ ta.focus(); }, 50);
+}
+function closeCronogramaPasteModal(){
+  const backdrop = document.getElementById('cronograma-paste-backdrop');
+  const ta = document.getElementById('cronograma-paste-textarea');
+  if (backdrop) backdrop.style.display = 'none';
+  if (ta) ta.removeEventListener('input', updateCronogramaPastePreview);
+}
+function applyCronogramaPasteModal(){
+  ensureCronogramaBlocks();
+  const raw = document.getElementById('cronograma-paste-textarea')?.value || '';
+  const blocks = parseCronogramaPasteText(raw);
+  if (!blocks.length) return;
+  tplData.cronogramaBlocos = blocks;
+  tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  closeCronogramaPasteModal();
+  renderCronogramaEditor();
 }
 
+function openCronogramaModal() {
+  var backdrop = document.getElementById('cronograma-backdrop');
+  if (!backdrop) return;
+  ensureCronogramaBlocks();
+  tplData.cronoUi = { openDays:{}, openItems:{}, addRows:{} };
+  backdrop.style.display = 'flex';
+  renderCronogramaEditor();
+}
 function closeCronogramaModal() {
   var backdrop = document.getElementById('cronograma-backdrop');
   if (backdrop) backdrop.style.display = 'none';
-  var ta = document.getElementById('cronograma-textarea');
-  if (ta) ta.removeEventListener('input', updateCronoPreview);
 }
-
 function saveCronogramaModal() {
-  var ta = document.getElementById('cronograma-textarea');
-  if (!ta) return;
-  tplData.cronograma = ta.value;
+  ensureCronogramaBlocks();
+  tplData.cronograma = cronogramaBlocksToText(tplData.cronogramaBlocos || '');
+  const tasks = buildCronogramaTasksFromBlocks(tplData.cronogramaBlocos || []);
 
-  // Parse and create child campaigns if we have a parent campaign context
-  const tasks = parseCronograma(ta.value);
-  if (tasks.length > 0 && editingCampId) {
+  if (editingCampId) {
+    // remove children previously generated by cronograma
+    campaigns = campaigns.filter(function(c){
+      return !(c.parentCampaignId === editingCampId && c._cronogramaGenerated);
+    });
+
     const parentCamp = getCampaign(editingCampId);
     if (parentCamp) {
       let created = 0;
-      tasks.forEach(t => {
+      tasks.forEach(function(t){
         const newCamp = {
           id: uid(),
           name: t.name,
           type: t.type,
           status: 'Em planejamento',
           owner: parentCamp.owner,
-          participants: parentCamp.participants && parentCamp.participants.length
-            ? [...parentCamp.participants]
-            : [parentCamp.owner],
+          participants: parentCamp.participants && parentCamp.participants.length ? [...parentCamp.participants] : [parentCamp.owner],
           canais: [t.canal],
           startDate: t.date||'',
           endDate: t.date||'',
           endTime: t.time||'',
           driveLink: '',
-          description: '📋 '+t.dayTitle+(t.time?' — '+t.time:''),
+          description: '📋 '+(t.dayTitle || '')+(t.time?' — '+t.time:''),
           subtasks: [],
           comments: [],
           templateType: t.templateType||null,
           templateData: null,
-          _templateLocked: true, // prevent template picker from showing
+          _templateLocked: true,
+          _cronogramaGenerated: true,
           parentCampaignId: editingCampId,
         };
         campaigns.push(newCamp);
@@ -1694,8 +2098,7 @@ function saveCronogramaModal() {
         showToast(created+' tarefa'+(created>1?'s':'')+' criada'+(created>1?'s':'')+' no Kanban', '#3ecf8e');
       }
     }
-  } else if (tasks.length > 0 && !editingCampId) {
-    // Creating new campaign — tasks will be created when campaign is saved
+  } else {
     tplData.cronogramaTasks = tasks;
   }
 
@@ -2098,146 +2501,124 @@ function adminTab(tab) {
   document.getElementById('atab-templates').classList.toggle('active', tab==='templates');
   document.getElementById('atab-settings').classList.toggle('active', tab==='settings');
   if (tab==='templates') renderTemplatesAdmin();
-  if (tab==='settings') renderAdminSettings();
+  if (tab==='settings') renderTagSettingsAdmin();
 }
 
 
-function countChannelUsage(name){
-  let count = 0;
-  campaigns.forEach(function(c){
-    if ((c.canais||[]).includes(name)) count++;
-    (c.subtasks||[]).forEach(function(s){ if (s.canal === name) count++; });
-    const td = c.templateData || {};
-    ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
-      (td[path]||[]).forEach(function(item){ if (item?.canal === name) count++; });
-    });
-  });
-  return count;
-}
-function renderSettingsSection(title, sub, items, key){
+function renderTagSettingsSection(title, sub, key, items){
   const rows = items.map(function(item, idx){
     return '<div class="settings-item">'+
-      '<div class="settings-item-name" id="settings-'+key+'-name-'+idx+'">'+esc(item)+'</div>'+
-      '<button class="settings-btn" onclick="startEditSettingItem(\''+key+'\','+idx+')">Editar</button>'+
-      '<button class="settings-btn danger" onclick="removeSettingItem(\''+key+'\','+idx+')">Excluir</button>'+
+      '<div class="settings-item-name" id="settings-'+key+'-'+idx+'">'+esc(item)+'</div>'+
+      '<button class="settings-btn" onclick="editTagSetting(\''+key+'\','+idx+')">Editar</button>'+
+      '<button class="settings-btn danger" onclick="removeTagSetting(\''+key+'\','+idx+')">Excluir</button>'+
     '</div>';
-  }).join('') || '<div class="settings-empty">Nenhum item cadastrado.</div>';
+  }).join('') || '<div class="settings-empty">Nenhuma tag cadastrada.</div>';
 
   return '<div class="settings-card">'+
-    '<div class="settings-head"><div><div class="settings-title">'+title+'</div><div class="settings-sub">'+sub+'</div></div></div>'+
+    '<div class="settings-title">'+title+'</div>'+
+    '<div class="settings-sub">'+sub+'</div>'+
     '<div class="settings-add-row">'+
-      '<input class="form-input" id="settings-new-'+key+'" placeholder="Adicionar novo">'+
-      '<button class="settings-btn primary" onclick="addSettingItem(\''+key+'\')">+ Adicionar</button>'+
+      '<input class="form-input" id="settings-new-'+key+'" placeholder="Adicionar nova tag">'+
+      '<button class="settings-btn primary" onclick="addTagSetting(\''+key+'\')">+ Adicionar</button>'+
     '</div>'+
     '<div class="settings-list">'+rows+'</div>'+
   '</div>';
 }
-function renderAdminSettings(){
-  const el = document.getElementById('admin-settings-content');
+function renderTagSettingsAdmin(){
+  const el = document.getElementById('admin-settings-list');
   if (!el) return;
   el.innerHTML = '<div class="settings-grid">'+
-    renderSettingsSection('Canais','Edita as tags usadas nos templates, filtros e cartões.', CANAIS, 'canais')+
-    renderSettingsSection('Categorias','Edita as categorias usadas em tarefa pessoal.', CATEGORIAS, 'categorias')+
+    renderTagSettingsSection('Canais','Atualiza filtros, templates e cronograma.', 'canais', CANAIS)+
+    renderTagSettingsSection('Categorias','Atualiza a Tarefa pessoal.', 'categorias', CATEGORIAS)+
   '</div>';
 }
-function getSettingsArray(key){
-  return key === 'canais' ? CANAIS : CATEGORIAS;
-}
-function setSettingsArray(key, arr){
-  if (key === 'canais') CANAIS = arr;
+function getTagArray(key){ return key==='canais' ? CANAIS : CATEGORIAS; }
+function setTagArray(key, arr){
+  if (key==='canais') CANAIS = arr;
   else CATEGORIAS = arr;
-  persistAdminSettings();
-  renderAdminSettings();
+  persistTagSettings();
+  renderTagSettingsAdmin();
+  refreshTagDependentUI();
 }
-function addSettingItem(key){
+function addTagSetting(key){
   const input = document.getElementById('settings-new-'+key);
-  const value = (input?.value || '').trim();
-  if (!value) return;
-  const arr = getSettingsArray(key);
-  if (arr.some(function(x){ return String(x).toLowerCase() === value.toLowerCase(); })) {
-    alert('Esse item já existe.');
-    return;
-  }
-  arr.push(value);
+  const val = (input?.value || '').trim();
+  if (!val) return;
+  const arr = [...getTagArray(key)];
+  if (arr.some(function(x){ return String(x).toLowerCase()===val.toLowerCase(); })) return alert('Essa tag já existe.');
+  arr.push(val);
   if (input) input.value = '';
-  setSettingsArray(key, [...arr]);
+  setTagArray(key, arr);
 }
-function startEditSettingItem(key, idx){
-  const arr = getSettingsArray(key);
-  const holder = document.getElementById('settings-'+key+'-name-'+idx);
+function editTagSetting(key, idx){
+  const arr = getTagArray(key);
+  const holder = document.getElementById('settings-'+key+'-'+idx);
   if (!holder) return;
   const current = arr[idx] || '';
-  holder.innerHTML = '<input value="'+esc(current)+'" onkeydown="handleSettingsEditKey(event, \''+key+'\','+idx+')" onblur="commitSettingEdit(\''+key+'\','+idx+', this.value)" autofocus>';
-  const inp = holder.querySelector('input');
-  if (inp) inp.select();
+  holder.innerHTML = '<input value="'+esc(current)+'" onkeydown="if(event.key===\'Enter\'){saveTagEdit(\''+key+'\','+idx+', this.value)} if(event.key===\'Escape\'){renderTagSettingsAdmin()}" onblur="saveTagEdit(\''+key+'\','+idx+', this.value)" autofocus>';
+  holder.querySelector('input')?.select();
 }
-function handleSettingsEditKey(e, key, idx){
-  if (e.key === 'Enter') commitSettingEdit(key, idx, e.target.value);
-  if (e.key === 'Escape') renderAdminSettings();
-}
-function commitSettingEdit(key, idx, value){
-  const next = String(value || '').trim();
-  if (!next) { renderAdminSettings(); return; }
-  const arr = [...getSettingsArray(key)];
-  const current = arr[idx];
-  if (arr.some(function(x,i){ return i!==idx && String(x).toLowerCase() === next.toLowerCase(); })) {
-    alert('Esse item já existe.');
-    renderAdminSettings();
-    return;
+function saveTagEdit(key, idx, value){
+  const val = String(value || '').trim();
+  if (!val) return renderTagSettingsAdmin();
+  const arr = [...getTagArray(key)];
+  const old = arr[idx];
+  if (arr.some(function(x,i){ return i!==idx && String(x).toLowerCase()===val.toLowerCase(); })) {
+    alert('Essa tag já existe.');
+    return renderTagSettingsAdmin();
   }
 
-  if (key === 'canais' && current !== next){
+  if (key==='canais' && old !== val){
     campaigns.forEach(function(c){
-      c.canais = (c.canais||[]).map(function(v){ return v === current ? next : v; });
-      (c.subtasks||[]).forEach(function(s){ if (s.canal === current) s.canal = next; });
+      c.canais = (c.canais||[]).map(function(x){ return x===old ? val : x; });
+      (c.subtasks||[]).forEach(function(s){ if (s.canal===old) s.canal = val; });
       const td = c.templateData || {};
       ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
-        (td[path]||[]).forEach(function(item){ if (item?.canal === current) item.canal = next; });
+        (td[path]||[]).forEach(function(item){ if (item?.canal===old) item.canal = val; });
+      });
+      (td.cronogramaBlocos||[]).forEach(function(day){
+        (day.items||[]).forEach(function(item){ if (item?.canal===old) item.canal = val; });
       });
     });
     saveData();
   }
 
-  if (key === 'categorias' && current !== next){
+  if (key==='categorias' && old !== val){
     campaigns.forEach(function(c){
-      if (c.templateType === 'tarefa_pessoal' && c.templateData?.ptCategory === current) c.templateData.ptCategory = next;
+      if (c.templateType==='tarefa_pessoal' && c.templateData?.ptCategory===old) c.templateData.ptCategory = val;
     });
     saveData();
   }
 
-  arr[idx] = next;
-  setSettingsArray(key, arr);
+  arr[idx] = val;
+  setTagArray(key, arr);
 }
-function removeSettingItem(key, idx){
-  const arr = [...getSettingsArray(key)];
-  const item = arr[idx];
-  if (!item) return;
+function removeTagSetting(key, idx){
+  const arr = [...getTagArray(key)];
+  const val = arr[idx];
+  if (!val) return;
+  if (!confirm('Excluir essa tag?')) return;
 
-  if (key === 'canais'){
-    const usage = countChannelUsage(item);
-    const ok = usage ? confirm('Esse canal está sendo usado em '+usage+' item(ns). Deseja excluir mesmo assim?') : confirm('Excluir esse canal?');
-    if (!ok) return;
-
+  if (key==='canais'){
     campaigns.forEach(function(c){
-      c.canais = (c.canais||[]).filter(function(v){ return v !== item; });
-      (c.subtasks||[]).forEach(function(s){ if (s.canal === item) s.canal = 'Geral'; });
+      c.canais = (c.canais||[]).filter(function(x){ return x!==val; });
+      (c.subtasks||[]).forEach(function(s){ if (s.canal===val) s.canal = 'Geral'; });
       const td = c.templateData || {};
-      ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
-        (td[path]||[]).forEach(function(entry){ if (entry?.canal === item) entry.canal = 'Geral'; });
+      (td.cronogramaBlocos||[]).forEach(function(day){
+        (day.items||[]).forEach(function(item){ if (item?.canal===val) item.canal = 'Geral'; });
       });
     });
     saveData();
   }
-
-  if (key === 'categorias'){
+  if (key==='categorias'){
     campaigns.forEach(function(c){
-      if (c.templateType === 'tarefa_pessoal' && c.templateData?.ptCategory === item) c.templateData.ptCategory = CATEGORIAS[0] || DEFAULT_CATEGORIAS[0];
+      if (c.templateType==='tarefa_pessoal' && c.templateData?.ptCategory===val) c.templateData.ptCategory = (CATEGORIAS[0] || DEFAULT_CATEGORIAS[0]);
     });
     saveData();
   }
 
   arr.splice(idx,1);
-  setSettingsArray(key, arr);
+  setTagArray(key, arr);
 }
 
 // Templates are stored as customizable user data
@@ -4201,8 +4582,9 @@ function renderTplCampanhasForm() {
       '</div>'
     : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum resumo definido — clique em Editar</span>';
 
-  const cronoPreview = d.cronograma
-    ? '<div style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6;max-height:80px;overflow:hidden">'+esc(d.cronograma).slice(0,300)+(d.cronograma.length>300?'...':'')+'</div>'
+  const cronoTasksCount = buildCronogramaTasksFromBlocks(d.cronogramaBlocos || []).length;
+  const cronoPreview = cronoTasksCount
+    ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6">'+cronoTasksCount+' conteúdo'+(cronoTasksCount>1?'s':'')+' configurado'+(cronoTasksCount>1?'s':'')+'</div>'
     : '<span style="color:var(--text-muted);font-style:italic;font-size:12px">Nenhum cronograma definido — clique em Editar</span>';
 
   return (
@@ -4724,19 +5106,10 @@ function saveCampaign() {
   let canais = [...document.querySelectorAll('#multi-canais .multi-item.selected')].map(el=>el.dataset.canal||el.textContent);
   if (currentTemplate === 'email') canais = ['E-mail'];
 
-  // Collect subtasks — from template or from manual subForms
   let subs = [];
   if (currentTemplate && tplData) {
-    // Para template 'campanhas': NÃO criar subtarefas agora
-    // applyStatusRules cuida disso conforme o status muda
-    if (currentTemplate === 'campanhas') {
-      subs = []; // começa vazio — briefing task será criada por applyStatusRules
-    }
-    // For email MKT: do not create fixed subtasks on first save.
-    // Subtasks are created later from the selected responsáveis when status changes.
-    if (currentTemplate === 'email') {
-      subs = [];
-    }
+    if (currentTemplate === 'campanhas') subs = [];
+    if (currentTemplate === 'email') subs = [];
   } else {
     subs = subForms.map(sf=>({
       id:sf.id,
@@ -4751,6 +5124,9 @@ function saveCampaign() {
     }));
   }
 
+  const savedTemplateData = getTemplateDataForSave();
+  const savedTemplateType = currentTemplate || null;
+
   campaigns.push({
     id:cuid(), name,
     type:document.getElementById('f-type').value,
@@ -4763,16 +5139,47 @@ function saveCampaign() {
     participants: participants.length ? participants : [document.getElementById('f-owner').value],
     canais: canais,
     driveLink:document.getElementById('f-drive')?.value?.trim()||'',
-      parentCampaignId:document.getElementById('f-parent-campaign')?.value||null,
+    parentCampaignId:document.getElementById('f-parent-campaign')?.value||null,
     description:document.getElementById('f-desc')?.value?.trim()||'',
     subtasks:subs, comments:[],
-    templateType: currentTemplate||null,
-    templateData: getTemplateDataForSave(),
-    _templateLocked: currentTemplate === 'campanhas',
+    templateType: savedTemplateType,
+    templateData: savedTemplateData,
+    _templateLocked: savedTemplateType === 'campanhas',
   });
-  subForms=[]; currentTemplate=null; tplData={};
+
   const newCamp = campaigns[campaigns.length-1];
   applyStatusRules(newCamp, null, newCamp.status);
+
+  const cronoTasks = savedTemplateData?.cronogramaTasks || [];
+  if (savedTemplateType === 'campanhas' && cronoTasks.length) {
+    cronoTasks.forEach(function(t){
+      const child = {
+        id: uid(),
+        name: t.name,
+        type: t.type,
+        status: 'Em planejamento',
+        owner: newCamp.owner,
+        participants: newCamp.participants && newCamp.participants.length ? [...newCamp.participants] : [newCamp.owner],
+        canais: [t.canal],
+        startDate: t.date||'',
+        endDate: t.date||'',
+        endTime: t.time||'',
+        driveLink: '',
+        description: '📋 '+(t.dayTitle || '')+(t.time?' — '+t.time:''),
+        subtasks: [],
+        comments: [],
+        templateType: t.templateType||null,
+        templateData: null,
+        _templateLocked: true,
+        _cronogramaGenerated: true,
+        parentCampaignId: newCamp.id,
+      };
+      campaigns.push(child);
+      applyStatusRules(child, null, 'Em planejamento');
+    });
+  }
+
+  subForms=[]; currentTemplate=null; tplData={};
   saveData();
   renderKanban();
   renderPersonal();
@@ -4780,7 +5187,6 @@ function saveCampaign() {
   closePanel();
   showToast('Campanha criada','#3ecf8e');
 }
-
 
 /* PERSONAL PANEL */
 function renderPersonalFilters() {
