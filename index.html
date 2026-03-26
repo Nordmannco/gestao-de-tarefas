@@ -2393,6 +2393,23 @@ function bootApp() {
       migrated++;
     });
     if (migrated > 0) saveData();
+    // Remove CL_DEFAULTS subtasks from tarefa_pessoal campaigns (they should use ptChecklistItems)
+    campaigns.forEach(function(c){
+      if (c.templateType !== 'tarefa_pessoal') return;
+      var hasDefaults = (c.subtasks||[]).some(function(s){
+        return s._auto === 'checklist' && ['Planejamento de cronograma','Planilha de preços com desconto','Configurar Manychat','Planejamento de anúncios'].indexOf(s.title) !== -1;
+      });
+      if (hasDefaults) {
+        c.subtasks = (c.subtasks||[]).filter(function(s){ return s._auto !== 'checklist'; });
+        // Re-apply from ptChecklistItems
+        var items = c.templateData && c.templateData.ptChecklistItems || [];
+        items.forEach(function(it){
+          if (!it.texto || !it.texto.trim()) return;
+          c.subtasks.push({id:uid(),title:it.texto,canal:'Geral',urgency:'Normal',owner:c.owner,due:'',status:it.done?'Concluído':'Pendente',dep:null,checklist:[],_auto:'checklist'});
+        });
+      }
+    });
+
     // Migrate existing crono subtasks: strip HH:MM from title, fix due
     campaigns.forEach(function(c){
       (c.subtasks||[]).forEach(function(s){
@@ -3454,7 +3471,7 @@ function openCampaignDetail(id) {
       (c.description?'<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;background:var(--bg-surface);padding:10px 12px;border-radius:var(--radius)">'+c.description+'</div>':'')+
     '</div>'+
     (c.templateType ? renderTemplateDetail(c) : '')+
-    (cronoSubs.length === 0 ? '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubtaskToDetail(\''+id+'\')">+ Adicionar</button></div>'+
+    (cronoSubs.length === 0 && c.templateType !== 'tarefa_pessoal' ? '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubtaskToDetail(\''+id+'\')">+ Adicionar</button></div>'+
     '<div id="detail-subtasks">'+subtasksHtml+'</div>' : '')+
     (function(){
       const filhos = campaigns.filter(x=>x.parentCampaignId===id);
@@ -3534,6 +3551,24 @@ function applyStatusRules(c, oldStatus, newStatus) {
   if (newStatus === 'Em andamento' && (oldStatus !== 'Em andamento' || oldStatus === null)) {
     // Remove briefing task
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
+
+    // For tarefa_pessoal: use ptChecklistItems, no CL_DEFAULTS
+    if (c.templateType === 'tarefa_pessoal') {
+      const ptItems = c.templateData?.ptChecklistItems || [];
+      // Remove any existing auto tasks
+      c.subtasks = (c.subtasks||[]).filter(function(s){ return !s._auto; });
+      ptItems.forEach(function(it){
+        if (!it.texto?.trim()) return;
+        c.subtasks.push({
+          id: uid(), title: it.texto,
+          canal: 'Geral', urgency: 'Normal',
+          owner: c.owner, due: '',
+          status: it.done ? 'Concluído' : 'Pendente',
+          dep: null, checklist: [], _auto: 'checklist',
+        });
+      });
+      return;
+    }
 
     // For campanhas with cronograma: always wipe stale checklist tasks and resync
     if (c.templateType === 'campanhas') {
@@ -3868,10 +3903,41 @@ function addDetailComment(campId) {
 }
 
 /* TEMPLATE DETAIL RENDERER */
+function renderTplTarefaPessoalDetail(c, d) {
+  var items = d.ptChecklistItems || [];
+  var clHtml = items.length
+    ? items.map(function(it, i) {
+        var cb = it.done
+          ? '<div class="td-cl-cb checked"><svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg></div>'
+          : '<div class="td-cl-cb"></div>';
+        return '<div class="td-cl-item" onclick="ptDetailClToggle(\''+c.id+'\','+i+')">'+cb+
+          '<span class="td-cl-text'+(it.done?' done':'')+'">'+esc(it.texto||'')+'</span></div>';
+      }).join('')
+    : '<div class="td-empty">Nenhum item no checklist</div>';
+
+  return '<div class="td-section">'+
+    '<div class="td-section-title">🧠 Tarefa pessoal</div>'+
+    (d.ptCategory ? '<div style="margin-bottom:8px"><span class="td-label">CATEGORIA</span><div class="td-value">'+esc(d.ptCategory)+'</div></div>' : '')+
+    (d.ptEstimate ? '<div style="margin-bottom:8px"><span class="td-label">ESTIMATIVA</span><div class="td-value">'+esc(d.ptEstimate)+'</div></div>' : '')+
+    (d.ptDesc ? '<div style="margin-bottom:8px"><span class="td-label">DESCRIÇÃO</span><div class="td-value" style="white-space:pre-wrap">'+esc(d.ptDesc)+'</div></div>' : '')+
+    (items.length ? '<div><span class="td-label">CHECKLIST</span>'+clHtml+'</div>' : '')+
+  '</div>';
+}
+function ptDetailClToggle(campId, idx) {
+  var c = getCampaign(campId); if (!c) return;
+  var items = c.templateData && c.templateData.ptChecklistItems;
+  if (!items || !items[idx]) return;
+  items[idx].done = !items[idx].done;
+  // update progress bar
+  saveData();
+  openCampaignDetail(campId);
+}
+
 function renderTemplateDetail(c) {
   const t = c.templateType;
   const d = c.templateData||{};
-  if (t==='campanhas')   return renderTplCampanhasDetail(c,d);
+  if (t==='campanhas')      return renderTplCampanhasDetail(c,d);
+  if (t==='tarefa_pessoal') return renderTplTarefaPessoalDetail(c,d);
   if (t==='publicacoes') return renderTplPublicacoesDetail(c,d);
   if (t==='email')       return renderTplEmailDetail(c,d);
   if (t==='demanda')     return renderTplDemandaDetail(c,d);
@@ -4487,6 +4553,56 @@ function renderTplReuniaoPlanejamentoForm(){
 }
 
 
+function ptClRender() {
+  if (!Array.isArray(tplData.ptChecklistItems)) {
+    tplData.ptChecklistItems = [{texto:'', done:false}];
+  }
+  var rows = tplData.ptChecklistItems.map(function(it, i) {
+    var cb = it.done
+      ? '<div onclick="ptClToggle('+i+')" style="width:15px;height:15px;border:1.5px solid var(--c-campanha);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--c-campanha)"><svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg></div>'
+      : '<div onclick="ptClToggle('+i+')" style="width:15px;height:15px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;cursor:pointer;background:var(--bg-card)"></div>';
+    var inputStyle = 'flex:1;border:none;outline:none;font-size:12px;background:transparent;color:var(--text-primary)' + (it.done ? ';text-decoration:line-through;opacity:.5' : '');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border-light)">' +
+      cb +
+      '<input id="ptcl-'+i+'" style="'+inputStyle+'" value="'+esc(it.texto||'')+'" placeholder="Item..." ' +
+        'oninput="ptClText('+i+',this.value)" ' +
+        'onkeydown="ptClEnter(event,'+i+')"> ' +
+      '<button type="button" style="border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;padding:0 2px" onclick="ptClRemove('+i+')">×</button>' +
+    '</div>';
+  }).join('');
+  return '<div id="pt-checklist-list">'+rows+'</div>';
+}
+
+function ptClAdd() {
+  if (!tplData.ptChecklistItems) tplData.ptChecklistItems = [];
+  tplData.ptChecklistItems.push({texto:'', done:false});
+  renderTplFields();
+  setTimeout(function(){
+    var idx = tplData.ptChecklistItems.length - 1;
+    var el = document.getElementById('ptcl-'+idx);
+    if (el) el.focus();
+  }, 30);
+}
+function ptClEnter(event, i) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  ptClAdd();
+}
+function ptClToggle(i) {
+  if (!tplData.ptChecklistItems || !tplData.ptChecklistItems[i]) return;
+  tplData.ptChecklistItems[i].done = !tplData.ptChecklistItems[i].done;
+  renderTplFields();
+}
+function ptClText(i, val) {
+  if (!tplData.ptChecklistItems || !tplData.ptChecklistItems[i]) return;
+  tplData.ptChecklistItems[i].texto = val;
+}
+function ptClRemove(i) {
+  if (!tplData.ptChecklistItems) return;
+  tplData.ptChecklistItems.splice(i, 1);
+  renderTplFields();
+}
+
 function renderTplTarefaPessoalForm(){
   const d = tplData || {};
   return '<div class="tpl-section">'+
@@ -4504,7 +4620,9 @@ function renderTplTarefaPessoalForm(){
       '</select></div></div>'+
     '</div>'+
     '<div class="form-group"><label class="form-label">Descrição</label><textarea class="form-textarea" id="pt-desc" placeholder="O que precisa ser feito?" oninput="tplData.ptDesc=this.value;autoResize(this)">'+(d.ptDesc||'')+'</textarea></div>'+
-    '<div class="form-group"><label class="form-label">Checklist</label><textarea class="form-textarea" id="pt-checklist" placeholder="Um item por linha" oninput="tplData.ptChecklist=this.value;autoResize(this)">'+(d.ptChecklist||'')+'</textarea></div>'+
+    '<div class="form-group"><label class="form-label">Checklist</label>'+
+    ptClRender()+
+    '</div>'+
   '</div>';
 }
 
