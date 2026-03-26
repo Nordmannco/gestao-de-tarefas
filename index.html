@@ -48,6 +48,10 @@ input,textarea,select{font-family:inherit}
   --c-tarefa:#f59e0b;     --c-tarefa-bg:rgba(245,158,11,.08);
 }
 
+.crono-nota-view ul,.crono-nota-view ol{padding-left:1.4em;margin:4px 0}
+.crono-nota-view li{margin:2px 0;padding-left:0}
+.crono-nota-view ul ul,.crono-nota-view ol ol{padding-left:1.2em}
+
 /* --- MEMBER PICKER SCREEN --- */
 #picker-screen{
   position:fixed;inset:0;
@@ -2089,15 +2093,19 @@ function saveCronogramaModal() {
 function syncCronoSubtasks(c) {
   if (!c || !c.templateData) return;
   const cronoBlocos = c.templateData.cronogramaBlocos || [];
+  // Flatten items keeping their day date
   const cronoItems = [];
   cronoBlocos.forEach(function(day){
+    const date = normalizeCronoDate(day.date || '');
     (day.items||[]).forEach(function(item){
       if (!(item.text||'').trim()) return;
-      cronoItems.push(item);
+      cronoItems.push({ item: item, date: date });
     });
   });
   c.subtasks = (c.subtasks||[]).filter(function(s){ return !s._fromCrono; });
-  cronoItems.forEach(function(item){
+  cronoItems.forEach(function(entry){
+    const item = entry.item;
+    const date = entry.date; // 'YYYY-MM-DD'
     const nomePart = (item.participante || '').trim();
     var ownerId = null;
     if (nomePart) {
@@ -2105,14 +2113,22 @@ function syncCronoSubtasks(c) {
       ownerId = m ? m.id : null;
     }
     if (!ownerId) ownerId = c.owner;
-    var timeLabel = item.time ? item.time + ' · ' : '';
+    // time stored in due field, not in title
+    // Build ISO due datetime: 'YYYY-MM-DDTHH:MM'
+    var due = '';
+    if (date && item.time) {
+      due = date + 'T' + item.time;
+    } else if (date) {
+      due = date + 'T00:00';
+    }
     c.subtasks.push({
       id: uid(),
-      title: timeLabel + (item.text||'').trim(),
+      title: (item.text||'').trim(),
+      _date: date,
       canal: item.canal || 'Geral',
       urgency: 'Normal',
       owner: ownerId,
-      due: '',
+      due: due,
       status: 'Pendente',
       dep: null,
       checklist: [],
@@ -2377,6 +2393,37 @@ function bootApp() {
       migrated++;
     });
     if (migrated > 0) saveData();
+    // Migrate existing crono subtasks: strip HH:MM from title, fix due
+    campaigns.forEach(function(c){
+      (c.subtasks||[]).forEach(function(s){
+        if (!s._fromCrono) return;
+        // Strip leading HH:MM · from title
+        var timeMatch = s.title ? s.title.match(/^(\d{2}:\d{2}) · (.+)$/) : null;
+        if (timeMatch) {
+          var extractedTime = timeMatch[1];
+          s.title = timeMatch[2];
+          // Fix due if it was empty
+          if (!s.due && s._date) {
+            s.due = s._date + 'T' + extractedTime;
+          } else if (!s.due && extractedTime) {
+            // Find date from cronograma
+            var blocos = c.templateData && c.templateData.cronogramaBlocos || [];
+            for (var bi=0; bi<blocos.length; bi++) {
+              var day = blocos[bi];
+              var found = (day.items||[]).some(function(it){ return (it.text||'').trim() === s.title && it.time === extractedTime; });
+              if (found && day.date) {
+                s.due = normalizeCronoDate(day.date) + 'T' + extractedTime;
+                break;
+              }
+            }
+          }
+        }
+      });
+    });
+    saveData();
+
+    // Pre-select logged user in kanban pessoa filter
+    if (window.currentUser?.id) kanbanFilter.pessoa = [window.currentUser.id];
     setView('kanban');
     updateStorageInfo();
     updateSidebarMembers();
@@ -3854,7 +3901,7 @@ function renderTplCampanhasDetail(c,d){
 
   // Use same layout as edit form — buildCronoParticipantesHtml
   const hasCrono = (d.cronogramaBlocos||[]).some(function(day){ return (day.items||[]).some(function(it){ return (it.text||'').trim(); }); });
-  const cronoParticipantesHtml = buildCronoParticipantesHtml(d);
+  const cronoParticipantesHtml = buildCronoParticipantesHtml(d, false); // view mode
 
   return '<div class="td-section">'+
     '<div class="td-section-title">⚡ Briefing da Campanha</div>'+
@@ -4608,23 +4655,92 @@ function ensureCampanhasDefaultsForSelectedParticipants() {
   tplData._defaultsApplied = true;
 }
 
-function expandCronoNota(notaId) {
-  const col = document.getElementById('nota-collapsed-'+notaId);
-  const full = document.getElementById('nota-full-'+notaId);
-  if (col) col.style.display = 'none';
-  if (full) { full.style.display = ''; const ta = document.getElementById(notaId); if (ta) ta.focus(); }
+function buildNotaViewHtml(nid, preview, color, fullHtml) {
+  // Pure string — no DOM, no onclick loss when inserted via innerHTML
+  return [
+    '<div style="margin-bottom:10px">',
+      '<div id="nota-collapsed-'+nid+'"',
+        ' data-nid="'+nid+'"',
+        ' onclick="expandCronoNotaById(this.dataset.nid)"',
+        ' style="min-height:44px;max-height:80px;overflow:hidden;border:0.5px solid var(--border);',
+                'border-radius:var(--radius);padding:9px 12px;font-size:12px;background:var(--bg-card);',
+                'cursor:pointer;line-height:1.6;color:'+color+'">',
+        preview,
+      '</div>',
+      '<div id="nota-full-'+nid+'" style="display:none">',
+        '<div style="border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;background:var(--bg-card)">',
+          '<div style="font-size:12px;line-height:1.7;color:var(--text-primary);--nota-list-pl:1.2em" class="crono-nota-view">',
+            fullHtml,
+          '</div>',
+        '</div>',
+        '<div style="display:flex;justify-content:flex-end;margin-top:4px">',
+          '<button type="button" class="notes-expand-btn"',
+            ' data-nid="'+nid+'"',
+            ' onclick="collapseCronoNotaById(this.dataset.nid)">',
+            'Fechar ↑',
+          '</button>',
+        '</div>',
+      '</div>',
+    '</div>'
+  ].join('');
 }
-function collapseCronoNota(notaId) {
-  const col = document.getElementById('nota-collapsed-'+notaId);
-  const full = document.getElementById('nota-full-'+notaId);
-  const ta = document.getElementById(notaId);
+
+function expandCronoNotaById(nid) {
+  var col = document.getElementById('nota-collapsed-'+nid);
+  var full = document.getElementById('nota-full-'+nid);
+  if (col) col.style.display = 'none';
+  if (full) full.style.display = '';
+  // focus contenteditable if in edit mode
+  var ce = document.getElementById(nid);
+  if (ce && ce.contentEditable === 'true') ce.focus();
+}
+function collapseCronoNotaById(nid) {
+  var col = document.getElementById('nota-collapsed-'+nid);
+  var full = document.getElementById('nota-full-'+nid);
   if (full) full.style.display = 'none';
-  if (col && ta) {
-    const txt = ta.value || '';
+  if (col) col.style.display = '';
+  // update preview text from contenteditable (edit mode only)
+  var ce = document.getElementById(nid);
+  if (ce && ce.contentEditable === 'true') {
+    var txt = (ce.innerText || '').trim();
     col.style.color = txt ? 'var(--text-primary)' : 'var(--text-muted)';
-    col.textContent = txt ? txt.slice(0,100)+(txt.length>100?'...':'') : 'Clique para adicionar informações...';
-    col.style.display = '';
+    col.textContent = txt ? txt.slice(0,160)+(txt.length>160?'...':'') : 'Clique para adicionar informações...';
   }
+}
+// keep old names as aliases for backward compat
+function expandCronoNota(nid){ expandCronoNotaById(nid); }
+function collapseCronoNota(nid){ collapseCronoNotaById(nid); }
+function setCronoNotaRich(el) {
+  const nome = el.dataset.nome || '';
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+  tplData.notasMembro[nome] = el.innerHTML || '';
+}
+function handleCronoNotaTab(e, el) {
+  if (e.key !== 'Tab') return;
+  e.preventDefault();
+  el.focus();
+  if (e.shiftKey) {
+    document.execCommand('outdent', false, null);
+  } else {
+    document.execCommand('indent', false, null);
+  }
+}
+function cronoNotaInsertChecklist(nid) {
+  var el = document.getElementById(nid);
+  if (!el) return;
+  el.focus();
+  document.execCommand('insertHTML', false,
+    '<div style="display:flex;align-items:center;gap:6px;margin:2px 0">' +
+    '<input type="checkbox" style="width:13px;height:13px;accent-color:var(--c-campanha);flex-shrink:0">' +
+    '<span>​</span></div><br>'
+  );
+  setCronoNotaRich(el);
+}
+function cronoNotaCmd(nid, cmd, val) {
+  const el = document.getElementById(nid);
+  if (!el) return;
+  el.focus();
+  document.execCommand(cmd, false, val || null);
 }
 function setCronoNota(el) {
   const nome = el.dataset.nome || '';
@@ -4632,15 +4748,18 @@ function setCronoNota(el) {
   tplData.notasMembro[nome] = el.value;
 }
 
-function buildCronoParticipantesHtml(d) {
+function buildCronoParticipantesHtml(d, editMode) {
+  // editMode=true: contenteditable + toolbar | editMode=false: read-only collapsed
   const blocos = d.cronogramaBlocos || [];
   const byPart = {}, partOrder = [];
   blocos.forEach(function(day){
+    const dayDate = normalizeCronoDate(day.date || '');
     (day.items||[]).forEach(function(item){
       if (!(item.text||'').trim()) return;
       const nome = (item.participante||'').trim() || '— Geral —';
       if (!byPart[nome]) { byPart[nome]=[]; partOrder.push(nome); }
-      byPart[nome].push(item);
+      // attach day date to item for display
+      byPart[nome].push(Object.assign({}, item, { _date: dayDate }));
     });
   });
   if (!partOrder.length) {
@@ -4654,20 +4773,66 @@ function buildCronoParticipantesHtml(d) {
     const nid = 'crono-nota-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
     const avContent = m ? (m.avatar ? '<img src="'+m.avatar+'" style="width:100%;height:100%;object-fit:cover">' : esc(m.initials||nome[0])) : esc(nome[0]);
 
+    // Tasks list
     const tasksHtml = tasks.map(function(item){
       const time = item.time || '';
       const canal = item.canal || 'Geral';
       const text = esc((item.text||'').trim());
-      const timeHtml = time ? '<span style="font-size:11px;font-weight:600;color:var(--c-campanha);font-family:var(--font-mono);margin-right:4px">'+esc(time)+'</span><span style="color:var(--text-muted);margin-right:4px">·</span>' : '';
+      // Build date label from item date if available
+      const itemDate = item._date || '';
+      const datePart = itemDate ? (function(d){ var p=d.split('-'); return p[2]+'/'+p[1]; })(itemDate) : '';
+      const dateTimeHtml = (datePart||time) ?
+        '<span style="font-size:11px;font-weight:600;color:var(--c-campanha);font-family:var(--font-mono);margin-right:4px">'+(datePart?datePart+' ':'')+(time||'')+'</span><span style="color:var(--text-muted);margin-right:6px">·</span>'
+        : '';
       return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border-light)">'+
         '<div style="width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0"></div>'+
-        '<span style="font-size:12px;color:var(--text-primary);flex:1">'+timeHtml+text+'</span>'+
+        '<span style="font-size:12px;color:var(--text-primary);flex:1">'+dateTimeHtml+text+'</span>'+
         '<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+esc(canal)+'</span>'+
       '</div>';
     }).join('');
 
-    const notaPreview = nota ? esc(nota.slice(0,120))+(nota.length>120?'...':'') : 'Informações para '+esc(nome)+'...';
-    const notaColor = nota ? 'var(--text-primary)' : 'var(--text-muted)';
+    // Info field
+    let infoHtml = '';
+    // Info field
+    if (editMode) {
+      // Edit mode: same toolbar as notes panel (B, I, lista, sublista via Tab, Aa, cor, checklist)
+      infoHtml =
+        '<div style="margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;background:var(--bg-card)" id="nota-wrap-'+nid+'">'+
+          '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:0 0 8px;border-bottom:0.5px solid var(--border);margin-bottom:8px">'+
+            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'bold\')" title="Negrito"><strong>B</strong></button>'+
+            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'italic\')" title="Itálico"><em>I</em></button>'+
+            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'underline\')" title="Sublinhado"><u>S</u></button>'+
+            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'insertUnorderedList\')" title="Lista">•</button>'+
+            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'indent\')" title="Sublista">⇥</button>'+
+            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaInsertChecklist(this.dataset.nid)" title="Checklist">☐</button>'+
+            '<select class="notes-tool-select" data-nid="'+nid+'" onchange="cronoNotaCmd(this.dataset.nid,\'fontSize\',this.value);this.selectedIndex=0" title="Tamanho">'+
+              '<option>Aa</option><option value="2">P</option><option value="3">M</option><option value="5">G</option>'+
+            '</select>'+
+            '<input type="color" class="notes-color-input" value="#111827" data-nid="'+nid+'" onchange="cronoNotaCmd(this.dataset.nid,\'foreColor\',this.value)" title="Cor">'+
+          '</div>'+
+          '<div id="'+nid+'" contenteditable="true" class="notes-editor"'+
+            ' data-nome="'+esc(nome)+'"'+
+            ' data-placeholder="Informações para '+esc(nome)+'..."'+
+            ' style="min-height:72px;outline:none;font-size:13px;line-height:1.7;color:var(--text-primary)"'+
+            ' oninput="setCronoNotaRich(this)"'+
+            ' onkeydown="handleCronoNotaTab(event,this)">'+
+            (nota||'')+
+          '</div>'+
+        '</div>';
+    } else {
+      // View mode: clean text preview, HTML content when expanded
+      const notaStripped = nota ? nota.replace(/<br\s*\/?>/gi,' · ').replace(/<\/?(li|p|div)[^>]*>/gi,' · ').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').replace(/( · )+/g,' · ').replace(/^ · | · $/g,'').trim() : '';
+      const notaPreview = notaStripped
+        ? (notaStripped.slice(0,160)+(notaStripped.length>160?'...':''))
+        : 'Informações para '+esc(nome)+'...';
+      const notaColor = notaStripped ? 'var(--text-primary)' : 'var(--text-muted)';
+      const notaFull = nota || '<em style="color:var(--text-muted)">Sem informações</em>';
+      infoHtml = buildNotaViewHtml(nid, notaPreview, notaColor, notaFull);
+    }
+
+
+
+
 
     return '<div style="margin-bottom:20px">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
@@ -4675,13 +4840,7 @@ function buildCronoParticipantesHtml(d) {
         '<span style="font-size:13px;font-weight:600;color:var(--text-primary)">'+esc(nome)+'</span>'+
         '<span style="font-size:10px;color:var(--text-muted);margin-left:auto;background:var(--bg-surface);padding:2px 8px;border-radius:10px">'+tasks.length+' tarefa'+(tasks.length>1?'s':'')+'</span>'+
       '</div>'+
-      '<div style="margin-bottom:10px">'+
-        '<div id="nota-collapsed-'+nid+'" onclick="expandCronoNota(\''+nid+'\')" style="min-height:32px;border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:'+notaColor+';background:var(--bg-card);cursor:pointer;line-height:1.5">'+notaPreview+'</div>'+
-        '<div id="nota-full-'+nid+'" style="display:none">'+
-          '<textarea id="'+nid+'" style="width:100%;min-height:80px;border:0.5px solid var(--c-campanha);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-card);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Referências, links, observações para '+esc(nome)+'..." oninput="setCronoNota(this)" data-nome="'+esc(nome)+'">'+esc(nota)+'</textarea>'+
-          '<div style="display:flex;justify-content:flex-end;margin-top:4px"><button type="button" class="notes-expand-btn" onclick="collapseCronoNota(\''+nid+'\')">Fechar \u2191</button></div>'+
-        '</div>'+
-      '</div>'+
+      infoHtml+
       tasksHtml+
     '</div>';
   }).join('');
@@ -4802,7 +4961,7 @@ function renderTplCampanhasForm() {
     '<div class="tpl-section">'+
       '<div class="tpl-section-title">✅ Participantes e tarefas</div>'+
       (cronoTasksCount > 0
-        ? buildCronoParticipantesHtml(d)
+        ? buildCronoParticipantesHtml(d, true) // edit mode
         : (membrosVisiveis.length ? clMembrosHtml :
           '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0">Adicione itens ao cronograma para ver os participantes</div>')
       )+
@@ -5633,7 +5792,9 @@ function renderPersonal() {
     const effectiveCanal = s._meetingCard ? 'Reunião' : getEffectiveTaskCanal(t);
     const typeLabel = c.templateType==='email' ? 'E-mail MKT' : c.templateType==='publicacoes' ? 'Publicação' : c.templateType==='campanhas' ? 'Campanha' : c.templateType==='reuniao_planejamento' ? 'Reuniões / Planejamento' : 'Demanda interna';
     const dueSource = s.due || (c.endDate ? (c.endDate + (c.endTime ? (' ' + c.endTime) : '')) : '');
-    const dueText = dueSource ? 'Prazo de entrega: ' + formatDue(dueSource) : 'Prazo de entrega: —';
+    const dueText = dueSource
+      ? (s._fromCrono ? '📅 ' + formatDue(dueSource) : 'Prazo de entrega: ' + formatDue(dueSource))
+      : 'Prazo de entrega: —';
 
     const urgStyle = URG_COLOR[urgency] || {color:'#888', bg:'#eee'};
     const statusStyle = STATUS_COLOR[status] || {color:'#888', bg:'rgba(136,136,136,.08)'};
