@@ -1818,37 +1818,44 @@ function renderCronogramaEditor(){
       const key = dayIdx+'-'+itemIdx;
       const isItemOpen = !!tplData.cronoUi.openItems[key];
 
+
       if (isItemOpen){
+        const memberOptsEdit = '<option value="">— Participante —</option>'+MEMBERS.map(function(m){ return '<option value="'+esc(m.name)+'"'+(item.participante===m.name?' selected':'')+'>'+esc(m.name)+'</option>'; }).join('');
         return '<div class="crono-line-edit">'+
-          '<div class="crono-line-grid">'+
-            '<input class="crono-input" type="time" value="'+esc(item.time||'')+'" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'time\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}">'+
-            '<select class="crono-select" onchange="cronoUpdateItem('+dayIdx+','+itemIdx+',\'canal\', this.value)">'+
+          '<div style="display:grid;grid-template-columns:72px 130px 140px minmax(0,1fr) auto;gap:8px;align-items:start">'+
+            '<div><div class="crono-mini-label">Hora</div><input class="crono-input" type="time" value="'+esc(item.time||'')+'" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'time\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}"></div>'+
+            '<div><div class="crono-mini-label">Canal</div><select class="crono-select" onchange="cronoUpdateItem('+dayIdx+','+itemIdx+',\'canal\', this.value)">'+
               CANAIS.map(function(canal){ return '<option value="'+esc(canal)+'"'+((item.canal||'Geral')===canal?' selected':'')+'>'+esc(canal)+'</option>'; }).join('')+
-            '</select>'+
-            '<textarea class="crono-text" placeholder="Escrever conteúdo" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'text\', this.value)" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}">'+esc(item.text||'')+'</textarea>'+
-            '<button class="tpl-remove-btn" type="button" onclick="cronoRemoveItem('+dayIdx+','+itemIdx+')">×</button>'+
+            '</select></div>'+
+            '<div><div class="crono-mini-label">Participante</div><select class="crono-select" style="height:30px;font-size:11px;width:100%" onchange="cronoUpdateItem('+dayIdx+','+itemIdx+',\'participante\', this.value)">'+memberOptsEdit+'</select></div>'+
+            '<div><div class="crono-mini-label">Descrição</div><textarea class="crono-text" placeholder="Descrever tarefa" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'text\', this.value)" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}">'+esc(item.text||'')+'</textarea></div>'+
+            '<div style="padding-top:18px"><button class="tpl-remove-btn" type="button" onclick="cronoRemoveItem('+dayIdx+','+itemIdx+')">×</button></div>'+
           '</div>'+
         '</div>';
       }
 
+      const partLabel = item.participante ? ' · <strong>'+esc(item.participante)+'</strong>' : '';
       return '<div class="crono-line-summary" onclick="cronoOpenItem('+dayIdx+','+itemIdx+')">'+
         '<div class="crono-line-left">'+
-          '<div class="crono-row-display"><span class="crono-row-time">'+esc(item.time||'--:--')+'</span>'+esc(item.canal||'Geral')+' · '+esc(item.text||'')+'</div>'+
+          '<div class="crono-row-display"><span class="crono-row-time">'+esc(item.time||'--:--')+'</span>'+esc(item.canal||'Geral')+' · '+esc(item.text||'')+partLabel+'</div>'+
         '</div>'+
       '</div>';
     }).join('') || '<div class="crono-empty">Nenhum conteúdo adicionado ainda.</div>';
 
     const addOpen = !!tplData.cronoUi.addRows[dayIdx];
+    const memberOptsAdd = '<option value="">— Participante —</option>'+MEMBERS.map(function(m){ return '<option value="'+esc(m.name)+'">'+esc(m.name)+'</option>'; }).join('');
     const addHtml = addOpen
-      ? '<div class="crono-add-row">'+
-          '<input class="crono-input" type="time" id="crono-new-time-'+dayIdx+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoAddItem('+dayIdx+')}">'+
-          '<select class="crono-select" id="crono-new-canal-'+dayIdx+'">'+
+      ? '<div style="display:grid;grid-template-columns:72px 130px 140px minmax(0,1fr) auto;gap:8px;align-items:start;margin-top:8px">'+
+          '<div><div class="crono-mini-label">Hora</div><input class="crono-input" type="time" id="crono-new-time-'+dayIdx+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoAddItem('+dayIdx+')}"></div>'+
+          '<div><div class="crono-mini-label">Canal</div><select class="crono-select" id="crono-new-canal-'+dayIdx+'">'+
             CANAIS.map(function(canal){ return '<option value="'+esc(canal)+'">'+esc(canal)+'</option>'; }).join('')+
-          '</select>'+
-          '<textarea class="crono-text" id="crono-new-text-'+dayIdx+'" placeholder="Escrever conteúdo" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoAddItem('+dayIdx+')}"></textarea>'+
-          '<button type="button" class="btn-add-sub" onclick="cronoAddItem('+dayIdx+')">Novo</button>'+
+          '</select></div>'+
+          '<div><div class="crono-mini-label">Participante</div><select class="crono-select" id="crono-new-part-'+dayIdx+'" style="height:30px;font-size:11px;width:100%">'+memberOptsAdd+'</select></div>'+
+          '<div><div class="crono-mini-label">Descrição</div><textarea class="crono-text" id="crono-new-text-'+dayIdx+'" placeholder="Descrever tarefa" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoAddItem('+dayIdx+')}"></textarea></div>'+
+          '<div style="padding-top:18px"><button type="button" class="btn-add-sub" onclick="cronoAddItem('+dayIdx+')">+ Add</button></div>'+
         '</div>'
-      : '<div class="crono-add-toggle"><button type="button" class="btn-add-sub" onclick="cronoOpenAdd('+dayIdx+')">Novo</button></div>';
+      : '<div class="crono-add-toggle"><button type="button" class="btn-add-sub" onclick="cronoOpenAdd('+dayIdx+')">+ Novo item</button></div>';
+
 
     const headerHtml = isDayOpen
       ? '<div class="crono-edit-wrap"><button class="tpl-remove-btn crono-day-remove" type="button" onclick="cronoRemoveDay('+dayIdx+')">×</button><div class="crono-day-head">'+
@@ -1899,9 +1906,10 @@ function cronoAddItem(dayIdx){
   const time = document.getElementById('crono-new-time-'+dayIdx)?.value || '';
   const canal = document.getElementById('crono-new-canal-'+dayIdx)?.value || 'Geral';
   const text = (document.getElementById('crono-new-text-'+dayIdx)?.value || '').trim();
+  const participante = document.getElementById('crono-new-part-'+dayIdx)?.value || '';
   if (!text) return;
   day.items = day.items || [];
-  day.items.push({ id:uid(), time:time, canal:canal, text:text });
+  day.items.push({ id:uid(), time:time, canal:canal, text:text, participante:participante });
   tplData.cronoUi.addRows[dayIdx] = false;
   renderCronogramaEditor();
 }
@@ -2055,55 +2063,63 @@ function closeCronogramaModal() {
 function saveCronogramaModal() {
   ensureCronogramaBlocks();
   tplData.cronograma = cronogramaBlocksToText(tplData.cronogramaBlocos || '');
-  const tasks = buildCronogramaTasksFromBlocks(tplData.cronogramaBlocos || []);
 
   if (editingCampId) {
-    // remove children previously generated by cronograma
-    campaigns = campaigns.filter(function(c){
-      return !(c.parentCampaignId === editingCampId && c._cronogramaGenerated);
-    });
-
     const parentCamp = getCampaign(editingCampId);
     if (parentCamp) {
-      let created = 0;
-      tasks.forEach(function(t){
-        const newCamp = {
-          id: uid(),
-          name: t.name,
-          type: t.type,
-          status: 'Em planejamento',
-          owner: parentCamp.owner,
-          participants: parentCamp.participants && parentCamp.participants.length ? [...parentCamp.participants] : [parentCamp.owner],
-          canais: [t.canal],
-          startDate: t.date||'',
-          endDate: t.date||'',
-          endTime: t.time||'',
-          driveLink: '',
-          description: '📋 '+(t.dayTitle || '')+(t.time?' — '+t.time:''),
-          subtasks: [],
-          comments: [],
-          templateType: t.templateType||null,
-          templateData: null,
-          _templateLocked: true,
-          _cronogramaGenerated: true,
-          parentCampaignId: editingCampId,
-        };
-        campaigns.push(newCamp);
-        applyStatusRules(newCamp, null, 'Em planejamento');
-        created++;
-      });
-      if (created > 0) {
+      if (!parentCamp.templateData) parentCamp.templateData = {};
+      parentCamp.templateData.cronogramaBlocos = JSON.parse(JSON.stringify(tplData.cronogramaBlocos || []));
+      if (parentCamp.status === 'Em andamento') {
+        syncCronoSubtasks(parentCamp);
         saveData();
         renderKanban();
-        showToast(created+' tarefa'+(created>1?'s':'')+' criada'+(created>1?'s':'')+' no Kanban', '#3ecf8e');
+        renderPersonal();
+        showToast('Cronograma salvo e checklist atualizado', '#3ecf8e');
+      } else {
+        saveData();
+        showToast('Cronograma salvo', '#3ecf8e');
       }
     }
-  } else {
-    tplData.cronogramaTasks = tasks;
   }
 
   closeCronogramaModal();
   renderTplFields();
+}
+
+function syncCronoSubtasks(c) {
+  if (!c || !c.templateData) return;
+  const cronoBlocos = c.templateData.cronogramaBlocos || [];
+  const cronoItems = [];
+  cronoBlocos.forEach(function(day){
+    (day.items||[]).forEach(function(item){
+      if (!(item.text||'').trim()) return;
+      cronoItems.push(item);
+    });
+  });
+  c.subtasks = (c.subtasks||[]).filter(function(s){ return !s._fromCrono; });
+  cronoItems.forEach(function(item){
+    const nomePart = (item.participante || '').trim();
+    var ownerId = null;
+    if (nomePart) {
+      var m = MEMBERS.find(function(x){ return x.name === nomePart || x.name.toLowerCase() === nomePart.toLowerCase(); });
+      ownerId = m ? m.id : null;
+    }
+    if (!ownerId) ownerId = c.owner;
+    var timeLabel = item.time ? item.time + ' · ' : '';
+    c.subtasks.push({
+      id: uid(),
+      title: timeLabel + (item.text||'').trim(),
+      canal: item.canal || 'Geral',
+      urgency: 'Normal',
+      owner: ownerId,
+      due: '',
+      status: 'Pendente',
+      dep: null,
+      checklist: [],
+      _auto: 'checklist',
+      _fromCrono: true,
+    });
+  });
 }
 
 function initDB() {
@@ -3018,8 +3034,11 @@ function formatDue(iso) {
 
 function calcProgress(c) {
   const subs = c.subtasks||[];
-  const done = subs.filter(s=>s.status==='Concluído').length;
-  return {done, total:subs.length, pct: subs.length ? Math.round(done/subs.length*100) : 0};
+  // Se tem subtasks do cronograma, usa só elas para o progresso
+  const cronoSubs = subs.filter(function(s){ return s._fromCrono; });
+  const target = cronoSubs.length > 0 ? cronoSubs : subs;
+  const done = target.filter(function(s){ return s.status==='Concluído'; }).length;
+  return {done, total:target.length, pct: target.length ? Math.round(done/target.length*100) : 0};
 }
 
 function isLate(s) {
@@ -3049,6 +3068,40 @@ function avatarHtml(m, size) {
   return '<div class="mini-avatar" style="width:'+size+'px;height:'+size+'px;background:'+m.color+'">'+content+'</div>';
 }
 
+function expandInfoEditor() {
+  const col = document.getElementById('info-editor-collapsed');
+  const full = document.getElementById('info-editor-full');
+  const rich = document.getElementById('f-desc-rich');
+  if (col) col.style.display = 'none';
+  if (full) full.style.display = '';
+  if (rich) { rich.focus(); syncInfoToHidden(); }
+}
+function collapseInfoEditor() {
+  const col = document.getElementById('info-editor-collapsed');
+  const full = document.getElementById('info-editor-full');
+  const rich = document.getElementById('f-desc-rich');
+  syncInfoToHidden();
+  if (full) full.style.display = 'none';
+  if (col) {
+    const txt = rich ? (rich.innerText||'').trim() : '';
+    col.style.color = txt ? 'var(--text-primary)' : 'var(--text-muted)';
+    col.textContent = txt ? txt.slice(0,140)+(txt.length>140?'...':'') : 'Clique para adicionar informações...';
+    col.style.display = '';
+  }
+}
+function syncInfoToHidden() {
+  const rich = document.getElementById('f-desc-rich');
+  const hidden = document.getElementById('f-desc');
+  if (rich && hidden) hidden.value = rich.innerHTML || '';
+}
+function infoCmd(cmd, val) {
+  const rich = document.getElementById('f-desc-rich');
+  if (!rich) return;
+  rich.focus();
+  document.execCommand(cmd, false, val || null);
+  syncInfoToHidden();
+}
+
 function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 document.addEventListener('input', e => { if (e.target.tagName==='TEXTAREA') autoResize(e.target); });
 
@@ -3066,7 +3119,7 @@ function toggleSubtask(campId, subId) {
   const c = getCampaign(campId); if (!c) return;
   const s = (c.subtasks||[]).find(x=>x.id===subId); if (!s) return;
   s.status = s.status==='Concluído' ? 'Pendente' : 'Concluído';
-  if ((c.subtasks||[]).every(x=>x.status==='Concluído') && c.status!=='Concluído') c.status='Concluído';
+  // Checklist não controla status da campanha — só atualiza barra de progresso
   saveData();
   if (currentView==='kanban') renderKanban();
   if (currentView==='personal') renderPersonal();
@@ -3264,8 +3317,8 @@ function openCampaignDetail(id) {
   const btnDel = document.getElementById('btn-delete');
   if (btnDel) btnDel.style.display='';
   document.getElementById('panel-title').textContent = c.name;
-  document.getElementById('btn-save').textContent = 'Atualizar';
-  document.getElementById('btn-save').onclick = () => { saveData(); closePanel(); showToast('Salvo','#3ecf8e'); };
+  document.getElementById('btn-save').textContent = 'Editar campanha';
+  document.getElementById('btn-save').onclick = function() { openEditCampaignPanel(id); };
 
   const owner = getMember(c.owner);
   const sc = STATUS_COLOR[c.status]||{};
@@ -3273,14 +3326,15 @@ function openCampaignDetail(id) {
   const progColor = prog.pct===100?'var(--c-conteudo)':prog.pct>50?'var(--c-tarefa)':'var(--c-campanha)';
   const participants = (c.participants||[]).map(p=>{const m=getMember(p);return m?avatarHtml(m,22):''}).join('');
 
-  const subtasksHtml = (c.subtasks||[]).map(s => {
+  // Render subtasks grouped by participant when from cronograma
+  function renderSubRow(s) {
     const m = getMember(s.owner);
     const blocked = isBlocked(s,c);
     const late = isLate(s);
     const uc = URG_COLOR[s.urgency]||{color:'#888',bg:'#eee'};
     const depTask = s.dep ? (c.subtasks||[]).find(x=>x.id===s.dep) : null;
     return '<div class="subtask-row">'+
-      '<div class="sub-cb '+(s.status==='Concluído'?'checked':'')+'" onclick="event.stopPropagation();toggleSubtaskDetail(\''+id+'\',\''+s.id+'\')">'+
+      '<div class="sub-cb '+(s.status==='Concluído'?'checked':'')+'" onclick="event.stopPropagation();toggleSubtaskDetail(\''+id+'\'\,\''+s.id+'\')">'+
         (s.status==='Concluído'?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+'</div>'+
       '<div class="sub-body">'+
         '<div class="sub-title'+(s.status==='Concluído'?' done':'')+'">'+s.title+'</div>'+
@@ -3294,7 +3348,30 @@ function openCampaignDetail(id) {
         (s.note?'<div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-style:italic">📝 '+s.note+'</div>':'')+
         (blocked&&depTask?'<div class="blocked-label">🔒 Bloqueada por: '+depTask.title+'</div>':'')+
       '</div></div>';
-  }).join('');
+  }
+  const cronoSubs = (c.subtasks||[]).filter(s => s._fromCrono);
+  let subtasksHtml = '';
+  if (cronoSubs.length > 0) {
+    const byOwner = {}, ownerOrder = [];
+    cronoSubs.forEach(s => { if (!byOwner[s.owner]) { byOwner[s.owner]=[]; ownerOrder.push(s.owner); } byOwner[s.owner].push(s); });
+    subtasksHtml = ownerOrder.map(ownerId => {
+      const m = getMember(ownerId);
+      const color = m ? m.color : '#888';
+      const name = m ? m.name : 'Sem responsável';
+      const done = byOwner[ownerId].filter(s=>s.status==='Concluído').length;
+      const total = byOwner[ownerId].length;
+      return '<div style="margin-bottom:14px">'+
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:5px;border-bottom:1.5px solid '+color+'40">'+
+          (m?avatarHtml(m,20):'')+
+          '<span style="font-size:12px;font-weight:600;color:var(--text-primary)">'+name+'</span>'+
+          '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">'+done+'/'+total+'</span>'+
+        '</div>'+
+        byOwner[ownerId].map(renderSubRow).join('')+
+      '</div>';
+    }).join('');
+  } else {
+    subtasksHtml = (c.subtasks||[]).map(renderSubRow).join('');
+  }
 
   const commentsHtml = (c.comments||[]).map((cm,i)=>{
     const m = MEMBERS.find(x=>x.name===cm.author);
@@ -3314,31 +3391,24 @@ function openCampaignDetail(id) {
 
   document.getElementById('panel-body').innerHTML =
     '<div style="margin-bottom:14px">'+
-      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">'+
-        '<select class="status-select" style="margin-bottom:0;flex:1" onchange="c_updateStatus(\''+id+'\',this.value)">'+
-          STATUSES.map(s=>'<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>').join('')+
-        '</select>'+
-        (c.status==='Em andamento'
-          ? '<button type="button" onclick="openEditCampaignPanel(\''+id+'\')" style="height:32px;padding:0 12px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg-card);font-size:12px;color:var(--text-primary);cursor:pointer;white-space:nowrap">Editar</button>'
-          : '')+
-      '</div>' +
+      '<select class="status-select" onchange="c_updateStatus(\''+id+'\',this.value)">'+
+        STATUSES.map(s=>'<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>').join('')+
+      '</select>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">INÍCIO</div><div style="font-size:13px">'+formatDate(c.startDate)+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">ENTREGA</div><div style="font-size:13px">'+formatDate(c.endDate)+(c.endTime?'<span style="font-size:11px;color:var(--text-muted);margin-left:5px">'+c.endTime+'</span>':'')+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">RESPONSÁVEL</div><div style="display:flex;align-items:center;gap:5px;font-size:13px">'+avatarHtml(owner,18)+(owner?owner.name:'—')+'</div></div>'+
         '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">PARTICIPANTES</div><div style="display:flex;gap:3px">'+participants+'</div></div>'+
-        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">PRIORIDADE</div><div style="font-size:13px">'+esc(c.urgency || 'Normal')+'</div></div>'+
-        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">CANAIS</div><div style="font-size:13px;line-height:1.5">'+(((c.canais||[]).length ? esc((c.canais||[]).join(', ')) : '—'))+'</div></div>'+
       '</div>'+
-      (c.driveLink?'<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">PASTA DO DRIVE</div><a href="'+c.driveLink+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--c-campanha);text-decoration:none;padding:5px 10px;border:0.5px solid var(--c-campanha);border-radius:var(--radius);background:var(--c-campanha-bg)">🔗 Abrir pasta</a></div>':'')+
+      (c.driveLink?'<a href="'+c.driveLink+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--c-campanha);text-decoration:none;padding:5px 10px;border:0.5px solid var(--c-campanha);border-radius:var(--radius);background:var(--c-campanha-bg);margin-bottom:12px">🔗 Pasta no Drive</a>':'')+
       (c.parentCampaignId ? (function(){const p=getCampaign(c.parentCampaignId);return p?'<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span>📎 Parte de:</span><button onclick="openCampaignDetail(\''+p.id+'\')" style="font-size:11px;color:var(--c-campanha);background:var(--c-campanha-bg);border:0.5px solid var(--c-campanha);border-radius:4px;padding:2px 8px;cursor:pointer">'+p.name+'</button></div>':''})() : '')+
       '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px"><span>Progresso</span><span>'+prog.done+'/'+prog.total+' — '+prog.pct+'%</span></div>'+
         '<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:'+prog.pct+'%;background:'+progColor+'"></div></div></div>'+
       (c.description?'<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;background:var(--bg-surface);padding:10px 12px;border-radius:var(--radius)">'+c.description+'</div>':'')+
     '</div>'+
     (c.templateType ? renderTemplateDetail(c) : '')+
-    '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubtaskToDetail(\''+id+'\')">+ Adicionar</button></div>'+
-    '<div id="detail-subtasks">'+subtasksHtml+'</div>'+
+    (cronoSubs.length === 0 ? '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubtaskToDetail(\''+id+'\')">+ Adicionar</button></div>'+
+    '<div id="detail-subtasks">'+subtasksHtml+'</div>' : '')+
     (function(){
       const filhos = campaigns.filter(x=>x.parentCampaignId===id);
       if (!filhos.length) return '';
@@ -3418,6 +3488,18 @@ function applyStatusRules(c, oldStatus, newStatus) {
     // Remove briefing task
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
 
+    // For campanhas with cronograma: always wipe stale checklist tasks and resync
+    if (c.templateType === 'campanhas') {
+      const cronoBlocos = c.templateData?.cronogramaBlocos || [];
+      const hasCrono = cronoBlocos.some(function(day){ return (day.items||[]).some(function(it){ return (it.text||'').trim(); }); });
+      if (hasCrono) {
+        // Remove any existing _auto checklist tasks (from CL_DEFAULTS or previous runs)
+        c.subtasks = (c.subtasks||[]).filter(function(s){ return s._auto !== 'checklist' && !s._fromCrono; });
+        syncCronoSubtasks(c);
+        return;
+      }
+    }
+
     const jaCriou = (c.subtasks||[]).some(s=>s._auto==='checklist');
     if (!jaCriou) {
       const participantes = (c.participants && c.participants.length) ? c.participants : [c.owner];
@@ -3477,6 +3559,16 @@ function applyStatusRules(c, oldStatus, newStatus) {
           });
         });
         return;
+      }
+
+      // Priority: cronograma items for campanhas template
+      if (c.templateType === 'campanhas') {
+        const cronoBlocos = c.templateData?.cronogramaBlocos || [];
+        const hasCrono = cronoBlocos.some(function(day){ return (day.items||[]).some(function(it){ return (it.text||'').trim(); }); });
+        if (hasCrono) {
+          syncCronoSubtasks(c);
+          return;
+        }
       }
 
       // Priority 1: custom override checklist for this template
@@ -3760,53 +3852,20 @@ function renderTplCampanhasDetail(c,d){
       metas[k]?'<div class="td-meta-box"><div class="td-meta-val">'+esc(metas[k])+'</div><div class="td-meta-lbl">'+l+'</div></div>':''
     ).join('')+'</div>' : '';
 
-  const checklistsMembro = d.checklistsMembro||{};
-  const membrosChecklist = Array.from(new Set([
-    ...(c.participants||[]).map(function(pid){
-      const m = getMember(pid);
-      return m ? m.name : null;
-    }).filter(Boolean),
-    ...Object.keys(checklistsMembro||{})
-  ]));
-
-  const clMembrosHtml = membrosChecklist.map(function(nome){
-    const itens = checklistsMembro[nome]||[];
-    if(!itens.length) return '';
-    const membro = MEMBERS.find(function(m){ return m.name===nome; });
-    const head = membro
-      ? '<div style="display:flex;align-items:center;gap:6px">'+avatarHtml(membro,18)+'<span>'+nome+'</span></div>'
-      : nome;
-
-    return '<div style="margin-bottom:14px">'+
-      '<div style="font-size:11px;font-weight:600;color:var(--text-primary);padding:4px 8px;background:var(--bg-card);border-radius:6px;margin-bottom:6px">'+head+'</div>'+
-      (d.notasMembro && d.notasMembro[nome] ? 
-        '<div style="margin:2px 0 10px 0;padding:8px 10px;font-size:12px;color:var(--text-primary);line-height:1.65;white-space:pre-wrap;border:1px solid var(--border);border-radius:8px;background:var(--bg-card)">'+esc(d.notasMembro[nome])+'</div>'
-      : '')+
-      itens.map(function(it,i){
-        return '<div class="td-cl-item" onclick="tplDetailClToggle(\''+c.id+'\',\'checklistsMembro.'+nome+'\','+i+')">'+
-        '<div class="td-cl-cb'+(it.done?' checked':'')+'">'+(it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
-        '</div><span class="td-cl-text'+(it.done?' done':'')+'">'+esc(it.texto)+(it.canal?' <span style="font-size:10px;color:var(--text-muted)">· '+esc(it.canal)+'</span>':'')+'</span></div>';
-      }).join('')+
-    '</div>';
-  }).join('');
-
-  const clEnc = d.checklistEncerramento||[];
-  const clEncHtml = clEnc.length ? clEnc.map((it,i)=>
-    '<div class="td-cl-item" onclick="tplDetailClToggle(\''+c.id+'\',\'checklistEncerramento\','+i+')">'+
-    '<div class="td-cl-cb'+(it.done?' checked':'')+'">'+(it.done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>':'')+
-    '</div><span class="td-cl-text'+(it.done?' done':'')+'">'+esc(it.texto)+'</span></div>'
-  ).join('') : '';
+  // Use same layout as edit form — buildCronoParticipantesHtml
+  const hasCrono = (d.cronogramaBlocos||[]).some(function(day){ return (day.items||[]).some(function(it){ return (it.text||'').trim(); }); });
+  const cronoParticipantesHtml = buildCronoParticipantesHtml(d);
 
   return '<div class="td-section">'+
     '<div class="td-section-title">⚡ Briefing da Campanha</div>'+
     tdField('Resumo estratégico',esc(d.resumoEstrategico))+
     (datasHtml?'<div style="margin-bottom:10px"><div class="td-label">Datas-chave</div>'+datasHtml+'</div>':'')+
-    tdField('Cronograma',esc(d.cronograma))+
+    (d.cronograma?'<div style="margin-bottom:8px"><div class="td-label">Cronograma</div><div style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6">'+esc(d.cronograma)+'</div></div>':'')+
     metasHtml+
   '</div>'+
-  (clMembrosHtml?'<div class="td-section"><div class="td-section-title">✅ Checklists por membro</div>'+clMembrosHtml+'</div>':'')+
-  (clEncHtml?'<div class="td-section"><div class="td-section-title">🔒 Encerramento</div>'+clEncHtml+'</div>':'');
+  (hasCrono?'<div class="td-section"><div class="td-section-title">✅ Participantes e tarefas</div>'+cronoParticipantesHtml+'</div>':'');
 }
+
 
 function renderTplPublicacoesDetail(c,d){
   const tipo = d.designTipo||'banner';
@@ -3833,10 +3892,8 @@ function renderTplPublicacoesDetail(c,d){
   '</div>'+
   '<div class="td-section">'+
     '<div class="td-section-title">🎨 Criativo <span style="font-size:10px;background:var(--bg-card);padding:2px 7px;border-radius:10px;margin-left:6px">'+
-      (tipo==='carrossel'?'Carrossel':(tipo==='video'?'Vídeo':'Banner único'))+'</span></div>'+
-    tdField('Informações do design',esc(d.gioInfo))+
+      (tipo==='carrossel'?'Carrossel':'Banner único')+'</span></div>'+
     slidesHtml+
-    (tipo==='video' ? tdField('Roteiro',esc(d.videoRoteiro)) : '')+
   '</div>';
 }
 
@@ -3903,21 +3960,13 @@ function tplDetailClToggle(campId, path, idx) {
   for (let i=0;i<parts.length-1;i++) { if(!obj[parts[i]])obj[parts[i]]={};obj=obj[parts[i]]; }
   const arr = obj[parts[parts.length-1]];
   if (arr&&arr[idx]) arr[idx].done=!arr[idx].done;
-  saveData();
-  renderKanban();
-  renderPersonal();
-  if (currentView==='overview') renderOverview();
-  openCampaignDetail(campId);
+  saveData(); openCampaignDetail(campId);
 }
 function tplDetailStepToggle(campId, membId, idx) {
   const c = getCampaign(campId); if(!c||!c.templateData) return;
   const passos = c.templateData.blocosMembros?.[membId]?.passos;
   if(passos&&passos[idx]) passos[idx].done=!passos[idx].done;
-  saveData();
-  renderKanban();
-  renderPersonal();
-  if (currentView==='overview') renderOverview();
-  openCampaignDetail(campId);
+  saveData(); openCampaignDetail(campId);
 }
 
 /* PANEL OPEN/CLOSE */
@@ -4073,7 +4122,14 @@ function updateCampaign(id) {
   c.parentCampaignId = document.getElementById('f-parent-campaign')?.value||null;
   c.description = (currentTemplate === 'reuniao_planejamento') ? '' : (document.getElementById('f-desc')?.value?.trim()||'');
   c.templateType = currentTemplate||null;
+  // Preserve cronogramaBlocos from existing templateData — they are edited via modal, not the main form
+  var _existingCronoBlocos = c.templateData?.cronogramaBlocos || [];
   c.templateData = getTemplateDataForSave();
+  if (c.templateType === 'campanhas' && _existingCronoBlocos.length && c.templateData) {
+    if (!c.templateData.cronogramaBlocos || !c.templateData.cronogramaBlocos.length) {
+      c.templateData.cronogramaBlocos = _existingCronoBlocos;
+    }
+  }
   c._templateLocked = c.templateType === 'campanhas' ? true : !!c._templateLocked;
   c.subtasks = (currentTemplate === 'reuniao_planejamento') ? [] : [...autoSubs, ...manualSubs];
   subForms=[]; currentTemplate=null; tplData={};
@@ -4186,7 +4242,27 @@ function renderCampaignForm(existingData) {
     '</div>'+
     '<div class="form-group"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
     '<div id="tpl-fields-container"></div>'+
-    '<div class="form-group"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'><label class="form-label">Informações gerais</label><textarea class="form-textarea" id="f-desc" placeholder="Objetivo, contexto e informações relevantes..." oninput="autoResize(this)">'+(existingData?.description||'')+'</textarea></div>'+
+    '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
+      '<label class="form-label">Informações gerais</label>'+
+      '<div id="info-editor-collapsed" onclick="expandInfoEditor()" style="min-height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;color:'+(existingData?.description?'var(--text-primary)':'var(--text-muted)')+';background:var(--bg-card);cursor:pointer;line-height:1.5;max-height:60px;overflow:hidden">'+(existingData?.description?String(existingData.description).slice(0,140)+(existingData.description.length>140?'...':''):'Clique para adicionar informações...')+'</div>'+
+      '<div id="info-editor-full" style="display:none">'+
+        '<div style="display:flex;gap:4px;flex-wrap:wrap;padding:5px 0 8px;border-bottom:0.5px solid var(--border);margin-bottom:6px">'+
+          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'bold\')" title="Negrito"><b>B</b></button>'+
+          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'italic\')" title="Itálico"><i>I</i></button>'+
+          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'insertUnorderedList\')" title="Lista">≡</button>'+
+          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'indent\')" title="Recuar →">⇥</button>'+
+          '<select class="notes-tool-select" onchange="infoCmd(\'fontSize\',this.value);this.selectedIndex=0">'+
+            '<option>Tamanho</option>'+
+            '<option value="1">Pequeno</option>'+
+            '<option value="3">Normal</option>'+
+            '<option value="5">Grande</option>'+
+          '</select>'+
+        '</div>'+
+        '<div id="f-desc-rich" contenteditable="true" class="notes-editor" data-placeholder="Objetivo, contexto e informações relevantes..." style="min-height:120px;border:0.5px solid var(--c-campanha);border-radius:var(--radius);padding:10px 12px;background:var(--bg-card);font-size:13px;line-height:1.6;outline:none" oninput="syncInfoToHidden()">'+(existingData?.description||'')+'</div>'+
+        '<input type="hidden" id="f-desc" value="">'+
+        '<div style="display:flex;justify-content:flex-end;margin-top:6px"><button type="button" class="notes-expand-btn" onclick="collapseInfoEditor()">Fechar ↑</button></div>'+
+      '</div>'+
+    '</div>'+
     '<div class="form-section-title"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>Subtarefas <button class="btn-add-sub" onclick="addSubForm()">+ Subtarefa</button></div>'+
     '<div id="sub-forms-container"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'></div>'
     ) : '');  // pre-select participants
@@ -4216,6 +4292,10 @@ function syncTemplateCanalRules() {
 
   if (canalGroup) canalGroup.style.display = (isCamp || isEmail) ? 'none' : '';
   if (canalAdd) canalAdd.style.display = (isCamp || isEmail) ? 'none' : '';
+
+  // For campanhas: hide participants field (they come from cronograma)
+  const partDropdown = document.getElementById('participants-dropdown');
+  if (partDropdown) partDropdown.style.display = isCamp ? 'none' : '';
 
   if (isEmail) {
     canalBox.querySelectorAll('.multi-item').forEach(function(el){
@@ -4384,13 +4464,15 @@ function renderTplTarefaPessoalForm(){
 function syncSpecialTemplateVisibility(){
   const isPersonal = currentTemplate === 'tarefa_pessoal';
   const isMeeting = currentTemplate === 'reuniao_planejamento';
+  const isCamp = currentTemplate === 'campanhas';
   const compactRow = document.querySelector('.compact-select-row');
   const driveField = document.getElementById('f-drive')?.closest('.form-group');
-  const descField = document.getElementById('f-desc')?.closest('.form-group');
+  const descField = document.getElementById('f-desc-rich') ? document.getElementById('info-field-wrap') : (document.getElementById('f-desc')?.closest('.form-group'));
   const subTitle = document.querySelector('.form-section-title');
   const subContainer = document.getElementById('sub-forms-container');
   const canaisWrap = document.getElementById('canais-dropdown')?.closest('.form-group');
   const emptyThird = document.querySelector('.compact-select-row > div:last-child');
+  const partDropdown = document.getElementById('participants-dropdown');
 
   if (compactRow) compactRow.style.display = isPersonal ? 'none' : '';
   if (driveField) driveField.style.display = (isPersonal || isMeeting) ? 'none' : '';
@@ -4399,6 +4481,8 @@ function syncSpecialTemplateVisibility(){
   if (subContainer) subContainer.style.display = (isPersonal || isMeeting) ? 'none' : '';
   if (canaisWrap) canaisWrap.style.display = isMeeting ? 'none' : '';
   if (emptyThird) emptyThird.style.display = isMeeting ? 'none' : '';
+  // Campanhas: participants come from cronograma, hide the dropdown
+  if (partDropdown) partDropdown.style.display = isCamp ? 'none' : '';
 }
 
 /* -- CAMPANHAS form -- */
@@ -4524,6 +4608,85 @@ function ensureCampanhasDefaultsForSelectedParticipants() {
   tplData._defaultsApplied = true;
 }
 
+function expandCronoNota(notaId) {
+  const col = document.getElementById('nota-collapsed-'+notaId);
+  const full = document.getElementById('nota-full-'+notaId);
+  if (col) col.style.display = 'none';
+  if (full) { full.style.display = ''; const ta = document.getElementById(notaId); if (ta) ta.focus(); }
+}
+function collapseCronoNota(notaId) {
+  const col = document.getElementById('nota-collapsed-'+notaId);
+  const full = document.getElementById('nota-full-'+notaId);
+  const ta = document.getElementById(notaId);
+  if (full) full.style.display = 'none';
+  if (col && ta) {
+    const txt = ta.value || '';
+    col.style.color = txt ? 'var(--text-primary)' : 'var(--text-muted)';
+    col.textContent = txt ? txt.slice(0,100)+(txt.length>100?'...':'') : 'Clique para adicionar informações...';
+    col.style.display = '';
+  }
+}
+function setCronoNota(el) {
+  const nome = el.dataset.nome || '';
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+  tplData.notasMembro[nome] = el.value;
+}
+
+function buildCronoParticipantesHtml(d) {
+  const blocos = d.cronogramaBlocos || [];
+  const byPart = {}, partOrder = [];
+  blocos.forEach(function(day){
+    (day.items||[]).forEach(function(item){
+      if (!(item.text||'').trim()) return;
+      const nome = (item.participante||'').trim() || '— Geral —';
+      if (!byPart[nome]) { byPart[nome]=[]; partOrder.push(nome); }
+      byPart[nome].push(item);
+    });
+  });
+  if (!partOrder.length) {
+    return '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Adicione itens ao cronograma com participantes definidos.</div>';
+  }
+  return partOrder.map(function(nome){
+    const m = MEMBERS.find(function(x){ return x.name===nome; });
+    const color = m ? m.color : '#888';
+    const nota = (d.notasMembro||{})[nome] || '';
+    const tasks = byPart[nome];
+    const nid = 'crono-nota-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
+    const avContent = m ? (m.avatar ? '<img src="'+m.avatar+'" style="width:100%;height:100%;object-fit:cover">' : esc(m.initials||nome[0])) : esc(nome[0]);
+
+    const tasksHtml = tasks.map(function(item){
+      const time = item.time || '';
+      const canal = item.canal || 'Geral';
+      const text = esc((item.text||'').trim());
+      const timeHtml = time ? '<span style="font-size:11px;font-weight:600;color:var(--c-campanha);font-family:var(--font-mono);margin-right:4px">'+esc(time)+'</span><span style="color:var(--text-muted);margin-right:4px">·</span>' : '';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border-light)">'+
+        '<div style="width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0"></div>'+
+        '<span style="font-size:12px;color:var(--text-primary);flex:1">'+timeHtml+text+'</span>'+
+        '<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+esc(canal)+'</span>'+
+      '</div>';
+    }).join('');
+
+    const notaPreview = nota ? esc(nota.slice(0,120))+(nota.length>120?'...':'') : 'Informações para '+esc(nome)+'...';
+    const notaColor = nota ? 'var(--text-primary)' : 'var(--text-muted)';
+
+    return '<div style="margin-bottom:20px">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
+        '<div style="width:28px;height:28px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden">'+avContent+'</div>'+
+        '<span style="font-size:13px;font-weight:600;color:var(--text-primary)">'+esc(nome)+'</span>'+
+        '<span style="font-size:10px;color:var(--text-muted);margin-left:auto;background:var(--bg-surface);padding:2px 8px;border-radius:10px">'+tasks.length+' tarefa'+(tasks.length>1?'s':'')+'</span>'+
+      '</div>'+
+      '<div style="margin-bottom:10px">'+
+        '<div id="nota-collapsed-'+nid+'" onclick="expandCronoNota(\''+nid+'\')" style="min-height:32px;border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:'+notaColor+';background:var(--bg-card);cursor:pointer;line-height:1.5">'+notaPreview+'</div>'+
+        '<div id="nota-full-'+nid+'" style="display:none">'+
+          '<textarea id="'+nid+'" style="width:100%;min-height:80px;border:0.5px solid var(--c-campanha);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:var(--bg-card);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="Referências, links, observações para '+esc(nome)+'..." oninput="setCronoNota(this)" data-nome="'+esc(nome)+'">'+esc(nota)+'</textarea>'+
+          '<div style="display:flex;justify-content:flex-end;margin-top:4px"><button type="button" class="notes-expand-btn" onclick="collapseCronoNota(\''+nid+'\')">Fechar \u2191</button></div>'+
+        '</div>'+
+      '</div>'+
+      tasksHtml+
+    '</div>';
+  }).join('');
+}
+
 function renderTplCampanhasForm() {
   ensureCampanhasDefaultsForSelectedParticipants();
   const d = tplData;
@@ -4637,9 +4800,12 @@ function renderTplCampanhasForm() {
       '<div id="tpl-dyn-datasChave">'+datasHtml+'</div>'+
     '</div>'+
     '<div class="tpl-section">'+
-      '<div class="tpl-section-title">✅ Checklist de execução</div>'+
-      (membrosVisiveis.length ? clMembrosHtml :
-        '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0">Selecione participantes acima para ver os checklists</div>')+
+      '<div class="tpl-section-title">✅ Participantes e tarefas</div>'+
+      (cronoTasksCount > 0
+        ? buildCronoParticipantesHtml(d)
+        : (membrosVisiveis.length ? clMembrosHtml :
+          '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0">Adicione itens ao cronograma para ver os participantes</div>')
+      )+
     '</div>'
   );
 }
@@ -5182,34 +5348,7 @@ function saveCampaign() {
   const newCamp = campaigns[campaigns.length-1];
   applyStatusRules(newCamp, null, newCamp.status);
 
-  const cronoTasks = savedTemplateData?.cronogramaTasks || [];
-  if (savedTemplateType === 'campanhas' && cronoTasks.length) {
-    cronoTasks.forEach(function(t){
-      const child = {
-        id: uid(),
-        name: t.name,
-        type: t.type,
-        status: 'Em planejamento',
-        owner: newCamp.owner,
-        participants: newCamp.participants && newCamp.participants.length ? [...newCamp.participants] : [newCamp.owner],
-        canais: [t.canal],
-        startDate: t.date||'',
-        endDate: t.date||'',
-        endTime: t.time||'',
-        driveLink: '',
-        description: '📋 '+(t.dayTitle || '')+(t.time?' — '+t.time:''),
-        subtasks: [],
-        comments: [],
-        templateType: t.templateType||null,
-        templateData: null,
-        _templateLocked: true,
-        _cronogramaGenerated: true,
-        parentCampaignId: newCamp.id,
-      };
-      campaigns.push(child);
-      applyStatusRules(child, null, 'Em planejamento');
-    });
-  }
+  // Cronograma não cria cards filhos — fica salvo em templateData e gera subtasks ao entrar Em andamento
 
   subForms=[]; currentTemplate=null; tplData={};
   saveData();
@@ -5452,8 +5591,8 @@ function renderPersonal() {
 
     (c.subtasks||[]).forEach(s => {
       if (s.owner !== currentMember) return;
-      // Tarefas de checklist (_auto='checklist') só aparecem quando a campanha está Em andamento ou além
-      if (s._auto === 'checklist' && c.status === 'Em planejamento') return;
+      // Tarefas de checklist (_auto='checklist') só aparecem quando a campanha está Em andamento
+      if (s._auto === 'checklist' && c.status !== 'Em andamento') return;
       tasks.push({sub:s, campaign:c});
     });
   });
