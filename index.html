@@ -1325,14 +1325,13 @@ body.modal-open #btn-new-campaign{display:none !important}
         <div style="font-size:18px;font-weight:600;margin-bottom:20px">⚙️ Administração</div>
         <div style="display:flex;gap:8px;margin-bottom:24px;border-bottom:0.5px solid var(--border);padding-bottom:0">
           <button onclick="adminTab('members')" id="atab-members" class="admin-tab active">👥 Membros</button>
-          <button onclick="adminTab('templates')" id="atab-templates" class="admin-tab">📋 Templates</button>
           <button onclick="adminTab('settings')" id="atab-settings" class="admin-tab">🏷️ Tags</button>
         </div>
         <div id="admin-tab-members">
           <div class="task-section-title">Membros ativos</div>
           <div id="admin-members-list"></div>
         </div>
-        <div id="admin-tab-templates" style="display:none">
+        <div id="admin-tab-templates" style="display:none!important">
           <div id="admin-templates-list"></div>
         </div>
         <div id="admin-tab-settings" style="display:none">
@@ -1470,7 +1469,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 <script>
 /* CONSTANTS & STATE */
 const TYPES    = ['Campanha','Conteúdo','Demanda interna','Reuniões / Planejamento','TAREFA PESSOAL'];
-const STATUSES = ['Em planejamento','Em andamento','Bloqueado','Aguardando aprovação','Concluído'];
+const STATUSES = ['Em planejamento','Em andamento','Pausado','Finalização','Concluído'];
 const DEFAULT_CANAIS   = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
 const DEFAULT_CATEGORIAS = ['Administrativo','Conteúdo','Financeiro','Operacional','Ideia','Estudo'];
 let CANAIS = [...DEFAULT_CANAIS];
@@ -1481,8 +1480,8 @@ const MEMBER_COLORS = ['#7c6af7','#3ecf8e','#f5a623','#f07070','#06b6d4','#8b5cf
 const STATUS_COLOR = {
   'Em planejamento':      {dot:'#6366f1',color:'#6366f1',bg:'rgba(99,102,241,.1)'},
   'Em andamento':         {dot:'#f59e0b',color:'#f59e0b',bg:'rgba(245,158,11,.1)'},
-  'Bloqueado':            {dot:'#ef4444',color:'#ef4444',bg:'rgba(239,68,68,.1)'},
-  'Aguardando aprovação': {dot:'#8b5cf6',color:'#8b5cf6',bg:'rgba(139,92,246,.1)'},
+  'Pausado':            {dot:'#ef4444',color:'#ef4444',bg:'rgba(239,68,68,.1)'},
+  'Finalização': {dot:'#8b5cf6',color:'#8b5cf6',bg:'rgba(139,92,246,.1)'},
   'Concluído':            {dot:'#10b981',color:'#10b981',bg:'rgba(16,185,129,.1)'},
 };
 const TYPE_COLOR = {
@@ -2393,20 +2392,18 @@ function bootApp() {
       migrated++;
     });
     if (migrated > 0) saveData();
-    // Remove CL_DEFAULTS subtasks from tarefa_pessoal campaigns (they should use ptChecklistItems)
+    // Clear CL_DEFAULTS auto subtasks from all campaign types
+    var defaultTitles = ['Planejamento de cronograma','Planilha de preços com desconto','Configurar Manychat','Planejamento de anúncios','Banner site','Anúncios','Configurar anúncios','Aviso Influenciadores','Adicionar Banners','Configurar cupom','Configurar promoção','Atualizar desconto nos produtos','Ativar cronômetro Nuvem','Testar checkout antes do lançamento','Cadastrar produto ou brinde','Comprar de brinde','Produção de peças finalizadas','Conferir e atualizar o estoque','Orçamento'];
     campaigns.forEach(function(c){
-      if (c.templateType !== 'tarefa_pessoal') return;
-      var hasDefaults = (c.subtasks||[]).some(function(s){
-        return s._auto === 'checklist' && ['Planejamento de cronograma','Planilha de preços com desconto','Configurar Manychat','Planejamento de anúncios'].indexOf(s.title) !== -1;
-      });
-      if (hasDefaults) {
-        c.subtasks = (c.subtasks||[]).filter(function(s){ return s._auto !== 'checklist'; });
-        // Re-apply from ptChecklistItems
-        var items = c.templateData && c.templateData.ptChecklistItems || [];
-        items.forEach(function(it){
-          if (!it.texto || !it.texto.trim()) return;
-          c.subtasks.push({id:uid(),title:it.texto,canal:'Geral',urgency:'Normal',owner:c.owner,due:'',status:it.done?'Concluído':'Pendente',dep:null,checklist:[],_auto:'checklist'});
-        });
+      if (c.templateType === 'tarefa_pessoal') {
+        c.subtasks = (c.subtasks||[]).filter(function(s){ return !s._auto; });
+        return;
+      }
+      if (!c._fromCrono && c.templateType === 'campanhas') {
+        var hadDefaults = (c.subtasks||[]).some(function(s){ return s._auto==='checklist' && defaultTitles.indexOf(s.title) !== -1; });
+        if (hadDefaults) {
+          c.subtasks = (c.subtasks||[]).filter(function(s){ return !(s._auto==='checklist' && defaultTitles.indexOf(s.title) !== -1); });
+        }
       }
     });
 
@@ -3552,23 +3549,8 @@ function applyStatusRules(c, oldStatus, newStatus) {
     // Remove briefing task
     c.subtasks = (c.subtasks||[]).filter(s => s._auto !== 'planning');
 
-    // For tarefa_pessoal: use ptChecklistItems, no CL_DEFAULTS
-    if (c.templateType === 'tarefa_pessoal') {
-      const ptItems = c.templateData?.ptChecklistItems || [];
-      // Remove any existing auto tasks
-      c.subtasks = (c.subtasks||[]).filter(function(s){ return !s._auto; });
-      ptItems.forEach(function(it){
-        if (!it.texto?.trim()) return;
-        c.subtasks.push({
-          id: uid(), title: it.texto,
-          canal: 'Geral', urgency: 'Normal',
-          owner: c.owner, due: '',
-          status: it.done ? 'Concluído' : 'Pendente',
-          dep: null, checklist: [], _auto: 'checklist',
-        });
-      });
-      return;
-    }
+    // Tarefa pessoal: checklist is internal, never creates subtasks
+    if (c.templateType === 'tarefa_pessoal') return;
 
     // For campanhas with cronograma: always wipe stale checklist tasks and resync
     if (c.templateType === 'campanhas') {
@@ -3698,42 +3680,8 @@ function applyStatusRules(c, oldStatus, newStatus) {
           });
         });
 
-      } else {
-        // No template data — use CL_DEFAULTS per participant
-        let criouAlguma = false;
-        participantes.forEach(memberId => {
-          if (!memberId) return;
-          const m = MEMBERS.find(x => x.id === memberId);
-          if (!m) return;
-          const defaultItems = CL_DEFAULTS[m.name] || [];
-          if (defaultItems.length > 0) {
-            defaultItems.forEach(item => {
-              const t = typeof item === 'string' ? {title:item, canal:'Geral'} : item;
-              c.subtasks.push({
-                id: uid(), title: t.title,
-                canal: t.canal || 'Geral', urgency: 'Normal',
-                owner: memberId, due: '',
-                status: 'Pendente', dep: null, checklist: [],
-                _auto: 'checklist',
-              });
-            });
-            criouAlguma = true;
-          }
-        });
-        if (!criouAlguma) {
-          // Last resort: one generic task per participant
-          participantes.forEach(memberId => {
-            if (!memberId) return;
-            c.subtasks.push({
-              id: uid(), title: 'Executar: ' + c.name,
-              canal: c.canais?.[0] || 'Geral', urgency: 'Normal',
-              owner: memberId, due: '',
-              status: 'Pendente', dep: null, checklist: [],
-              _auto: 'checklist',
-            });
-          });
-        }
       }
+      // No auto-fill from defaults — only explicit checklist items create subtasks
     }
   }
 }
@@ -4341,20 +4289,18 @@ function renderCampaignForm(existingData) {
         URGENCIAS.map(function(u){return '<option value="'+u+'"'+((u===(existingData?.urgency||'Normal'))?' selected':'')+'>'+u+'</option>';}).join('')+
       '</select></div></div>'+
     '</div>'+
-    '<div class="compact-select-row"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
-      '<div class="form-group compact-dropdown" id="participants-dropdown"><label class="form-label">Participantes</label>'+
-        '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'participants-dropdown\')"><span class="summary" id="participants-summary">Selecionar participantes</span><span>▾</span></button>'+
-        '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div></div>'+
+    '<div class="compact-select-row"'+(currentTemplate==="tarefa_pessoal"?' style="display:none"':'')+'>'+
       (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' ? (
         '<div class="form-group compact-dropdown" id="canais-dropdown"><label class="form-label">Canais</label>'+
           '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'canais-dropdown\')"><span class="summary" id="canais-summary">Selecionar canais</span><span>▾</span></button>'+
           '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
           '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div></div>'
       ) : '<div></div>')+
-      '<div></div>'+
+      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento' ? (
+        '<div class="form-group" style="margin:0"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
+      ) : '<div></div>')+
     '</div>'+
-    '<div class="form-group"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'+
-    '<div id="tpl-fields-container"></div>'+
+    '<div id="participants-dropdown" style="display:none"><div class="multi-select" id="multi-participants" style="display:none">'+membersHtml+'</div></div>'+
     '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
       '<label class="form-label">Informações gerais</label>'+
       '<div id="info-editor-collapsed" onclick="expandInfoEditor()" style="min-height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;color:'+(existingData?.description?'var(--text-primary)':'var(--text-muted)')+';background:var(--bg-card);cursor:pointer;line-height:1.5;max-height:60px;overflow:hidden">'+(existingData?.description?String(existingData.description).slice(0,140)+(existingData.description.length>140?'...':''):'Clique para adicionar informações...')+'</div>'+
@@ -4376,6 +4322,7 @@ function renderCampaignForm(existingData) {
         '<div style="display:flex;justify-content:flex-end;margin-top:6px"><button type="button" class="notes-expand-btn" onclick="collapseInfoEditor()">Fechar ↑</button></div>'+
       '</div>'+
     '</div>'+
+    '<div id="tpl-fields-container"></div>'+
     '<div class="form-section-title"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>Subtarefas <button class="btn-add-sub" onclick="addSubForm()">+ Subtarefa</button></div>'+
     '<div id="sub-forms-container"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'></div>'
     ) : '');  // pre-select participants
@@ -4736,32 +4683,12 @@ function tplClSelectCanal(path, idx, selectEl) {
 
 
 function ensureCampanhasDefaultsForSelectedParticipants() {
+  // Auto-fill disabled — only initialize empty structures and datasChave
   if (currentTemplate !== 'campanhas') return;
   if (!tplData || typeof tplData !== 'object') tplData = {};
-
-  const selectedNames = [...(document.querySelectorAll('#multi-participants .multi-item.selected')||[])].map(el=>{
-    const m = MEMBERS.find(x=>x.id===el.dataset.val);
-    return m?.name;
-  }).filter(Boolean);
-
   if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
   if (!tplData.notasMembro) tplData.notasMembro = {};
   if (!tplData.encMembro) tplData.encMembro = {};
-
-  selectedNames.forEach(nome => {
-    if (CL_DEFAULTS[nome] && (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length)) {
-      tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'
-        ? {texto:t,canal:'Geral',done:false}
-        : {texto:t.title,canal:t.canal||'Geral',done:false}));
-    }
-    if (!tplData.notasMembro[nome]) tplData.notasMembro[nome] = tplData.notasMembro[nome] || '';
-    if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
-      tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS
-        .filter(x=>x.membro===nome)
-        .map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
-    }
-  });
-
   if (!tplData.datasChave || !tplData.datasChave.length) {
     tplData.datasChave = [
       {label:'Pré-lançamento Clube',date:'',time:''},
@@ -4769,8 +4696,6 @@ function ensureCampanhasDefaultsForSelectedParticipants() {
       {label:'Término',date:'',time:''},
     ];
   }
-
-  tplData._defaultsApplied = true;
 }
 
 function buildNotaViewHtml(nid, preview, color, fullHtml) {
@@ -5243,50 +5168,101 @@ function renderTplEmailForm() {
 
 /* -- DEMANDA INTERNA form -- */
 function renderTplDemandaForm() {
-  const d = tplData;
-  const membrosAtivos = d.membrosAtivos||[];
-  const blocos = d.blocosMembros||{};
+  var d = tplData;
+  var membrosAtivos = d.membrosAtivos||[];
+  var blocos = d.blocosMembros||{};
+  var Q = '\x27';
+  var html = '<div class="tpl-section"><div class="tpl-section-title">Participantes</div>';
 
-  const membrosHtml = MEMBERS.map(m=>{
-    const ativo = membrosAtivos.includes(m.id);
-    const passos = blocos[m.id]?.passos||[];
-    const passosHtml = passos.map((p,pi)=>{
-      const depOpts = passos.slice(0,pi).map((pp,j)=>'<option value="'+pp.id+'"'+(p.dep===pp.id?' selected':'')+'>Passo '+(j+1)+' — '+esc(pp.titulo)+'</option>').join('');
-      return '<div class="tpl-step-box" id="tpl-step-'+m.id+'-'+pi+'">'+
-        '<button class="tpl-remove-btn" style="position:absolute;top:6px;right:6px" onclick="tplStepRemove(\''+m.id+'\','+pi+')">×</button>'+
-        '<div class="tpl-step-num">Passo '+(pi+1)+'</div>'+
-        '<div class="form-group"><input class="form-input" style="height:30px;font-size:12px" placeholder="Título do passo" value="'+esc(p.titulo||'')+'" oninput="tplData.blocosMembros[\''+m.id+'\'].passos['+pi+'].titulo=this.value"></div>'+
-        '<div class="tpl-row">'+
-        '<div class="select-wrap"><select class="form-select" style="height:30px;font-size:12px" onchange="tplData.blocosMembros[\''+m.id+'\'].passos['+pi+'].urgencia=this.value">'+
-          URGENCIAS.map(u=>'<option'+(p.urgencia===u?' selected':'')+'>'+u+'</option>').join('')+'</select></div>'+
-        '<input class="form-input" type="datetime-local" style="height:30px;font-size:12px" value="'+(p.prazo||'')+'" oninput="tplData.blocosMembros[\''+m.id+'\'].passos['+pi+'].prazo=this.value">'+
-        '</div>'+
-        (depOpts?'<div class="select-wrap" style="margin-top:4px"><select class="form-select" style="height:30px;font-size:12px" onchange="tplData.blocosMembros[\''+m.id+'\'].passos['+pi+'].dep=this.value"><option value="">Sem dependência</option>'+depOpts+'</select></div>':'')+
-        '</div>';
+  MEMBERS.forEach(function(m) {
+    if (!membrosAtivos.includes(m.id)) return;
+    var passos = (blocos[m.id]||{}).passos||[];
+    var nota = (d.notasMembro||{})[m.name] || '';
+    var avContent = m.avatar
+      ? '<img src="'+m.avatar+'" style="width:100%;height:100%;object-fit:cover">'
+      : (m.initials||m.name.slice(0,2));
+
+    // Exec steps HTML
+    var passosHtml = passos.map(function(p, pi) {
+      var urgOpts = URGENCIAS.map(function(u){
+        return '<option'+(p.urgencia===u?' selected':'')+'>'+u+'</option>';
+      }).join('');
+      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--border-light)">'+
+        '<input class="form-input" style="flex:1;height:28px;font-size:12px" placeholder="Descrever o passo..." value="'+esc(p.titulo||'')+'" oninput="tplDemandaStep('+Q+m.id+Q+','+pi+','+Q+'titulo'+Q+',this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();tplStepAdd('+Q+m.id+Q+')}">'+
+        '<div class="select-wrap" style="width:90px;flex-shrink:0"><select class="form-select" style="height:28px;font-size:11px" onchange="tplDemandaStep('+Q+m.id+Q+','+pi+','+Q+'urgencia'+Q+',this.value)">'+urgOpts+'</select></div>'+
+        '<input class="form-input" type="datetime-local" style="width:150px;height:28px;font-size:11px;flex-shrink:0" value="'+(p.prazo||'')+'" oninput="tplDemandaStep('+Q+m.id+Q+','+pi+','+Q+'prazo'+Q+',this.value)">'+
+        '<button type="button" style="border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;flex-shrink:0" onclick="tplStepRemove('+Q+m.id+Q+','+pi+')">×</button>'+
+      '</div>';
     }).join('');
 
-    return '<div style="margin-bottom:8px">'+
-      '<label class="tpl-member-toggle">'+
-      '<input type="checkbox" '+(ativo?'checked':'')+' onchange="tplToggleMembro(\''+m.id+'\',this.checked)">'+
-      '<div class="m-dot" style="background:'+m.color+';width:10px;height:10px;border-radius:50%"></div>'+
-      '<span style="font-size:13px;color:var(--text-primary)">'+m.name+'</span>'+
-      '<span style="font-size:11px;color:var(--text-muted)">'+m.role+'</span>'+
-      '</label>'+
-      (ativo?'<div class="tpl-member-block" id="tpl-bloco-'+m.id+'">'+
-        '<div class="tpl-member-block-title">'+
-          '<div class="m-dot" style="background:'+m.color+'"></div>'+m.name+
-          '<button type="button" class="btn-add-sub" style="margin-left:auto" onclick="tplStepAdd(\''+m.id+'\')">+ Passo</button>'+
+    html +=
+      '<div style="margin-bottom:20px">'+
+        // Header: avatar + name + task count + deselect
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
+          '<div style="width:28px;height:28px;border-radius:50%;background:'+m.color+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden">'+avContent+'</div>'+
+          '<span style="font-size:13px;font-weight:600;color:var(--text-primary)">'+esc(m.name)+'</span>'+
+          '<span style="font-size:10px;color:var(--text-muted);margin-left:auto;background:var(--bg-surface);padding:2px 8px;border-radius:10px">'+passos.length+' passo'+(passos.length!==1?'s':'')+'</span>'+
+          '<button type="button" style="border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;padding:0 4px" onclick="tplToggleMembro('+Q+m.id+Q+',false)" title="Remover">×</button>'+
         '</div>'+
-        '<div id="tpl-passos-'+m.id+'">'+passosHtml+'</div>'+
-      '</div>':'<div id="tpl-bloco-'+m.id+'" style="display:none"></div>')+
-    '</div>';
-  }).join('');
+        // Notes / briefing
+        '<div style="margin-bottom:12px">'+
+          '<textarea style="width:100%;min-height:52px;border:0.5px solid var(--border-light);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:transparent;color:var(--text-primary);outline:none;box-sizing:border-box" '+
+            'placeholder="Informações para '+esc(m.name)+': referências, links, observações..." '+
+            'oninput="if(!tplData.notasMembro)tplData.notasMembro={};tplData.notasMembro['+Q+m.name+Q+']=this.value">'+esc(nota)+'</textarea>'+
+        '</div>'+
+        // Execução
+        '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Execução</div>'+
+        '<div id="tpl-passos-'+m.id+'">'+ passosHtml +'</div>'+
+        '<div style="display:flex;gap:6px;margin-top:8px">'+
+          '<input class="form-input" id="tpl-step-new-'+m.id+'" placeholder="Nova tarefa..." style="height:28px;font-size:11px" '+
+            'onkeydown="if(event.key===\'Enter\'){tplDemandaAddStep('+Q+m.id+Q+',this);event.preventDefault()}">'+
+          '<button class="btn-add-sub" style="height:28px;font-size:11px;flex-shrink:0" onclick="tplDemandaAddStep('+Q+m.id+Q+',document.getElementById('+Q+'tpl-step-new-'+m.id+Q+'))">+</button>'+
+        '</div>'+
+      '</div>';
+  });
 
-  return '<div class="tpl-section">'+
-    '<div class="tpl-section-title">📋 Membros participantes</div>'+
-    membrosHtml+
-  '</div>';
+  // Add member button
+  var inativos = MEMBERS.filter(function(m){ return !membrosAtivos.includes(m.id); });
+  if (inativos.length) {
+    html += '<button type="button" class="btn-add-sub" style="width:100%;height:30px;font-size:12px;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:4px" onclick="demandaShowAddMember()">+ Adicionar participante</button>';
+    html += '<div id="dd-demanda-members" style="display:none;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg-card);margin-top:4px;padding:4px 0">';
+    inativos.forEach(function(m){
+      html += '<div class="filter-dd-item" data-mid="'+m.id+'" onclick="demandaAddMember(this.dataset.mid)" style="display:flex;align-items:center;gap:8px">'+
+        '<div style="width:7px;height:7px;border-radius:50%;background:'+m.color+';flex-shrink:0"></div>'+
+        '<span>'+esc(m.name)+'</span>'+
+        '<span style="font-size:10px;color:var(--text-muted);margin-left:4px">'+esc(m.role)+'</span>'+
+      '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
 }
+
+function tplDemandaAddStep(mid, inputEl) {
+  if (!tplData.blocosMembros) tplData.blocosMembros = {};
+  if (!tplData.blocosMembros[mid]) tplData.blocosMembros[mid] = {passos:[]};
+  var titulo = inputEl ? inputEl.value.trim() : '';
+  tplData.blocosMembros[mid].passos.push({id:uid(), titulo:titulo, urgencia:'Normal', prazo:'', dep:null});
+  if (inputEl) inputEl.value = '';
+  renderTplFields();
+}
+function demandaShowAddMember() {
+  var dd = document.getElementById('dd-demanda-members');
+  if (dd) dd.style.display = dd.style.display === 'none' ? '' : 'none';
+}
+function demandaAddMember(mid) {
+  tplToggleMembro(mid, true);
+  var dd = document.getElementById('dd-demanda-members');
+  if (dd) dd.style.display = 'none';
+}
+function tplDemandaStep(mid, idx, key, val) {
+  if (!tplData.blocosMembros || !tplData.blocosMembros[mid]) return;
+  var p = tplData.blocosMembros[mid].passos && tplData.blocosMembros[mid].passos[idx];
+  if (p) p[key] = val;
+}
+
 
 /* -- TEMPLATE HELPER FUNCTIONS -- */
 
@@ -5387,6 +5363,12 @@ function tplToggleMembro(membId, checked) {
     tplData.membrosAtivos=tplData.membrosAtivos.filter(x=>x!==membId);
   }
   renderTplFields();
+  renderTplFields();
+  var partSummary = document.getElementById('participants-summary');
+  if (partSummary && currentTemplate === 'demanda') {
+    var n = (tplData.membrosAtivos||[]).length;
+    partSummary.textContent = n ? n + ' selecionado' + (n > 1 ? 's' : '') : 'Selecionar participantes';
+  }
 }
 function tplStepAdd(membId) {
   if (!tplData.blocosMembros) tplData.blocosMembros={};
@@ -5425,8 +5407,7 @@ function updateCompactSummaries(){
   if (partSummary) {
     const selected = [...document.querySelectorAll('#multi-participants .multi-item.selected')];
     if (!selected.length) partSummary.textContent = 'Selecionar participantes';
-    else if (selected.length === 1) partSummary.textContent = selected[0].textContent.trim();
-    else partSummary.textContent = selected.length + ' participantes';
+    else partSummary.textContent = selected.length + ' selecionado' + (selected.length > 1 ? 's' : '');
   }
 
   const canalSummary = document.getElementById('canais-summary');
@@ -5494,34 +5475,10 @@ function syncTemplateParticipants() {
 }
 
 function syncCampanhasChecklist() {
-  const selected = [...document.querySelectorAll('#multi-participants .multi-item.selected')].map(el=>{
-    const m = MEMBERS.find(x=>x.id===el.dataset.val);
-    return m?.name;
-  }).filter(Boolean);
-
-  const membrosComDefault = Object.keys(CL_DEFAULTS);
+  // Auto-fill disabled — just keep existing data, no CL_DEFAULTS injection
   if (!tplData.checklistsMembro) tplData.checklistsMembro = {};
   if (!tplData.encMembro) tplData.encMembro = {};
   if (!tplData.notasMembro) tplData.notasMembro = {};
-
-  membrosComDefault.forEach(nome => {
-    const isSelected = selected.includes(nome);
-    if (isSelected) {
-      if (!tplData.checklistsMembro[nome] || !tplData.checklistsMembro[nome].length) {
-        tplData.checklistsMembro[nome] = CL_DEFAULTS[nome].map(t=>(typeof t==='string'?{texto:t,canal:'Geral',done:false}:{texto:t.title,canal:t.canal||'Geral',done:false}));
-      }
-      if (!tplData.encMembro[nome] || !tplData.encMembro[nome].length) {
-        tplData.encMembro[nome] = CL_ENCERRAMENTO_DEFAULTS.filter(x=>x.membro===nome).map(x=>({texto:x.item,canal:x.canal||'Geral',done:false}));
-      }
-    } else {
-      if (tplData.checklistsMembro[nome]) delete tplData.checklistsMembro[nome];
-      if (tplData.encMembro[nome]) delete tplData.encMembro[nome];
-      if (tplData.notasMembro[nome]) delete tplData.notasMembro[nome];
-    }
-  });
-
-  ensureCampanhasDefaultsForSelectedParticipants();
-
   const container = document.getElementById('tpl-fields-container');
   if (container && currentTemplate==='campanhas') renderTplFields();
 }
@@ -5816,7 +5773,7 @@ function renderPersonalMeetings(){
   el.innerHTML = meetings.map(function(c){
     const pautas = (c.templateData?.pautas || []).length;
     const ideias = (c.templateData?.pautas || []).reduce(function(acc,p){ return acc + ((p.ideias || []).length); }, 0);
-    const dateText = c.startDate ? formatDate(c.startDate) : (c.endDate ? formatDate(c.endDate) : 'Sem data');
+    const dateText = c.endDate ? formatDate(c.endDate) : (c.startDate ? formatDate(c.startDate) : 'Sem data');
     return '<div class="meeting-mini-card" onclick="openEditCampaignPanel(\''+c.id+'\')">'+
       '<div class="meeting-mini-title">'+esc(c.name || 'Reunião')+'</div>'+
       '<div class="meeting-mini-meta"><span>'+dateText+'</span><span class="meeting-mini-dot"></span><span>'+pautas+' pautas</span><span class="meeting-mini-dot"></span><span>'+ideias+' ideias</span></div>'+
@@ -5846,25 +5803,27 @@ function renderPersonal() {
   campaigns.forEach(c => {
     const participantIds = [c.owner].concat(c.participants || []).filter(Boolean);
 
-    if (c.templateType === 'reuniao_planejamento' && participantIds.includes(currentMember)) {
+    // Reuniões aparecem apenas no painel lateral, não na lista de tarefas
+    if (c.templateType === 'reuniao_planejamento') return;
+
+    // Tarefa pessoal: always shows as single card (checklist is internal)
+    if (c.templateType === 'tarefa_pessoal' && c.owner === currentMember) {
       tasks.push({
         sub:{
-          id:'meeting-'+c.id,
-          title:c.name || 'Reunião',
-          canal:'Reunião',
-          urgency:c.urgency || 'Normal',
+          id:'pt-'+c.id,
+          title:c.name,
+          canal:'Geral',
+          urgency:c.urgency||'Normal',
           owner:c.owner,
-          due:c.startDate ? (c.startDate + (c.endTime ? ('T' + c.endTime) : '')) : '',
-          status:c.status || 'Em planejamento',
+          due:c.endDate ? (c.endDate+(c.endTime?'T'+c.endTime:'')) : '',
+          status:c.status||'Em planejamento',
           checklist:[],
-          note:c.templateData?.objetivo || '',
-          _meetingCard:true
+          _ptCard:true
         },
         campaign:c
       });
+      return;
     }
-
-    if (c.templateType === 'reuniao_planejamento') return;
 
     (c.subtasks||[]).forEach(s => {
       if (s.owner !== currentMember) return;
@@ -5908,7 +5867,7 @@ function renderPersonal() {
     const status = c.status || 'Pendente';
     const urgency = s.urgency || 'Normal';
     const effectiveCanal = s._meetingCard ? 'Reunião' : getEffectiveTaskCanal(t);
-    const typeLabel = c.templateType==='email' ? 'E-mail MKT' : c.templateType==='publicacoes' ? 'Publicação' : c.templateType==='campanhas' ? 'Campanha' : c.templateType==='reuniao_planejamento' ? 'Reuniões / Planejamento' : 'Demanda interna';
+    const typeLabel = c.templateType==='email' ? 'E-mail MKT' : c.templateType==='publicacoes' ? 'Publicação' : c.templateType==='campanhas' ? 'Campanha' : c.templateType==='reuniao_planejamento' ? 'Reuniões / Planejamento' : c.templateType==='tarefa_pessoal' ? 'Tarefa pessoal' : 'Demanda interna';
     const dueSource = s.due || (c.endDate ? (c.endDate + (c.endTime ? (' ' + c.endTime) : '')) : '');
     const dueText = dueSource
       ? (s._fromCrono ? '📅 ' + formatDue(dueSource) : 'Prazo de entrega: ' + formatDue(dueSource))
@@ -5940,9 +5899,11 @@ function renderPersonal() {
     const campId = c.id, subId = s.id;
 
     const mainName = (c.templateType === 'campanhas' || c.templateType === 'reuniao_planejamento') ? c.name : ((s.note && String(s.note).trim()) || c.name || '');
-    const titleText = (c.templateType === 'campanhas' || c.templateType === 'reuniao_planejamento')
-      ? (s.title || c.name || 'Tarefa')
-      : ((s.title || 'Tarefa') + ' | ' + mainName);
+    const titleText = s._ptCard
+      ? c.name  // tarefa pessoal: just the campaign name
+      : (c.templateType === 'campanhas' || c.templateType === 'reuniao_planejamento')
+        ? (s.title || c.name || 'Tarefa')
+        : (s.title && s.title !== c.name ? (s.title + ' | ' + mainName) : (s.title || c.name || 'Tarefa'));
 
     let subtitleText = '';
     const parentId = c.parentCampaignId || c.parentId || c.parentCampId || null;
@@ -5962,6 +5923,7 @@ function renderPersonal() {
     div.style.cssText = 'padding-left:18px;cursor:pointer';
     div.onclick = function(){
       if (s._meetingCard) { openEditCampaignPanel(campId); }
+      else if (s._ptCard) { openEditCampaignPanel(campId); }
       else if (s._openEdit) { openEditCampaignPanel(campId); }
       else { openCampaignDetail(campId); }
     };
