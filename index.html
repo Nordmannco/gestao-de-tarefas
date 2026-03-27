@@ -391,6 +391,29 @@ body.modal-open #btn-new-campaign{display:none !important}
 .form-input{width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;outline:none;color:var(--text-primary);background:var(--bg-card);transition:border-color .15s}
 .form-input:focus{border-color:var(--c-campanha)}
 .form-textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;outline:none;color:var(--text-primary);background:var(--bg-card);resize:none;overflow:hidden;min-height:60px;transition:border-color .15s;line-height:1.5}
+.mini-editor-wrap{margin-bottom:0}
+.mini-toolbar{display:flex;align-items:center;gap:3px;padding:0 0 5px 0;flex-wrap:wrap}
+.mini-tb{width:26px;height:26px;border:none;border-radius:4px;background:transparent;color:var(--text-muted);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.mini-tb:hover{background:var(--bg-surface);color:var(--text-primary)}
+.mini-tb.sz{font-size:10px;font-weight:600;width:auto;padding:0 5px}
+.mini-sep{width:1px;height:16px;background:var(--border-light);margin:0 2px;flex-shrink:0}
+.mini-swatch{width:18px;height:18px;border-radius:3px;border:none;cursor:pointer;flex-shrink:0}
+.mini-swatch:hover{transform:scale(1.2)}
+.mini-editor{outline:none;color:var(--text-primary);font-size:13px;line-height:1.6;min-height:50px;width:100%;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;background:var(--bg-card);transition:border-color .15s;box-sizing:border-box}
+.mini-editor:focus{border-color:var(--c-campanha)}
+.mini-editor:empty:before{content:attr(data-ph);color:var(--text-muted);pointer-events:none}
+.mini-editor div,.mini-editor p{margin:0}
+.mini-editor ul{padding-left:16px;margin:0}
+.mini-editor li{margin:0}
+.td-col-wrap{margin-bottom:12px}
+.td-col-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-primary);margin-bottom:6px}
+.td-col-preview{font-size:13px;color:var(--text-primary);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:pre-wrap}
+.td-col-full ul,.td-col-full ol{padding-left:1.4em;margin:4px 0}
+.td-col-full li{margin:2px 0}
+.td-col-full{font-size:13px;color:var(--text-primary);line-height:1.6;display:none}
+.td-col-full.open{display:block}
+.td-col-toggle{font-size:11px;color:var(--c-campanha);cursor:pointer;margin-top:3px;display:none;background:none;border:none;padding:0;font-family:var(--font);font-weight:500}
+.td-col-toggle:hover{opacity:.7}
 .form-textarea:focus{border-color:var(--c-campanha)}
 .form-select{width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;outline:none;color:var(--text-primary);background:var(--bg-card);appearance:none}
 .select-wrap{position:relative}
@@ -512,6 +535,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 .notes-editor div,.notes-editor p,.notes-editor ul{margin:0 0 6px 0}
 .notes-editor ul{padding-left:18px;margin-left:0;list-style-position:outside}
 .notes-editor li{margin-left:0;padding-left:0}
+.notes-sep{width:1px;height:14px;background:var(--border-light);margin:0 2px;display:inline-block;vertical-align:middle}
 .notes-tool-btn.is-active{
   background:var(--bg-surface);color:var(--text-primary);box-shadow:inset 0 0 0 0.5px var(--border)
 }
@@ -554,7 +578,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 .panel-search svg{width:14px;height:14px;color:var(--text-muted);flex-shrink:0}
 .panel-search input{flex:1;border:none;outline:none;font-size:13px;background:transparent;color:var(--text-primary)}
 .panel-stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.stat-chip{padding:5px 12px;border-radius:20px;font-size:11px;background:var(--bg-card);border:0.5px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+.stat-chip{padding:5px 12px;border-radius:4px;font-size:11px;background:var(--bg-card);border:0.5px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;gap:5px}
 .stat-num{font-weight:600;color:var(--text-primary)}
 .task-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:16px 0 8px;display:flex;align-items:center;gap:6px}
 .task-block{
@@ -1234,10 +1258,7 @@ body.modal-open #btn-new-campaign{display:none !important}
     <div class="topbar-sep"></div>
     <div class="chips" id="topbar-chips"></div>
     <div class="topbar-spacer"></div>
-    <button class="btn-new" id="btn-new-campaign" onclick="openNewCampaignPanel()">
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 1v10M1 6h10"/></svg>
-      Nova campanha
-    </button>
+    <button class="btn-new" id="btn-new-campaign" onclick="openNewCampaignPanel()">+ NOVA</button>
   </div>
 
   <div class="content">
@@ -1277,15 +1298,23 @@ body.modal-open #btn-new-campaign{display:none !important}
           <div class="notes-toolbar">
             <button type="button" class="notes-tool-btn" id="notes-btn-bold" onclick="notesExec('bold')" title="Negrito"><strong>B</strong></button>
             <button type="button" class="notes-tool-btn" id="notes-btn-italic" onclick="notesExec('italic')" title="Itálico"><em>I</em></button>
+            <button type="button" class="notes-tool-btn" id="notes-btn-underline" onclick="notesExec('underline')" title="Sublinhado"><u>U</u></button>
+            <span class="notes-sep"></span>
             <button type="button" class="notes-tool-btn" id="notes-btn-list" onclick="notesExec('insertUnorderedList')" title="Lista">•</button>
             <button type="button" class="notes-tool-btn" onclick="insertChecklistItem()" title="Checklist">☐</button>
-            <select class="notes-tool-select" id="notes-size" onchange="applyNotesFontSize(this.value)" title="Tamanho">
-              <option value="">Aa</option>
-              <option value="2">P</option>
-              <option value="3">M</option>
-              <option value="5">G</option>
-            </select>
-            <input type="color" class="notes-color-input" id="notes-color" value="#111827" onchange="applyNotesColor(this.value)" title="Cor">
+            <span class="notes-sep"></span>
+            <button type="button" class="notes-tool-btn" onclick="applyNotesFontSize('2')" title="Pequeno" style="font-size:10px;font-weight:600">P</button>
+            <button type="button" class="notes-tool-btn" onclick="applyNotesFontSize('3')" title="Médio" style="font-size:10px;font-weight:600">M</button>
+            <button type="button" class="notes-tool-btn" onclick="applyNotesFontSize('5')" title="Grande" style="font-size:10px;font-weight:600">G</button>
+            <span class="notes-sep"></span>
+            <button class="mini-swatch" style="background:#1e293b" title="Preto" onmousedown="event.preventDefault();notesExec('foreColor','#1e293b')"></button>
+            <button class="mini-swatch" style="background:#64748b" title="Cinza" onmousedown="event.preventDefault();notesExec('foreColor','#64748b')"></button>
+            <button class="mini-swatch" style="background:#dc2626" title="Vermelho" onmousedown="event.preventDefault();notesExec('foreColor','#dc2626')"></button>
+            <button class="mini-swatch" style="background:#ea580c" title="Laranja" onmousedown="event.preventDefault();notesExec('foreColor','#ea580c')"></button>
+            <button class="mini-swatch" style="background:#ca8a04" title="Amarelo" onmousedown="event.preventDefault();notesExec('foreColor','#ca8a04')"></button>
+            <button class="mini-swatch" style="background:#16a34a" title="Verde" onmousedown="event.preventDefault();notesExec('foreColor','#16a34a')"></button>
+            <button class="mini-swatch" style="background:#2563eb" title="Azul" onmousedown="event.preventDefault();notesExec('foreColor','#2563eb')"></button>
+            <button class="mini-swatch" style="background:#9333ea" title="Roxo" onmousedown="event.preventDefault();notesExec('foreColor','#9333ea')"></button>
           </div>
           <div class="notes-editor-wrap" id="notes-editor-wrap">
             <div id="personal-notes-editor" class="notes-editor" contenteditable="true" spellcheck="true" oninput="savePersonalNotes();updateNotesToolbarState()" onmouseup="updateNotesToolbarState()" onkeyup="updateNotesToolbarState()" data-placeholder="Escreva ideias, prioridades, lembretes e observações..."></div>
@@ -1485,9 +1514,15 @@ const STATUS_COLOR = {
   'Concluído':            {dot:'#10b981',color:'#10b981',bg:'rgba(16,185,129,.1)'},
 };
 const TYPE_COLOR = {
-  'Campanha': {color:'#7c6af7',bg:'rgba(124,106,247,.1)'},
-  'Conteúdo': {color:'#10b981',bg:'rgba(16,185,129,.1)'},
-  'Tarefa':   {color:'#f59e0b',bg:'rgba(245,158,11,.1)'},
+  'Campanha':             {color:'#7c6af7',bg:'rgba(124,106,247,.1)'},
+  'Conteúdo':             {color:'#db2777',bg:'rgba(236,72,153,.1)'},
+  'E-mail':               {color:'#3b82f6',bg:'rgba(59,130,246,.1)'},
+  'E-mail MKT':           {color:'#3b82f6',bg:'rgba(59,130,246,.1)'},
+  'Demanda interna':      {color:'#0d9488',bg:'rgba(20,184,166,.1)'},
+  'Tarefa pessoal':       {color:'#d97706',bg:'rgba(245,158,11,.1)'},
+  'TAREFA PESSOAL':       {color:'#d97706',bg:'rgba(245,158,11,.1)'},
+  'Reuniões / Planejamento': {color:'#6366f1',bg:'rgba(99,102,241,.1)'},
+  'Tarefa':               {color:'#f59e0b',bg:'rgba(245,158,11,.1)'},
 };
 const URG_COLOR = {
   'Urgente':    {color:'#ef4444',bg:'rgba(239,68,68,.1)'},
@@ -3163,6 +3198,114 @@ function infoCmd(cmd, val) {
   syncInfoToHidden();
 }
 
+function tdCol(label, html, uid) {
+  if (!html || html.replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim() === '') return '';
+  // Strip to plain text for preview
+  var plain = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(li|p|div|h[1-6])[^>]*>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  var divPrev = 'tdcp-' + uid;
+  var divFull = 'tdcf-' + uid;
+  var tog = 'tdct-' + uid;
+  // Always show toggle — simpler and reliable
+  return '<div class="td-col-wrap">'+
+    (label ? '<div class="td-col-label">'+label+'</div>' : '')+
+    '<div id="'+divPrev+'" class="td-col-preview">'+plain+'</div>'+
+    '<div id="'+divFull+'" class="td-col-full">'+html+'</div>'+
+    '<button id="'+tog+'" class="td-col-toggle" style="display:inline" data-prev="'+divPrev+'" data-full="'+divFull+'" data-tog="'+tog+'" onclick="tdColToggle(this)">ver mais ↓</button>'+
+  '</div>';
+}
+function tdColToggle(btn) {
+  var prev = document.getElementById(btn.dataset.prev);
+  var full = document.getElementById(btn.dataset.full);
+  var isOpen = full.classList.toggle('open');
+  if (prev) prev.style.display = isOpen ? 'none' : '';
+  btn.textContent = isOpen ? 'ver menos ↑' : 'ver mais ↓';
+}
+// Check on render if content is clamped
+function tdColInit() {
+  document.querySelectorAll('.td-col-preview').forEach(function(el) {
+    var tog = document.getElementById(el.id.replace('tdcp-','tdct-'));
+    if (!tog) return;
+    // Show toggle if content overflows
+    if (el.scrollHeight > el.clientHeight + 4) {
+      tog.style.display = 'inline';
+    }
+  });
+}
+function rteHtml(id, value, placeholder, saveExpr, label) {
+  var labelHtml = label ? '<span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-right:8px">'+label+'</span>' : '';
+  var toolbar =
+    '<div class="mini-toolbar">'+labelHtml+
+      '<button class="mini-tb" title="Negrito" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'bold\')"><b>B</b></button>'+
+      '<button class="mini-tb" title="Itálico" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'italic\')"><i style=\"font-style:italic\">I</i></button>'+
+      '<button class="mini-tb" title="Sublinhado" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'underline\')"><u>U</u></button>'+
+      '<div class="mini-sep"></div>'+
+      '<button class="mini-tb" title="Lista" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'insertUnorderedList\')">•</button>'+
+      '<div class="mini-sep"></div>'+
+      '<button class="mini-tb sz" title="Pequeno" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'fontSize\',\'2\')">P</button>'+
+      '<button class="mini-tb sz" title="Médio" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'fontSize\',\'3\')">M</button>'+
+      '<button class="mini-tb sz" title="Grande" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'fontSize\',\'5\')">G</button>'+
+      '<div class="mini-sep"></div>'+
+      '<button class="mini-swatch" style="background:#1e293b" title="Preto" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#1e293b\')"></button>'+
+      '<button class="mini-swatch" style="background:#64748b" title="Cinza" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#64748b\')"></button>'+
+      '<button class="mini-swatch" style="background:#dc2626" title="Vermelho" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#dc2626\')"></button>'+
+      '<button class="mini-swatch" style="background:#ea580c" title="Laranja" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#ea580c\')"></button>'+
+      '<button class="mini-swatch" style="background:#ca8a04" title="Amarelo" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#ca8a04\')"></button>'+
+      '<button class="mini-swatch" style="background:#16a34a" title="Verde" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#16a34a\')"></button>'+
+      '<button class="mini-swatch" style="background:#2563eb" title="Azul" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#2563eb\')"></button>'+
+      '<button class="mini-swatch" style="background:#9333ea" title="Roxo" onmousedown="event.preventDefault();rteCmd(\''+id+'\',\'foreColor\',\'#9333ea\')"></button>'+
+    '</div>';
+  return '<div class="mini-editor-wrap">'+toolbar+
+    '<div id="'+id+'" class="mini-editor" contenteditable="true" spellcheck="true" data-ph="'+placeholder+'" oninput="'+saveExpr+'" onkeydown="rteKeydown(event,this)">'+
+      (value||'')+
+    '</div>'+
+  '</div>';
+}
+function rteKeydown(e, el) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    if (e.shiftKey) {
+      document.execCommand('outdent', false, null);
+    } else {
+      document.execCommand('indent', false, null);
+    }
+  }
+}
+function rteCmd(id, cmd, val) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.focus();
+  if (cmd === 'insertUnorderedList') {
+    // Use execCommand but fix cursor position
+    var sel = window.getSelection();
+    var range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+    document.execCommand('insertUnorderedList', false, null);
+    return;
+  }
+  document.execCommand(cmd, false, val || null);
+}
+function rteGet(id) {
+  var el = document.getElementById(id);
+  return el ? el.innerHTML : '';
+}
+function rteSaveNota(elId) {
+  var el = document.getElementById(elId); if (!el) return;
+  var val = el.innerHTML;
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+  MEMBERS.forEach(function(m) {
+    if (elId === 'nota-'+m.name.replace(/[^a-zA-Z0-9]/g,'_') || elId === 'nota-demanda-'+m.id) {
+      tplData.notasMembro[m.name] = val;
+    }
+  });
+}
 function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 document.addEventListener('input', e => { if (e.target.tagName==='TEXTAREA') autoResize(e.target); });
 
@@ -3207,19 +3350,19 @@ function setView(view, member) {
     document.getElementById('view-calendar').classList.add('active');
     document.getElementById('topbar-title').textContent='Calendário';
     document.getElementById('nav-calendar').classList.add('active');
-    btnNew.style.display='none';
+    btnNew.style.display='';
     renderCalendarFilters(); renderCalendar();
   } else if (view==='overview') {
     document.getElementById('view-overview').classList.add('active');
     document.getElementById('topbar-title').textContent='Carga da equipe';
     document.getElementById('nav-overview').classList.add('active');
-    btnNew.style.display='none';
+    btnNew.style.display='';
     renderOverview();
   } else if (view==='personal') {
     document.getElementById('view-personal').classList.add('active');
     const m = getMember(member);
     document.getElementById('topbar-title').textContent='Painel — '+(m?m.name:'');
-    btnNew.style.display='none';
+    btnNew.style.display='';
     const nb = document.getElementById('nav-'+member); if (nb) nb.classList.add('active');
     document.getElementById('personal-search').value='';
     personalFilter={urgency:[],canal:[],tipo:[],periodStart:'',periodEnd:'',periodPreset:''};
@@ -3228,7 +3371,7 @@ function setView(view, member) {
     document.getElementById('view-admin').classList.add('active');
     document.getElementById('topbar-title').textContent='Administração';
     document.getElementById('nav-admin').classList.add('active');
-    btnNew.style.display='none';
+    btnNew.style.display='';
     renderAdmin();
   }
 }
@@ -3343,10 +3486,13 @@ function renderCampaignCard(c) {
   const parentCampaign = c.parentCampaignId ? campaigns.find(x=>x.id===c.parentCampaignId) : null;
   const linkedTitle = parentCampaign?.name || '';
 
-  let topLabel = 'Campanha';
-  if (c.templateType && c.templateType !== 'campanhas') {
-    topLabel = (c.canais && c.canais.length ? c.canais[0] : c.type || 'Geral');
-  }
+  let topLabel = c.templateType==='campanhas'?'Campanha'
+    : c.templateType==='publicacoes'?'Conteúdo'
+    : c.templateType==='email'?'E-mail'
+    : c.templateType==='demanda'?'Demanda interna'
+    : c.templateType==='tarefa_pessoal'?'Tarefa pessoal'
+    : c.templateType==='reuniao_planejamento'?'Reuniões / Planejamento'
+    : 'Campanha';
 
   const urgency = c.urgency || 'Normal';
   const secondaryTitle = linkedTitle || '';
@@ -3378,7 +3524,7 @@ function openCampaignDetail(id) {
   const btnDel = document.getElementById('btn-delete');
   if (btnDel) btnDel.style.display='';
   document.getElementById('panel-title').textContent = c.name;
-  document.getElementById('btn-save').textContent = 'Editar campanha';
+  document.getElementById('btn-save').textContent = 'EDITAR';
   document.getElementById('btn-save').onclick = function() { openEditCampaignPanel(id); };
 
   const owner = getMember(c.owner);
@@ -3452,6 +3598,7 @@ function openCampaignDetail(id) {
 
   document.getElementById('panel-body').innerHTML =
     '<div style="margin-bottom:14px">'+
+      (c.status==='Em andamento'&&c.templateType?'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:'+(c.templateType==="tarefa_pessoal"?"#d97706":c.templateType==="demanda"?"#0d9488":"var(--c-campanha)")+';margin-bottom:8px;padding:4px 10px;background:'+(c.templateType==="tarefa_pessoal"?"rgba(245,158,11,.1)":c.templateType==="demanda"?"rgba(20,184,166,.1)":"var(--c-campanha-bg)")+';border-radius:4px;display:inline-block">'+(c.templateType==='email'?'E-mail MKT':c.templateType==='publicacoes'?'Publicação':c.templateType==='campanhas'?'Campanha':c.templateType==='reuniao_planejamento'?'Reunião':c.templateType==='tarefa_pessoal'?'Tarefa pessoal':c.templateType==='demanda'?'Demanda interna':'')+'</div>':'')+'<br style="display:'+(c.status==="Em andamento"&&c.templateType?"":"none")+'">'+
       '<select class="status-select" onchange="c_updateStatus(\''+id+'\',this.value)">'+
         STATUSES.map(s=>'<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>').join('')+
       '</select>'+
@@ -3465,7 +3612,7 @@ function openCampaignDetail(id) {
       (c.parentCampaignId ? (function(){const p=getCampaign(c.parentCampaignId);return p?'<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span>📎 Parte de:</span><button onclick="openCampaignDetail(\''+p.id+'\')" style="font-size:11px;color:var(--c-campanha);background:var(--c-campanha-bg);border:0.5px solid var(--c-campanha);border-radius:4px;padding:2px 8px;cursor:pointer">'+p.name+'</button></div>':''})() : '')+
       '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px"><span>Progresso</span><span>'+prog.done+'/'+prog.total+' — '+prog.pct+'%</span></div>'+
         '<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:'+prog.pct+'%;background:'+progColor+'"></div></div></div>'+
-      (c.description?'<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;background:var(--bg-surface);padding:10px 12px;border-radius:var(--radius)">'+c.description+'</div>':'')+
+      (c.description && c.templateType !== 'campanhas' && c.templateType !== 'reuniao_planejamento' ? tdCol('INFORMAÇÕES GERAIS', c.description, 'info-geral') : '')+
     '</div>'+
     (c.templateType ? renderTemplateDetail(c) : '')+
     (cronoSubs.length === 0 && c.templateType !== 'tarefa_pessoal' ? '<div class="form-section-title">Subtarefas <button class="btn-add-sub" onclick="addSubtaskToDetail(\''+id+'\')">+ Adicionar</button></div>'+
@@ -3493,6 +3640,7 @@ function openCampaignDetail(id) {
     '</div>';
 
   openPanel();
+  setTimeout(tdColInit, 50);
 }
 
 /* -- REGRAS AUTOMÁTICAS DE STATUS -- */
@@ -3512,7 +3660,7 @@ function applyStatusRules(c, oldStatus, newStatus) {
       if (!c.subtasks) c.subtasks = [];
       c.subtasks.push({
         id: uid(),
-        title: 'Preencher briefing: ' + c.name,
+        title: 'PREENCHER: ' + c.name,
         canal: 'Geral',
         urgency: 'Importante',
         owner: c.owner,
@@ -3867,7 +4015,7 @@ function renderTplTarefaPessoalDetail(c, d) {
     '<div class="td-section-title">🧠 Tarefa pessoal</div>'+
     (d.ptCategory ? '<div style="margin-bottom:8px"><span class="td-label">CATEGORIA</span><div class="td-value">'+esc(d.ptCategory)+'</div></div>' : '')+
     (d.ptEstimate ? '<div style="margin-bottom:8px"><span class="td-label">ESTIMATIVA</span><div class="td-value">'+esc(d.ptEstimate)+'</div></div>' : '')+
-    (d.ptDesc ? '<div style="margin-bottom:8px"><span class="td-label">DESCRIÇÃO</span><div class="td-value" style="white-space:pre-wrap">'+esc(d.ptDesc)+'</div></div>' : '')+
+    tdCol('DESCRIÇÃO', d.ptDesc||'', 'pt-desc')+
     (items.length ? '<div><span class="td-label">CHECKLIST</span>'+clHtml+'</div>' : '')+
   '</div>';
 }
@@ -3918,10 +4066,9 @@ function renderTplCampanhasDetail(c,d){
   const cronoParticipantesHtml = buildCronoParticipantesHtml(d, false); // view mode
 
   return '<div class="td-section">'+
-    '<div class="td-section-title">⚡ Briefing da Campanha</div>'+
-    tdField('Resumo estratégico',esc(d.resumoEstrategico))+
-    (datasHtml?'<div style="margin-bottom:10px"><div class="td-label">Datas-chave</div>'+datasHtml+'</div>':'')+
-    (d.cronograma?'<div style="margin-bottom:8px"><div class="td-label">Cronograma</div><div style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6">'+esc(d.cronograma)+'</div></div>':'')+
+    tdCol('RESUMO ESTRATÉGICO', d.resumoEstrategico||'', 'resumo')+
+    (datasHtml?'<div style="margin-bottom:12px"><div class="td-col-label">DATAS-CHAVE</div>'+datasHtml+'</div>':'')+
+    (d.cronograma?tdCol('CRONOGRAMA', '<pre style="white-space:pre-wrap;font-family:var(--font);font-size:12px;margin:0">'+esc(d.cronograma)+'</pre>', 'cronograma'):'')+
     metasHtml+
   '</div>'+
   (hasCrono?'<div class="td-section"><div class="td-section-title">✅ Participantes e tarefas</div>'+cronoParticipantesHtml+'</div>':'');
@@ -3947,9 +4094,9 @@ function renderTplPublicacoesDetail(c,d){
 
   return '<div class="td-section">'+
     '<div class="td-section-title">📸 Postagem</div>'+
-    tdField('Descrição do post',esc(d.biaCopy))+
+    tdCol('DESCRIÇÃO DO POST', d.biaCopy||'', 'pub-copy')+
     tdRow([['Texto do botão',esc(d.biaBotao)],['Link',d.biaLink?'<a href="'+esc(d.biaLink)+'" target="_blank" style="color:var(--c-campanha)">'+esc(d.biaLink)+'</a>':'']])+
-    tdField('Observações',esc(d.biaObs))+
+    tdCol('OBSERVAÇÕES', d.biaObs||'', 'pub-obs')+
   '</div>'+
   '<div class="td-section">'+
     '<div class="td-section-title">🎨 Criativo <span style="font-size:10px;background:var(--bg-card);padding:2px 7px;border-radius:10px;margin-left:6px">'+
@@ -3970,12 +4117,12 @@ function renderTplEmailDetail(c,d){
     '<div class="td-section-title">✉️ ENVIAR</div>'+
     tdRow([['Público',esc(d.publico)],['Assunto',esc(d.assunto)]])+
     tdField('Sub-assunto',esc(d.subassunto))+
-    tdField('Ordem do layout',esc(d.layoutOrdem))+
+    tdCol('ORDEM DO LAYOUT', d.layoutOrdem||'', 'email-layout')+
     (prodHtml?'<div style="margin-bottom:8px"><div class="td-label">Produtos</div>'+prodHtml+'</div>':'')+
   '</div>'+
   '<div class="td-section">'+
     '<div class="td-section-title">🎨 BANNER</div>'+
-    tdField('Informações do design',esc(d.emailDesignInfo))+
+    tdCol('INFORMAÇÕES DO DESIGN', d.emailDesignInfo||'', 'email-design')+
     tdRow([['Pré-título',esc(d.gioPretitulo)],['Entrelinha',esc(d.gioEntrelinha)]])+
     tdField('Título',esc(d.gioTitulo))+
     tdField('Subtítulo',esc(d.gioSubtitulo))+
@@ -4004,8 +4151,10 @@ function renderTplDemandaDetail(c,d){
           '</div>'+
         '</div></div>';
     }).join('');
+    const notaMembro = (d.notasMembro||{})[m.name] || '';
     return '<div class="td-section" style="margin-bottom:10px">'+
       '<div class="td-section-title"><div class="m-dot" style="background:'+m.color+'"></div>'+m.name+'</div>'+
+      tdCol('INFORMAÇÕES', notaMembro, 'demanda-'+mid)+
       (passosHtml||'<div style="font-size:12px;color:var(--text-muted)">Nenhum passo cadastrado</div>')+
     '</div>';
   }).join('');
@@ -4074,10 +4223,42 @@ function openEditCampaignPanel(id) {
   const btnDel = document.getElementById('btn-delete');
   if (btnDel) btnDel.style.display='';
   document.getElementById('panel-title').textContent = 'Editar: ' + c.name;
+
+  // Reunião em andamento: lock form, only allow adding pautas
+  if (c.templateType === 'reuniao_planejamento' && c.status === 'Em andamento') {
+    document.getElementById('btn-save').style.display = 'none';
+    document.getElementById('panel-body').innerHTML =
+      '<div style="background:var(--bg-surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">'+
+        '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Reunião em andamento</div>'+
+        '<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px">'+esc(c.name)+'</div>'+
+        '<div style="font-size:12px;color:var(--text-muted)">As pautas anteriores estão bloqueadas para edição.</div>'+
+      '</div>'+
+      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Adicionar nova pauta</div>'+
+      '<div style="display:flex;gap:8px;margin-bottom:8px">'+
+        '<input class="form-input" id="reuniao-nova-pauta" placeholder="Descrever nova pauta..." style="flex:1">'+
+        '<button class="btn-primary" style="height:38px;padding:0 16px" data-id="'+id+'" onclick="reuniaoAddPautaLive(this.dataset.id)">+ Adicionar</button>'+
+      '</div>';
+    openPanel();
+    return;
+  }
+
+  document.getElementById('btn-save').style.display = '';
   document.getElementById('btn-save').textContent = 'Salvar alterações';
   document.getElementById('btn-save').onclick = function() { updateCampaign(id); };
   renderCampaignForm(c);
   openPanel();
+}
+
+function reuniaoAddPautaLive(campId) {
+  var input = document.getElementById('reuniao-nova-pauta');
+  if (!input || !input.value.trim()) return;
+  var c = getCampaign(campId); if (!c) return;
+  if (!c.templateData) c.templateData = {};
+  if (!c.templateData.pautas) c.templateData.pautas = [];
+  c.templateData.pautas.push({titulo: input.value.trim(), ideias:[], done:false});
+  input.value = '';
+  saveData();
+  showToast('Pauta adicionada', '#7c6af7');
 }
 
 function sanitizeChecklistItems(items, includeCanal) {
@@ -4302,25 +4483,8 @@ function renderCampaignForm(existingData) {
     '</div>'+
     '<div id="participants-dropdown" style="display:none"><div class="multi-select" id="multi-participants" style="display:none">'+membersHtml+'</div></div>'+
     '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
-      '<label class="form-label">Informações gerais</label>'+
-      '<div id="info-editor-collapsed" onclick="expandInfoEditor()" style="min-height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;color:'+(existingData?.description?'var(--text-primary)':'var(--text-muted)')+';background:var(--bg-card);cursor:pointer;line-height:1.5;max-height:60px;overflow:hidden">'+(existingData?.description?String(existingData.description).slice(0,140)+(existingData.description.length>140?'...':''):'Clique para adicionar informações...')+'</div>'+
-      '<div id="info-editor-full" style="display:none">'+
-        '<div style="display:flex;gap:4px;flex-wrap:wrap;padding:5px 0 8px;border-bottom:0.5px solid var(--border);margin-bottom:6px">'+
-          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'bold\')" title="Negrito"><b>B</b></button>'+
-          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'italic\')" title="Itálico"><i>I</i></button>'+
-          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'insertUnorderedList\')" title="Lista">≡</button>'+
-          '<button type="button" class="notes-tool-btn" onclick="infoCmd(\'indent\')" title="Recuar →">⇥</button>'+
-          '<select class="notes-tool-select" onchange="infoCmd(\'fontSize\',this.value);this.selectedIndex=0">'+
-            '<option>Tamanho</option>'+
-            '<option value="1">Pequeno</option>'+
-            '<option value="3">Normal</option>'+
-            '<option value="5">Grande</option>'+
-          '</select>'+
-        '</div>'+
-        '<div id="f-desc-rich" contenteditable="true" class="notes-editor" data-placeholder="Objetivo, contexto e informações relevantes..." style="min-height:120px;border:0.5px solid var(--c-campanha);border-radius:var(--radius);padding:10px 12px;background:var(--bg-card);font-size:13px;line-height:1.6;outline:none" oninput="syncInfoToHidden()">'+(existingData?.description||'')+'</div>'+
-        '<input type="hidden" id="f-desc" value="">'+
-        '<div style="display:flex;justify-content:flex-end;margin-top:6px"><button type="button" class="notes-expand-btn" onclick="collapseInfoEditor()">Fechar ↑</button></div>'+
-      '</div>'+
+      rteHtml('f-desc-rich', existingData?.description||'', 'Objetivo, contexto e informações relevantes...', 'syncInfoToHidden()', 'Informações gerais')+
+      '<input type="hidden" id="f-desc" value="">'+
     '</div>'+
     '<div id="tpl-fields-container"></div>'+
     '<div class="form-section-title"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>Subtarefas <button class="btn-add-sub" onclick="addSubForm()">+ Subtarefa</button></div>'+
@@ -4488,7 +4652,7 @@ function renderTplReuniaoPlanejamentoForm(){
 
   return '<div class="tpl-section">'+
     '<div class="tpl-section-title">🧭 Reunião / Planejamento</div>'+
-    '<div class="form-group"><label class="form-label">Objetivo da reunião</label><textarea class="form-textarea" id="rp-objetivo" placeholder="O que precisa sair decidido nessa reunião?" oninput="tplData.objetivo=this.value;autoResize(this)">'+(d.objetivo||'')+'</textarea></div>'+
+    '<div class="form-group">'+rteHtml('rp-objetivo',d.objetivo||'','O que precisa sair decidido nessa reunião?','tplData.objetivo=rteGet(\'rp-objetivo\')','Objetivo da reunião')+'</div>'+
     '<div class="form-group">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">'+
         '<label class="form-label" style="margin:0">Pautas</label>'+
@@ -4566,7 +4730,7 @@ function renderTplTarefaPessoalForm(){
         }).join('')+
       '</select></div></div>'+
     '</div>'+
-    '<div class="form-group"><label class="form-label">Descrição</label><textarea class="form-textarea" id="pt-desc" placeholder="O que precisa ser feito?" oninput="tplData.ptDesc=this.value;autoResize(this)">'+(d.ptDesc||'')+'</textarea></div>'+
+    '<div class="form-group">'+rteHtml('pt-desc',d.ptDesc||'','O que precisa ser feito?','tplData.ptDesc=rteGet(\'pt-desc\')','Descrição')+'</div>'+
     '<div class="form-group"><label class="form-label">Checklist</label>'+
     ptClRender()+
     '</div>'+
@@ -4838,30 +5002,9 @@ function buildCronoParticipantesHtml(d, editMode) {
     let infoHtml = '';
     // Info field
     if (editMode) {
-      // Edit mode: same toolbar as notes panel (B, I, lista, sublista via Tab, Aa, cor, checklist)
-      infoHtml =
-        '<div style="margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;background:var(--bg-card)" id="nota-wrap-'+nid+'">'+
-          '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:0 0 8px;border-bottom:0.5px solid var(--border);margin-bottom:8px">'+
-            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'bold\')" title="Negrito"><strong>B</strong></button>'+
-            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'italic\')" title="Itálico"><em>I</em></button>'+
-            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'underline\')" title="Sublinhado"><u>S</u></button>'+
-            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'insertUnorderedList\')" title="Lista">•</button>'+
-            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaCmd(this.dataset.nid,\'indent\')" title="Sublista">⇥</button>'+
-            '<button type="button" class="notes-tool-btn" data-nid="'+nid+'" onclick="cronoNotaInsertChecklist(this.dataset.nid)" title="Checklist">☐</button>'+
-            '<select class="notes-tool-select" data-nid="'+nid+'" onchange="cronoNotaCmd(this.dataset.nid,\'fontSize\',this.value);this.selectedIndex=0" title="Tamanho">'+
-              '<option>Aa</option><option value="2">P</option><option value="3">M</option><option value="5">G</option>'+
-            '</select>'+
-            '<input type="color" class="notes-color-input" value="#111827" data-nid="'+nid+'" onchange="cronoNotaCmd(this.dataset.nid,\'foreColor\',this.value)" title="Cor">'+
-          '</div>'+
-          '<div id="'+nid+'" contenteditable="true" class="notes-editor"'+
-            ' data-nome="'+esc(nome)+'"'+
-            ' data-placeholder="Informações para '+esc(nome)+'..."'+
-            ' style="min-height:72px;outline:none;font-size:13px;line-height:1.7;color:var(--text-primary)"'+
-            ' oninput="setCronoNotaRich(this)"'+
-            ' onkeydown="handleCronoNotaTab(event,this)">'+
-            (nota||'')+
-          '</div>'+
-        '</div>';
+      infoHtml = '<div style="margin-bottom:10px">'+
+        rteHtml(nid, nota, 'Informações para '+esc(nome)+'...', 'setCronoNotaRich(document.getElementById(this.id))', 'Anotações')+
+      '</div>';
     } else {
       // View mode: clean text preview, HTML content when expanded
       const notaStripped = nota ? nota.replace(/<br\s*\/?>/gi,' · ').replace(/<\/?(li|p|div)[^>]*>/gi,' · ').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').replace(/( · )+/g,' · ').replace(/^ · | · $/g,'').trim() : '';
@@ -4926,12 +5069,12 @@ function renderTplCampanhasForm() {
     const inputEncId = 'tpl-enc-new-'+nome.replace(/\s/g,'_');
 
     // Briefing box — ALL members get a notes field
+    // Briefing box — ALL members get a notes field
     const briefingBox =
       '<div style="margin-bottom:12px">'+
-        '<textarea style="width:100%;min-height:52px;border:0.5px solid var(--border-light);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:transparent;color:var(--text-primary);outline:none;box-sizing:border-box" '+
-          'placeholder="Informações para '+nome+': referências, links, observações..." '+
-          'oninput="if(!tplData.notasMembro)tplData.notasMembro={};tplData.notasMembro[\''+nome+'\']=this.value">'+esc(nota)+'</textarea>'+
+        rteHtml('nota-'+nome.replace(/[^a-zA-Z0-9]/g,'_'), nota, 'Informações para '+nome+'...', 'rteSaveNota(this.id)') +
       '</div>';
+
 
     // Exec checklist
     const itensHtml = itens.map((it,i)=>campCheckItem(it,i,pathExec,color)).join('');
@@ -4986,9 +5129,7 @@ function renderTplCampanhasForm() {
 
   return (
     '<div class="tpl-section">'+
-      '<div class="tpl-section-title" style="justify-content:space-between">⚡ Resumo estratégico'+
-        '<button type="button" class="btn-add-sub" onclick="openResumoModal()">✏️ Editar</button>'+
-      '</div>'+resumoPreview+
+      rteHtml('resumo-estrategico-inline', d.resumoEstrategico||'', 'Resumo geral da campanha, objetivo, estrutura, oferta...', 'tplData.resumoEstrategico=rteGet(\'resumo-estrategico-inline\')', '⚡ Resumo estratégico')+
     '</div>'+
     '<div class="tpl-section">'+
       '<div class="tpl-section-title" style="justify-content:space-between">📋 Cronograma'+
@@ -5086,17 +5227,17 @@ function renderTplPublicacoesForm() {
   return '<div class="tpl-section">'+
     '<div class="tpl-section-title">📸 Postagem</div>'+
     '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('postagemResponsaveis', participantesSelecionados)+'</div>'+
-    '<div class="form-group"><label class="form-label">Descrição do post</label><textarea class="form-textarea" oninput="tplData.biaCopy=this.value;autoResize(this)">'+(d.biaCopy||'')+'</textarea></div>'+
+    '<div class="form-group">'+rteHtml('tpl-biaCopy',d.biaCopy||'','Escreva a legenda do post...','tplData.biaCopy=rteGet(\'tpl-biaCopy\')','Descrição do post')+'</div>'+
     '<div class="tpl-row">'+
     '<div class="form-group" style="margin:0"><label class="form-label">Texto do botão</label><input class="form-input" value="'+esc(d.biaBotao||'')+'" oninput="tplData.biaBotao=this.value"></div>'+
     '<div class="form-group" style="margin:0"><label class="form-label">Link</label><input class="form-input" placeholder="https://..." value="'+esc(d.biaLink||'')+'" oninput="tplData.biaLink=this.value"></div>'+
     '</div>'+
-    '<div class="form-group" style="margin-top:10px"><label class="form-label">Observações para Bia</label><textarea class="form-textarea" oninput="tplData.biaObs=this.value;autoResize(this)">'+(d.biaObs||'')+'</textarea></div>'+
+    '<div class="form-group" style="margin-top:10px">'+rteHtml('tpl-biaObs',d.biaObs||'','Observações adicionais...','tplData.biaObs=rteGet(\'tpl-biaObs\')','Observações para Bia')+'</div>'+
   '</div>'+
   '<div class="tpl-section">'+
     '<div class="tpl-section-title">🎨 Criativo</div>'+
     '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('criativoResponsaveis', participantesSelecionados)+'</div>'+
-    '<div class="form-group"><label class="form-label">Informações do criativo</label><textarea class="form-textarea" placeholder="Direção, referências, observações..." oninput="tplData.gioInfo=this.value;autoResize(this)">'+(d.gioInfo||'')+'</textarea></div>'+
+    '<div class="form-group">'+rteHtml('tpl-gioInfo',d.gioInfo||'','Direção, referências, observações...','tplData.gioInfo=rteGet(\'tpl-gioInfo\')','Informações do criativo')+'</div>'+
     '<div class="form-group"><label class="form-label">Tipo de peça</label>'+
     '<div style="display:flex;gap:12px;margin-top:4px">'+
     ((editingCampId && tipo) ?
@@ -5117,7 +5258,7 @@ function renderTplPublicacoesForm() {
     '<div class="form-group"><label class="form-label">CTA</label><input class="form-input" value="'+esc(d.gioCta||'')+'" oninput="tplData.gioCta=this.value"></div>'
     :
     (tipo==='video' ?
-      '<div class="form-group"><label class="form-label">Roteiro</label><textarea class="form-textarea" placeholder="Escreva o roteiro do vídeo" oninput="tplData.videoRoteiro=this.value;autoResize(this)">'+(d.videoRoteiro||'')+'</textarea></div>'
+      '<div class="form-group">'+rteHtml('tpl-videoRoteiro',d.videoRoteiro||'','Escreva o roteiro do vídeo...','tplData.videoRoteiro=rteGet(\'tpl-videoRoteiro\')','Roteiro')+'</div>'
       :
       '<div id="tpl-slides-container">'+slidesHtml+'</div>'+
       '<button type="button" class="btn-add-sub" style="margin-top:4px" onclick="tplSlideAdd()">+ Slide</button>'
@@ -5147,7 +5288,7 @@ function renderTplEmailForm() {
     '<div class="form-group" style="margin:0"><label class="form-label">Assunto</label><input class="form-input" value="'+esc(d.assunto||'')+'" oninput="tplData.assunto=this.value"></div>'+
     '</div>'+
     '<div class="form-group" style="margin-top:10px"><label class="form-label">Sub-assunto (preview text)</label><input class="form-input" value="'+esc(d.subassunto||'')+'" oninput="tplData.subassunto=this.value"></div>'+
-    '<div class="form-group"><label class="form-label">Ordem do layout</label><textarea class="form-textarea" oninput="tplData.layoutOrdem=this.value;autoResize(this)" placeholder="Descreva a sequência de blocos do e-mail...">'+(d.layoutOrdem||'')+'</textarea></div>'+
+    '<div class="form-group">'+rteHtml('tpl-layoutOrdem',d.layoutOrdem||'','Descreva a sequência de blocos do e-mail...','tplData.layoutOrdem=rteGet(\'tpl-layoutOrdem\')','Ordem do layout')+'</div>'+
     '<div class="form-section-title" style="margin-top:10px">Produtos '+
     '<button type="button" class="btn-add-sub" onclick="tplDynAdd(\'produtos\',{nome:\'\',link:\'\'})">+ Produto</button></div>'+
     '<div id="tpl-dyn-produtos">'+prodHtml+'</div>'+
@@ -5155,7 +5296,7 @@ function renderTplEmailForm() {
   '<div class="tpl-section">'+
     '<div class="tpl-section-title">🎨 BANNER</div>'+
     '<div class="form-group"><label class="form-label">Responsáveis</label>'+renderTplResponsaveisMulti('emailDesignResponsaveis', participantesSelecionados)+'</div>'+
-    '<div class="form-group"><label class="form-label">Informações do design</label><textarea class="form-textarea" rows="3" placeholder="Referências, direção visual, observações..." oninput="tplData.emailDesignInfo=this.value;autoResize(this)">'+(d.emailDesignInfo||'')+'</textarea></div>'+
+    '<div class="form-group">'+rteHtml('tpl-emailDesignInfo',d.emailDesignInfo||'','Referências, direção visual, observações...','tplData.emailDesignInfo=rteGet(\'tpl-emailDesignInfo\')','Informações do design')+'</div>'+
     '<div class="tpl-row">'+
     '<div class="form-group" style="margin:0"><label class="form-label">Pré-título</label><input class="form-input" value="'+esc(d.gioPretitulo||'')+'" oninput="tplData.gioPretitulo=this.value"></div>'+
     '<div class="form-group" style="margin:0"><label class="form-label">Entrelinha</label><input class="form-input" value="'+esc(d.gioEntrelinha||'')+'" oninput="tplData.gioEntrelinha=this.value"></div>'+
@@ -5205,11 +5346,11 @@ function renderTplDemandaForm() {
           '<button type="button" style="border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;padding:0 4px" onclick="tplToggleMembro('+Q+m.id+Q+',false)" title="Remover">×</button>'+
         '</div>'+
         // Notes / briefing
+        // Notes / briefing
         '<div style="margin-bottom:12px">'+
-          '<textarea style="width:100%;min-height:52px;border:0.5px solid var(--border-light);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);line-height:1.6;resize:vertical;background:transparent;color:var(--text-primary);outline:none;box-sizing:border-box" '+
-            'placeholder="Informações para '+esc(m.name)+': referências, links, observações..." '+
-            'oninput="if(!tplData.notasMembro)tplData.notasMembro={};tplData.notasMembro['+Q+m.name+Q+']=this.value">'+esc(nota)+'</textarea>'+
+          rteHtml('nota-demanda-'+m.id, nota, 'Informações para '+esc(m.name)+'...', 'rteSaveNota(this.id)') +
         '</div>'+
+
         // Execução
         '<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Execução</div>'+
         '<div id="tpl-passos-'+m.id+'">'+ passosHtml +'</div>'+
@@ -5780,6 +5921,10 @@ function renderPersonalMeetings(){
     '</div>';
   }).join('');
 }
+function setStatFilter(val) {
+  window._personalStatFilter = val;
+  renderPersonal();
+}
 function renderPersonal() {
   if (!currentMember) return;
   const m = getMember(currentMember);
@@ -5855,11 +6000,17 @@ function renderPersonal() {
   const pending=tasks.filter(t=>t.sub.status!=='Concluído');
   const late=pending.filter(t=>isLate(t.sub));
 
-  // Stats
+  // Stats — clickable filters
+  var statFilter = window._personalStatFilter || 'pending';
   document.getElementById('personal-stats').innerHTML=
-    '<div class="stat-chip"><span class="stat-num">'+pending.length+'</span> pendentes</div>'+
-    (late.length?'<div class="stat-chip" style="border-color:var(--u-urgente);color:var(--u-urgente)"><span class="stat-num">'+late.length+'</span> atrasadas</div>':'')+
-    '<div class="stat-chip"><span class="stat-num">'+done.length+'</span> concluídas</div>';
+    '<div class="stat-chip" style="cursor:pointer'+(statFilter==="pending"?';border-color:var(--c-campanha);color:var(--c-campanha)':'')+'" onclick="setStatFilter(\'pending\')"><span class="stat-num">'+pending.length+'</span> pendentes</div>'+
+    (late.length?'<div class="stat-chip" style="cursor:pointer;border-color:var(--u-urgente);color:var(--u-urgente)'+(statFilter==="late"?';background:rgba(239,68,68,.08)':'')+'" onclick="setStatFilter(\'late\')"><span class="stat-num">'+late.length+'</span> atrasadas</div>':'')+
+    '<div class="stat-chip" style="cursor:pointer'+(statFilter==="done"?';border-color:var(--c-campanha);color:var(--c-campanha)':'')+'" onclick="setStatFilter(\'done\')"><span class="stat-num">'+done.length+'</span> concluídas</div>';
+
+  // Filter tasks by stat selection
+  if (statFilter === 'late') tasks = late;
+  else if (statFilter === 'done') tasks = done;
+  else tasks = pending;
 
   // Cards
   function taskCard(t, isDone) {
@@ -5912,7 +6063,7 @@ function renderPersonal() {
     if (parentCampaign?.name) {
       subtitleText = String(parentCampaign.name).toUpperCase();
     } else if (c.templateType === 'campanhas') {
-      const isBriefingCard = (s._openEdit === true) || /^Preencher briefing:/i.test(String(s.title || ''));
+      const isBriefingCard = (s._openEdit === true) || /^PREENCHER:/i.test(String(s.title || ''));
       if (!isBriefingCard && c.name) {
         subtitleText = String(c.name).toUpperCase();
       }
@@ -5941,7 +6092,11 @@ function renderPersonal() {
               (subtitleText ? '<div class="task-v3-subtitle">'+subtitleText+'</div>' : '<div class="task-v3-subtitle is-empty"></div>')+
             '</div>'+
             '<div class="task-v3-meta-left">'+
-              '<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+typeLabel+'</span>'+
+              (function(){
+  var tBg = c.templateType==='tarefa_pessoal'?'rgba(245,158,11,.12)':c.templateType==='demanda'?'rgba(20,184,166,.12)':c.templateType==='campanhas'?'rgba(124,106,247,.1)':c.templateType==='publicacoes'?'rgba(236,72,153,.1)':c.templateType==='email'?'rgba(59,130,246,.1)':'var(--bg-surface)';
+  var tClr = c.templateType==='tarefa_pessoal'?'#d97706':c.templateType==='demanda'?'#0d9488':c.templateType==='campanhas'?'#7c6af7':c.templateType==='publicacoes'?'#db2777':c.templateType==='email'?'#3b82f6':'var(--text-muted)';
+  return '<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;background:'+tBg+';color:'+tClr+'">'+typeLabel+'</span>';
+})()+
               '<span class="task-v3-due">'+dueText+'</span>'+
             '</div>'+
           '</div>'+
@@ -6058,7 +6213,7 @@ function getCalendarEntries() {
   const items = [];
   campaigns.forEach(function(c){
     if (!allowedTemplates.includes(c.templateType || '')) return;
-    const rawDate = c.startDate || c.endDate || '';
+    const rawDate = c.templateType === 'reuniao_planejamento' ? (c.endDate || c.startDate || '') : (c.startDate || c.endDate || '');
     if (!rawDate) return;
     const date = new Date(rawDate);
     if (Number.isNaN(date.getTime())) return;
