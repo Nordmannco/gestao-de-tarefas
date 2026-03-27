@@ -1468,7 +1468,7 @@ body.modal-open #btn-new-campaign{display:none !important}
     <button class="btn-cancel" onclick="closePanel()">Cancelar</button>
     <div style="display:flex;gap:8px">
       <button id="btn-delete" style="display:none" class="btn-delete" onclick="deleteCampaign()">🗑 Excluir</button>
-      <button class="btn-save" id="btn-save">Salvar campanha</button>
+      <button class="btn-save" id="btn-save">Salvar</button>
     </div>
   </div>
 </div>
@@ -4209,7 +4209,7 @@ function openNewCampaignPanel() {
   const btnDel = document.getElementById('btn-delete');
   if (btnDel) btnDel.style.display='none';
   document.getElementById('panel-title').textContent='Nova campanha';
-  document.getElementById('btn-save').textContent='Salvar campanha';
+  document.getElementById('btn-save').textContent='Salvar';
   document.getElementById('btn-save').onclick = saveCampaign;
   renderCampaignForm(null);
   openPanel();
@@ -4547,7 +4547,12 @@ function renderCampaignForm(existingData) {
         URGENCIAS.map(function(u){return '<option value="'+u+'"'+((u===(existingData?.urgency||'Normal'))?' selected':'')+'>'+u+'</option>';}).join('')+
       '</select></div></div>'+
     '</div>'+
-    '<div class="compact-select-row"'+(currentTemplate==="tarefa_pessoal"?' style="display:none"':'')+'>'+
+    '<div class="compact-select-row"'+(currentTemplate==="tarefa_pessoal"?' style="display:none"':'')+' style="grid-template-columns:'+(currentTemplate==='email'||currentTemplate==='publicacoes'?'1fr 1fr 1fr':'1fr 1fr')+'">'+
+      (currentTemplate === 'email' || currentTemplate === 'publicacoes' ? (
+        '<div class="form-group compact-dropdown" id="participants-dropdown"><label class="form-label">Participantes</label>'+
+          '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'participants-dropdown\')"><span class="summary" id="participants-summary">Selecionar participantes</span><span>▾</span></button>'+
+          '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div></div>'
+      ) : '<div id="participants-dropdown" style="display:none"><div class="multi-select" id="multi-participants" style="display:none">'+membersHtml+'</div></div><div></div>')+
       (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' ? (
         '<div class="form-group compact-dropdown" id="canais-dropdown"><label class="form-label">Canais</label>'+
           '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'canais-dropdown\')"><span class="summary" id="canais-summary">Selecionar canais</span><span>▾</span></button>'+
@@ -4558,7 +4563,6 @@ function renderCampaignForm(existingData) {
         '<div class="form-group" style="margin:0"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
       ) : '<div></div>')+
     '</div>'+
-    '<div id="participants-dropdown" style="display:none"><div class="multi-select" id="multi-participants" style="display:none">'+membersHtml+'</div></div>'+
     '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
       rteHtml('f-desc-rich', existingData?.description||'', 'Objetivo, contexto e informações relevantes...', 'syncInfoToHidden()', 'Informações gerais')+
       '<input type="hidden" id="f-desc" value="">'+
