@@ -4224,20 +4224,75 @@ function openEditCampaignPanel(id) {
   if (btnDel) btnDel.style.display='';
   document.getElementById('panel-title').textContent = 'Editar: ' + c.name;
 
-  // Reunião em andamento: lock form, only allow adding pautas
+  // Reunião em andamento: show in view mode — EDITAR unlocks full edit
   if (c.templateType === 'reuniao_planejamento' && c.status === 'Em andamento') {
-    document.getElementById('btn-save').style.display = 'none';
-    document.getElementById('panel-body').innerHTML =
-      '<div style="background:var(--bg-surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">'+
-        '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Reunião em andamento</div>'+
-        '<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px">'+esc(c.name)+'</div>'+
-        '<div style="font-size:12px;color:var(--text-muted)">As pautas anteriores estão bloqueadas para edição.</div>'+
-      '</div>'+
-      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Adicionar nova pauta</div>'+
-      '<div style="display:flex;gap:8px;margin-bottom:8px">'+
-        '<input class="form-input" id="reuniao-nova-pauta" placeholder="Descrever nova pauta..." style="flex:1">'+
-        '<button class="btn-primary" style="height:38px;padding:0 16px" data-id="'+id+'" onclick="reuniaoAddPautaLive(this.dataset.id)">+ Adicionar</button>'+
+    var d = c.templateData || {};
+    var pautas = d.pautas || [];
+
+    // Build pautas view with locked header + idea input per pauta
+    var pautasViewHtml = pautas.length ? pautas.map(function(pauta, pi) {
+      var ideiasHtml = (pauta.ideias||[]).map(function(ideia) {
+        return '<div style="padding:6px 0;border-bottom:0.5px solid var(--border-light)">'+
+          '<div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">'+esc(ideia.autor||'Equipe')+(ideia.data?' · '+esc(ideia.data):'')+'</div>'+
+          '<div style="font-size:13px;color:var(--text-primary);line-height:1.5">'+esc(ideia.texto||'')+'</div>'+
+          (ideia.ref?'<div style="font-size:11px;margin-top:2px"><a href="'+esc(ideia.ref)+'" target="_blank" style="color:var(--c-campanha)">🔗 '+esc(ideia.ref)+'</a></div>':'')+
+        '</div>';
+      }).join('') || '<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Nenhuma ideia ainda.</div>';
+
+      return '<div style="margin-bottom:12px;border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden">'+
+        '<div style="padding:10px 12px;background:var(--bg-surface);border-bottom:0.5px solid var(--border-light)">'+
+          '<span style="font-size:13px;font-weight:600;color:var(--text-primary)">'+esc(pauta.titulo||'Pauta '+(pi+1))+'</span>'+
+        '</div>'+
+        '<div style="padding:8px 12px">'+
+          ideiasHtml+
+          '<div style="display:flex;gap:6px;margin-top:8px">'+
+            '<input class="form-input" id="reuniao-idea-'+pi+'" placeholder="Nova ideia..." style="flex:1;height:30px;font-size:12px">'+
+            '<input class="form-input" id="reuniao-ref-'+pi+'" placeholder="Ref. (link opcional)" style="width:160px;height:30px;font-size:12px;flex-shrink:0">'+
+            '<button class="btn-add-sub" style="height:30px;flex-shrink:0" data-pid="'+pi+'" data-cid="'+id+'" onclick="reuniaoAddIdeiaLive(this.dataset.cid,this.dataset.pid)">+ Ideia</button>'+
+          '</div>'+
+        '</div>'+
       '</div>';
+    }).join('') : '<div style="font-size:12px;color:var(--text-muted)">Nenhuma pauta adicionada.</div>';
+
+    // Objective
+    var objetivoHtml = d.objetivo
+      ? '<div style="margin-bottom:14px">'+
+          '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">Objetivo</div>'+
+          '<div style="font-size:13px;color:var(--text-primary);line-height:1.6">'+esc(d.objetivo)+'</div>'+
+        '</div>'
+      : '';
+
+    document.getElementById('btn-save').style.display = '';
+    document.getElementById('btn-save').textContent = 'EDITAR';
+    document.getElementById('btn-save').onclick = function() {
+      // Switch to full edit mode
+      document.getElementById('btn-save').textContent = 'Salvar alterações';
+      document.getElementById('btn-save').onclick = function() { updateCampaign(id); };
+      renderCampaignForm(getCampaign(id));
+    };
+
+    // Header: status, dates, responsible, participants
+    var owner = getMember(c.owner);
+    var prog = calcProgress(c);
+    var participants = (c.participants||[]).map(function(p){var m=getMember(p);return m?avatarHtml(m,22):''}).join('');
+    var headerHtml =
+      '<select class="status-select" data-id="'+id+'" onchange="c_updateStatus(this.dataset.id,this.value)">'+
+        STATUSES.map(function(s){return '<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>';}).join('')+
+      '</select>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
+        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">INÍCIO</div><div style="font-size:13px">'+formatDate(c.startDate)+'</div></div>'+
+        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">ENTREGA</div><div style="font-size:13px">'+formatDate(c.endDate)+'</div></div>'+
+        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">RESPONSÁVEL</div><div style="display:flex;align-items:center;gap:5px;font-size:13px">'+avatarHtml(owner,18)+(owner?owner.name:'—')+'</div></div>'+
+        '<div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">PARTICIPANTES</div><div style="display:flex;gap:3px">'+participants+'</div></div>'+
+      '</div>'+
+      '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px"><span>Progresso</span><span>'+prog.done+'/'+prog.total+' — '+prog.pct+'%</span></div>'+
+        '<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:'+prog.pct+'%"></div></div></div>';
+
+    document.getElementById('panel-body').innerHTML =
+      headerHtml+
+      objetivoHtml+
+      '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Pautas</div>'+
+      pautasViewHtml;
     openPanel();
     return;
   }
@@ -4247,6 +4302,28 @@ function openEditCampaignPanel(id) {
   document.getElementById('btn-save').onclick = function() { updateCampaign(id); };
   renderCampaignForm(c);
   openPanel();
+}
+
+function reuniaoAddIdeiaLive(campId, pi) {
+  var c = getCampaign(campId); if (!c) return;
+  var pauta = c.templateData && c.templateData.pautas && c.templateData.pautas[pi];
+  if (!pauta) return;
+  var txtEl = document.getElementById('reuniao-idea-'+pi);
+  var refEl = document.getElementById('reuniao-ref-'+pi);
+  var texto = txtEl ? txtEl.value.trim() : '';
+  if (!texto) return;
+  var ref = refEl ? refEl.value.trim() : '';
+  if (!pauta.ideias) pauta.ideias = [];
+  pauta.ideias.push({
+    texto: texto, ref: ref,
+    autor: window.currentUser ? window.currentUser.name : 'Equipe',
+    data: new Date().toLocaleDateString('pt-BR')
+  });
+  if (txtEl) txtEl.value = '';
+  if (refEl) refEl.value = '';
+  saveData();
+  // Refresh panel
+  openEditCampaignPanel(campId);
 }
 
 function reuniaoAddPautaLive(campId) {
