@@ -4563,7 +4563,7 @@ function renderCampaignForm(existingData) {
         '<div class="form-group" style="margin:0"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
       ) : '<div></div>')+
     '</div>'+
-    '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
+    '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'||currentTemplate==='campanhas'?' style="display:none"':'')+'>'+
       rteHtml('f-desc-rich', existingData?.description||'', 'Objetivo, contexto e informações relevantes...', 'syncInfoToHidden()', 'Informações gerais')+
       '<input type="hidden" id="f-desc" value="">'+
     '</div>'+
@@ -4607,6 +4607,12 @@ function syncTemplateCanalRules() {
       const canal = (el.dataset.canal || el.textContent || '').trim();
       el.classList.toggle('selected', canal === 'E-mail');
     });
+  }
+
+  // Hide informações gerais for campanhas and tarefa_pessoal
+  var infoWrap = document.getElementById('info-field-wrap');
+  if (infoWrap) {
+    infoWrap.style.display = (isCamp || currentTemplate === 'tarefa_pessoal') ? 'none' : '';
   }
 }
 
@@ -4833,7 +4839,7 @@ function syncSpecialTemplateVisibility(){
 
   if (compactRow) compactRow.style.display = isPersonal ? 'none' : '';
   if (driveField) driveField.style.display = (isPersonal || isMeeting) ? 'none' : '';
-  if (descField) descField.style.display = (isPersonal || isMeeting) ? 'none' : '';
+  if (descField) descField.style.display = (isPersonal || isMeeting || isCamp) ? 'none' : '';
   if (subTitle) subTitle.style.display = (isPersonal || isMeeting) ? 'none' : '';
   if (subContainer) subContainer.style.display = (isPersonal || isMeeting) ? 'none' : '';
   if (canaisWrap) canaisWrap.style.display = isMeeting ? 'none' : '';
