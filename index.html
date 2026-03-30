@@ -420,6 +420,36 @@ body.modal-open #btn-new-campaign{display:none !important}
 .select-wrap::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:11px;color:var(--text-muted)}
 .multi-select{display:flex;flex-wrap:wrap;gap:6px}
 .multi-item{padding:4px 10px;border-radius:20px;font-size:11px;border:0.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+.dept-header{padding:6px 10px 3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.dept-header:hover{color:var(--text-primary)}
+.dept-header .dept-arrow{transition:transform .15s;display:inline-block}
+.dept-header.open .dept-arrow{transform:rotate(90deg)}
+.dept-header .dept-rename-btn{opacity:0;font-size:9px;color:var(--text-muted);padding:0 3px;background:none;border:none;cursor:pointer;line-height:1;margin-left:4px}
+.dept-header:hover .dept-rename-btn{opacity:1}
+.filter-dept-hdr{padding:5px 10px 3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none}
+.filter-dept-hdr:hover{color:var(--text-primary)}
+.filter-dept-hdr .dept-arrow{transition:transform .15s;display:inline-block}
+.filter-dept-hdr.open .dept-arrow{transform:rotate(90deg)}
+.filter-dept-hdr.has-value{color:var(--c-campanha)}
+.filter-dept-tags{display:none;padding:0 0 4px 8px}
+.filter-dept-tags.open{display:block}
+.dept-rename-input{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:none;outline:none;background:transparent;color:var(--text-primary);font-family:var(--font);width:100px}
+.dept-tags-wrap{display:none;flex-wrap:wrap;gap:5px;padding:2px 8px 8px}
+.dept-tags-wrap.open{display:flex}
+.dept-tag{padding:4px 10px;border-radius:4px;font-size:11px;border:0.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .15s}
+.dept-tag:hover{border-color:var(--c-campanha)}
+.dept-tag.selected{background:var(--c-campanha-bg);border-color:var(--c-campanha);color:var(--c-campanha)}
+.dept-tag .canal-edit-btn{opacity:0;font-size:9px;color:var(--text-muted);padding:0 2px;background:none;border:none;cursor:pointer;flex-shrink:0;line-height:1}
+.dept-tag:hover .canal-edit-btn{opacity:1}
+.dept-tag .canal-move-btn{opacity:0;font-size:9px;color:var(--text-muted);padding:0 2px;background:none;border:none;cursor:pointer;flex-shrink:0;line-height:1}
+.dept-tag:hover .canal-move-btn{opacity:1}
+.dept-move-popup{position:absolute;z-index:999;background:var(--bg-card);border:0.5px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding:6px;min-width:160px}
+.dept-move-popup .dept-move-opt{padding:6px 10px;font-size:12px;cursor:pointer;border-radius:4px;color:var(--text-primary)}
+.dept-move-popup .dept-move-opt:hover{background:var(--bg-surface)}
+.dept-move-popup .dept-move-new{padding:5px 6px;display:flex;gap:4px;border-top:0.5px solid var(--border-light);margin-top:4px}
+.dept-unassigned{padding:4px 10px 8px;display:flex;flex-wrap:wrap;gap:5px}
+.multi-item .canal-edit-btn{opacity:0;font-size:9px;color:var(--text-muted);padding:0 2px;line-height:1;background:none;border:none;cursor:pointer;margin-left:2px;flex-shrink:0}
+.multi-item:hover .canal-edit-btn{opacity:1}
 .multi-item.selected{border-color:var(--c-campanha);background:var(--c-campanha-bg);color:var(--c-campanha)}
 .m-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .form-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:18px 0 10px;display:flex;justify-content:space-between;align-items:center}
@@ -613,7 +643,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 .filter-dd-list{
   display:none;position:absolute;top:34px;left:0;
   background:var(--bg-card);border:0.5px solid var(--border);border-radius:8px;
-  z-index:300;min-width:150px;max-height:220px;overflow-y:auto;
+  z-index:300;min-width:150px;max-height:320px;overflow-y:auto;
   box-shadow:0 4px 16px rgba(0,0,0,.1);padding:4px 0;
 }
 .filter-dd-list.open{display:block}
@@ -684,7 +714,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 .cal-filter-list{
   display:none;position:absolute;top:34px;left:0;background:var(--bg-card);
   border:0.5px solid var(--border);border-radius:8px;z-index:300;min-width:150px;
-  max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.1);padding:4px 0
+  max-height:320px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.1);padding:4px 0
 }
 .cal-filter-list.open{display:block}
 .cal-filter-item{padding:7px 14px;font-size:12px;cursor:pointer;color:var(--text-secondary);transition:background .1s}
@@ -1500,6 +1530,7 @@ body.modal-open #btn-new-campaign{display:none !important}
 const TYPES    = ['Campanha','Conteúdo','Demanda interna','Reuniões / Planejamento','TAREFA PESSOAL'];
 const STATUSES = ['Em planejamento','Em andamento','Pausado','Finalização','Concluído'];
 const DEFAULT_CANAIS   = ['Stories IG','Feed Instagram','Instagram Reels','TikTok','YouTube','E-mail','WhatsApp lista','WhatsApp VIP','Grupo WhatsApp','SMS','Meta Ads','Google Ads','Site','Geral'];
+let TAG_DEPTS = {}; // { tagName: deptName }
 const DEFAULT_CATEGORIAS = ['Administrativo','Conteúdo','Financeiro','Operacional','Ideia','Estudo'];
 let CANAIS = [...DEFAULT_CANAIS];
 let CATEGORIAS = [...DEFAULT_CATEGORIAS];
@@ -1564,9 +1595,10 @@ function loadTagSettings(){
   const s = getSettingsStore();
   CANAIS = Array.isArray(s.canais) && s.canais.length ? [...s.canais] : [...DEFAULT_CANAIS];
   CATEGORIAS = Array.isArray(s.categorias) && s.categorias.length ? [...s.categorias] : [...DEFAULT_CATEGORIAS];
+  TAG_DEPTS = (s.tagDepts && typeof s.tagDepts==='object') ? Object.assign({}, s.tagDepts) : {};
 }
 function persistTagSettings(){
-  const payload = { canais:[...CANAIS], categorias:[...CATEGORIAS] };
+  const payload = { canais:[...CANAIS], categorias:[...CATEGORIAS], tagDepts: Object.assign({}, TAG_DEPTS) };
   saveSettingsStore(payload);
   if (_db) {
     try {
@@ -1862,9 +1894,20 @@ function renderCronogramaEditor(){
         return '<div class="crono-line-edit">'+
           '<div style="display:grid;grid-template-columns:72px 130px 140px minmax(0,1fr) auto;gap:8px;align-items:start">'+
             '<div><div class="crono-mini-label">Hora</div><input class="crono-input" type="time" value="'+esc(item.time||'')+'" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'time\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}"></div>'+
-            '<div><div class="crono-mini-label">Canal</div><select class="crono-select" onchange="cronoUpdateItem('+dayIdx+','+itemIdx+',\'canal\', this.value)">'+
-              CANAIS.map(function(canal){ return '<option value="'+esc(canal)+'"'+((item.canal||'Geral')===canal?' selected':'')+'>'+esc(canal)+'</option>'; }).join('')+
-            '</select></div>'+
+            '<div><div class="crono-mini-label">Categoria</div>'+
+              (function(){
+                var depts=[]; CANAIS.forEach(function(c){var d=TAG_DEPTS[c];if(d&&depts.indexOf(d)===-1)depts.push(d);}); depts.sort();
+                var unassigned=CANAIS.filter(function(c){return !TAG_DEPTS[c];});
+                var cur=item.canal||'Geral';
+                var opts=depts.map(function(dept){
+                  var tags=CANAIS.filter(function(c){return TAG_DEPTS[c]===dept;});
+                  if(!tags.length)return'';
+                  return'<optgroup label="'+esc(dept)+'">'+tags.map(function(c){return'<option value="'+esc(c)+'"'+(c===cur?' selected':'')+'>'+esc(c)+'</option>';}).join('')+'</optgroup>';
+                }).join('');
+                unassigned.forEach(function(c){opts+='<option value="'+esc(c)+'"'+(c===cur?' selected':'')+'>'+esc(c)+'</option>';});
+                return'<select class="crono-select" onchange="cronoUpdateItem('+dayIdx+','+itemIdx+',\'canal\',this.value)">'+opts+'</select>';
+              })()+
+            '</div>'+
             '<div><div class="crono-mini-label">Participante</div><select class="crono-select" style="height:30px;font-size:11px;width:100%" onchange="cronoUpdateItem('+dayIdx+','+itemIdx+',\'participante\', this.value)">'+memberOptsEdit+'</select></div>'+
             '<div><div class="crono-mini-label">Descrição</div><textarea class="crono-text" placeholder="Descrever tarefa" oninput="cronoUpdateItem('+dayIdx+','+itemIdx+',\'text\', this.value)" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoCloseItem('+dayIdx+','+itemIdx+')}">'+esc(item.text||'')+'</textarea></div>'+
             '<div style="padding-top:18px"><button class="tpl-remove-btn" type="button" onclick="cronoRemoveItem('+dayIdx+','+itemIdx+')">×</button></div>'+
@@ -1885,9 +1928,19 @@ function renderCronogramaEditor(){
     const addHtml = addOpen
       ? '<div style="display:grid;grid-template-columns:72px 130px 140px minmax(0,1fr) auto;gap:8px;align-items:start;margin-top:8px">'+
           '<div><div class="crono-mini-label">Hora</div><input class="crono-input" type="time" id="crono-new-time-'+dayIdx+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cronoAddItem('+dayIdx+')}"></div>'+
-          '<div><div class="crono-mini-label">Canal</div><select class="crono-select" id="crono-new-canal-'+dayIdx+'">'+
-            CANAIS.map(function(canal){ return '<option value="'+esc(canal)+'">'+esc(canal)+'</option>'; }).join('')+
-          '</select></div>'+
+          '<div><div class="crono-mini-label">Categoria</div>'+
+            (function(){
+              var depts=[]; CANAIS.forEach(function(c){var d=TAG_DEPTS[c];if(d&&depts.indexOf(d)===-1)depts.push(d);}); depts.sort();
+              var unassigned=CANAIS.filter(function(c){return !TAG_DEPTS[c];});
+              var opts=depts.map(function(dept){
+                var tags=CANAIS.filter(function(c){return TAG_DEPTS[c]===dept;});
+                if(!tags.length)return'';
+                return'<optgroup label="'+esc(dept)+'">'+tags.map(function(c){return'<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('')+'</optgroup>';
+              }).join('');
+              unassigned.forEach(function(c){opts+='<option value="'+esc(c)+'">'+esc(c)+'</option>';});
+              return'<select class="crono-select" id="crono-new-canal-'+dayIdx+'">'+opts+'</select>';
+            })()+
+          '</div>'+
           '<div><div class="crono-mini-label">Participante</div><select class="crono-select" id="crono-new-part-'+dayIdx+'" style="height:30px;font-size:11px;width:100%">'+memberOptsAdd+'</select></div>'+
           '<div><div class="crono-mini-label">Descrição</div><textarea class="crono-text" id="crono-new-text-'+dayIdx+'" placeholder="Descrever tarefa" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();cronoAddItem('+dayIdx+')}"></textarea></div>'+
           '<div style="padding-top:18px"><button type="button" class="btn-add-sub" onclick="cronoAddItem('+dayIdx+')">+ Add</button></div>'+
@@ -3392,13 +3445,54 @@ function getKanbanFilterEntries() {
   });
 }
 
+function filterDeptToggle(el) {
+  el.classList.toggle('open');
+  var w = document.getElementById(el.dataset.did);
+  if (w) w.classList.toggle('open');
+}
+function ddGroupedFilter(id, label, selected, clickJs, entries) {
+  // Use full CANAIS list so all depts show, not just those used in campaigns
+  var allCanais = [...CANAIS].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+  var depts = [];
+  allCanais.forEach(function(c){ var d=TAG_DEPTS[c]; if(d && depts.indexOf(d)===-1) depts.push(d); });
+  depts.sort();
+  var unassigned = allCanais.filter(function(c){ return !TAG_DEPTS[c]; });
+
+  var innerHtml = depts.map(function(dept){
+    var tags = allCanais.filter(function(c){ return TAG_DEPTS[c]===dept; });
+    if (!tags.length) return '';
+    var deptId = id+'-d-'+dept.replace(/[^a-zA-Z0-9]/g,'_');
+    var hasSel = tags.some(function(t){ return selected.includes(t); });
+    return '<div>'+
+      '<div class="filter-dept-hdr'+(hasSel?' has-value':'')+'" data-did="'+deptId+'" onclick="filterDeptToggle(this)">'+
+        '<span class="dept-arrow">▶</span>'+dept+
+      '</div>'+
+      '<div class="filter-dept-tags" id="'+deptId+'">'+
+        tags.map(function(c){
+          return '<div class="cal-filter-item'+(selected.includes(c)?' sel':'')+'" onclick="'+clickJs.replace('__VAL__', encodeURIComponent(c))+'">'+c+'</div>';
+        }).join('')+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  unassigned.forEach(function(c){
+    innerHtml += '<div class="cal-filter-item'+(selected.includes(c)?' sel':'')+'" onclick="'+clickJs.replace('__VAL__', encodeURIComponent(c))+'">'+c+'</div>';
+  });
+
+  var clearKey = id.indexOf('kbf') !== -1 ? 'clearKanbanFilter' : 'clearCalendarFilter';
+  innerHtml += '<div class="cal-filter-clear" onclick="'+clearKey+'(\'canal\');toggleCalendarFilterDD(\''+id+'\')" >Limpar</div>';
+
+  return '<div class="cal-filter-dd">'+
+    '<button type="button" class="cal-filter-btn'+(selected.length?' has-value':'')+' " data-id="'+id+'" onclick="toggleCalendarFilterDD(this.dataset.id)">'+calendarFilterSummary(label, selected)+' ▾</button>'+
+    '<div class="cal-filter-list" id="'+id+'">'+innerHtml+'</div>'+
+  '</div>';
+}
 function renderKanbanFilters() {
   const bar = document.getElementById('topbar-chips');
   if (!bar) return;
 
   const entries = getKanbanFilterEntries();
   const types = [...new Set(entries.map(function(x){ return x.typeLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
-  const canais = [...new Set(entries.map(function(x){ return x.canalLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
   const pessoas = MEMBERS.slice().sort(function(a,b){ return a.name.localeCompare(b.name,'pt-BR'); });
 
   function dd(id, label, selected, items, clickJs, valueGetter, labelGetter){
@@ -3420,7 +3514,7 @@ function renderKanbanFilters() {
 
   bar.innerHTML =
     dd('kbf-type','Tipo',kanbanFilter.type,types,"toggleKanbanFilter('type', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
-    dd('kbf-canal','Canal',kanbanFilter.canal,canais,"toggleKanbanFilter('canal', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
+    ddGroupedFilter('kbf-canal','Categoria',kanbanFilter.canal,"toggleKanbanFilter('canal', decodeURIComponent('__VAL__'))", entries) +
     dd('kbf-pessoa','Pessoa',kanbanFilter.pessoa,pessoas,"toggleKanbanFilter('pessoa', decodeURIComponent('__VAL__'))",function(x){return x.id;},function(x){return x.name;}) +
     (hasAny ? '<button class="btn-clear-all" onclick="kanbanFilter={type:[],canal:[],pessoa:[]};renderKanbanFilters();renderKanban();">Limpar filtros</button>' : '');
 }
@@ -4485,11 +4579,78 @@ function renderCampaignForm(existingData) {
   tplData = existingData?.templateData ? JSON.parse(JSON.stringify(existingData.templateData)) : {};
 
   // canais selectable
-  let _canaisAtual = Array.isArray(existingData?.canais) ? [...existingData.canais] : [];
+  window._canaisAtual = Array.isArray(existingData?.canais) ? [...existingData.canais] : []; let _canaisAtual = window._canaisAtual;
   if (currentTemplate === 'email') _canaisAtual = ['E-mail'];
-  const canaisHtml = [...CANAIS, ..._canaisAtual.filter(c=>!CANAIS.includes(c))].map(c=>
-    '<div class="multi-item'+(_canaisAtual.includes(c)?' selected':'')+'" onclick="toggleMulti(this)" data-canal="'+c+'">'+c+'</div>'
-  ).join('');
+  // Build two-level dept → tags
+  var _allTags = [...CANAIS, ..._canaisAtual.filter(c=>!CANAIS.includes(c))];
+  var _depts = [];
+  _allTags.forEach(function(c){ var d=TAG_DEPTS[c]; if(d && _depts.indexOf(d)===-1) _depts.push(d); });
+  _depts.sort();
+  // Tags with no dept
+  var _unassigned = _allTags.filter(function(c){ return !TAG_DEPTS[c]; });
+
+  function _tagHtml(c) {
+    var sel = _canaisAtual.includes(c);
+    return '<div class="dept-tag'+(sel?' selected':'')+'" data-canal="'+esc(c)+'" onclick="toggleDeptTag(this)" style="position:relative">'+
+      esc(c)+
+      '<button class="canal-edit-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalInlineEdit(this)" title="Renomear">✎</button>'+
+      '<button class="canal-move-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalMovePopup(this)" title="Mover para departamento">⊞</button>'+
+    '</div>';
+  }
+
+  var canaisHtml =
+    _depts.map(function(dept){
+      var tags = _allTags.filter(function(c){ return TAG_DEPTS[c]===dept; });
+      if (!tags.length) return '';
+      var hasSelected = tags.some(function(c){ return _canaisAtual.includes(c); });
+      var deptId = 'dtw-'+dept.replace(/[^a-zA-Z0-9]/g,'_');
+      return '<div>'+
+        '<div class="dept-header'+(hasSelected?' open':'')+' " data-wid="'+deptId+'" data-dept="'+esc(dept)+'" onclick="canalDeptToggle(this,this.dataset.wid)">'+
+          '<span>'+esc(dept)+'</span>'+
+          '<span style="display:flex;align-items:center;gap:2px">'+
+            '<button class="dept-rename-btn" data-dept="'+esc(dept)+'" onmousedown="event.preventDefault();event.stopPropagation();deptInlineRename(this)" title="Renomear">✎</button>'+
+            '<span class="dept-arrow">▶</span>'+
+          '</span>'+
+        '</div>'+
+        '<div class="dept-tags-wrap'+(hasSelected?' open':'')+'" id="'+deptId+'">'+
+          tags.map(_tagHtml).join('')+
+        '</div>'+
+      '</div>';
+    }).join('')+
+    (_unassigned.length ?
+      '<div class="dept-unassigned">'+_unassigned.map(_tagHtml).join('')+'</div>'
+    : '');
+
+  // ptCatHtml — same structure, single-select for tarefa pessoal
+  var _ptCurCat = (tplData && tplData.ptCategory) ? tplData.ptCategory : '';
+  function _ptTagHtml(c) {
+    var sel = c === _ptCurCat;
+    return '<div class="dept-tag'+(sel?' selected':'')+'" data-canal="'+esc(c)+'" '+
+      'onclick="tplData.ptCategory=this.dataset.canal;var s=document.getElementById(\'pt-cat-summary\');if(s)s.textContent=this.dataset.canal;toggleCompactDropdown(\'pt-cat-dropdown\')" '+
+      'style="position:relative">'+
+      esc(c)+
+      '<button class="canal-edit-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalInlineEdit(this)" title="Renomear">✎</button>'+
+      '<button class="canal-move-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalMovePopup(this)" title="Mover">⊞</button>'+
+    '</div>';
+  }
+  var ptCatHtml =
+    _depts.map(function(dept){
+      var tags = _allTags.filter(function(c){ return TAG_DEPTS[c]===dept; });
+      if (!tags.length) return '';
+      var hasSelected = tags.includes(_ptCurCat);
+      var deptId = 'ptd-'+dept.replace(/[^a-zA-Z0-9]/g,'_');
+      return '<div>'+
+        '<div class="dept-header'+(hasSelected?' open':'')+' " data-wid="'+deptId+'" data-dept="'+esc(dept)+'" onclick="canalDeptToggle(this,this.dataset.wid)">'+
+          '<span>'+esc(dept)+'</span>'+
+          '<span style="display:flex;align-items:center;gap:2px">'+
+            '<button class="dept-rename-btn" data-dept="'+esc(dept)+'" onmousedown="event.preventDefault();event.stopPropagation();deptInlineRename(this)" title="Renomear">✎</button>'+
+            '<span class="dept-arrow">▶</span>'+
+          '</span>'+
+        '</div>'+
+        '<div class="dept-tags-wrap'+(hasSelected?' open':'')+'" id="'+deptId+'">'+tags.map(_ptTagHtml).join('')+'</div>'+
+      '</div>';
+    }).join('')+
+    (_unassigned.length ? '<div class="dept-unassigned">'+_unassigned.map(_ptTagHtml).join('')+'</div>' : '');
 
   const membersHtml = MEMBERS.map(m=>
     '<div class="multi-item '+(m.id===window.currentUser?.id?'selected':'')+'" onclick="toggleMulti(this)" data-val="'+m.id+'">'+
@@ -4551,17 +4712,35 @@ function renderCampaignForm(existingData) {
         URGENCIAS.map(function(u){return '<option value="'+u+'"'+((u===(existingData?.urgency||'Normal'))?' selected':'')+'>'+u+'</option>';}).join('')+
       '</select></div></div>'+
     '</div>'+
-    '<div class="compact-select-row"'+(currentTemplate==="tarefa_pessoal"?' style="display:none"':'')+' style="grid-template-columns:'+(currentTemplate==='email'||currentTemplate==='publicacoes'?'1fr 1fr 1fr':'1fr 1fr')+'">'+
-      (currentTemplate === 'email' || currentTemplate === 'publicacoes' ? (
-        '<div class="form-group compact-dropdown" id="participants-dropdown"><label class="form-label">Participantes</label>'+
-          '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'participants-dropdown\')"><span class="summary" id="participants-summary">Selecionar participantes</span><span>▾</span></button>'+
-          '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div></div>'
-      ) : '<div id="participants-dropdown" style="display:none"><div class="multi-select" id="multi-participants" style="display:none">'+membersHtml+'</div></div><div></div>')+
-      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' ? (
-        '<div class="form-group compact-dropdown" id="canais-dropdown"><label class="form-label">Canais</label>'+
+    (currentTemplate==='reuniao_planejamento' ?
+      // Reunião: Participantes + Categoria lado a lado
+      '<div class="tpl-row">'+
+        '<div class="form-group compact-dropdown" style="margin:0" id="participants-inline-wrap">'+
+          '<label class="form-label">Participantes</label>'+
+          '<button type="button" class="compact-dropdown-btn" data-did="participants-inline-wrap" onclick="toggleCompactDropdown(this.dataset.did)"><span class="summary" id="participants-inline-summary">Selecionar participantes</span><span>&#x25BE;</span></button>'+
+          '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
+        '</div>'+
+        '<div class="form-group compact-dropdown" style="margin:0" id="canais-dropdown">'+
+          '<label class="form-label">Categoria</label>'+
+          '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'canais-dropdown\')"><span class="summary" id="canais-summary">Selecionar categoria</span><span>▾</span></button>'+
+          '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
+          '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Nova categoria..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div>'+
+        '</div>'+
+      '</div>'
+    :
+      // Others: participantes alone (hidden for campanhas/tarefa_pessoal)
+      '<div class="form-group compact-dropdown" id="participants-inline-wrap"'+(currentTemplate==='campanhas'||currentTemplate==='tarefa_pessoal'?' style="display:none"':'')+'>'+
+        '<label class="form-label">Participantes</label>'+
+        '<button type="button" class="compact-dropdown-btn" data-did="participants-inline-wrap" onclick="toggleCompactDropdown(this.dataset.did)"><span class="summary" id="participants-inline-summary">Selecionar participantes</span><span>&#x25BE;</span></button>'+
+        '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-participants">'+membersHtml+'</div></div>'+
+      '</div>'
+    )+
+    '<div class="compact-select-row"'+(currentTemplate==="tarefa_pessoal"||currentTemplate==="reuniao_planejamento"?' style="display:none"':'')+'>'+
+      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento' ? (
+        '<div class="form-group compact-dropdown" id="canais-dropdown"><label class="form-label">Categoria</label>'+
           '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'canais-dropdown\')"><span class="summary" id="canais-summary">Selecionar canais</span><span>▾</span></button>'+
           '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
-          '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Novo canal..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div></div>'
+          '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Nova categoria..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div></div>'
       ) : '<div></div>')+
       (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento' ? (
         '<div class="form-group" style="margin:0"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
@@ -4807,20 +4986,50 @@ function ptClRemove(i) {
 
 function renderTplTarefaPessoalForm(){
   const d = tplData || {};
+  // Build two-level html inline (no dependency on renderCampaignForm scope)
+  var _cur = (d.ptCategory) ? d.ptCategory : '';
+  var _tags = [...CANAIS];
+  var _dpts = []; _tags.forEach(function(c){ var dpt=TAG_DEPTS[c]; if(dpt&&_dpts.indexOf(dpt)===-1)_dpts.push(dpt); }); _dpts.sort();
+  var _unass = _tags.filter(function(c){ return !TAG_DEPTS[c]; });
+  function _ptTag(c){
+    var sel=c===_cur;
+    return '<div class="dept-tag'+(sel?' selected':'')+'" data-canal="'+esc(c)+'" '+
+      'onclick="tplData.ptCategory=this.dataset.canal;var s=document.getElementById(\'pt-cat-summary\');if(s)s.textContent=this.dataset.canal;toggleCompactDropdown(\'pt-cat-dropdown\')" '+
+      'style="position:relative">'+esc(c)+
+      '<button class="canal-edit-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalInlineEdit(this)" title="Renomear">✎</button>'+
+      '<button class="canal-move-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalMovePopup(this)" title="Mover">⊞</button>'+
+    '</div>';
+  }
+  var _ptHtml = _dpts.map(function(dept){
+    var tags=_tags.filter(function(c){return TAG_DEPTS[c]===dept;});
+    if(!tags.length)return'';
+    var hasSelected=tags.includes(_cur);
+    var deptId='ptd-'+dept.replace(/[^a-zA-Z0-9]/g,'_');
+    return '<div>'+
+      '<div class="dept-header'+(hasSelected?' open':'')+' " data-wid="'+deptId+'" data-dept="'+esc(dept)+'" onclick="canalDeptToggle(this,this.dataset.wid)">'+
+        '<span>'+esc(dept)+'</span>'+
+        '<span style="display:flex;align-items:center;gap:2px">'+
+          '<button class="dept-rename-btn" data-dept="'+esc(dept)+'" onmousedown="event.preventDefault();event.stopPropagation();deptInlineRename(this)" title="Renomear">✎</button>'+
+          '<span class="dept-arrow">▶</span>'+
+        '</span>'+
+      '</div>'+
+      '<div class="dept-tags-wrap'+(hasSelected?' open':'')+'" id="'+deptId+'">'+tags.map(_ptTag).join('')+'</div>'+
+    '</div>';
+  }).join('') + (_unass.length?'<div class="dept-unassigned">'+_unass.map(_ptTag).join('')+'</div>':'');
+
   return '<div class="tpl-section">'+
     '<div class="tpl-section-title">Tarefa pessoal</div>'+
-    '<div class="tpl-row">'+
-      '<div class="form-group" style="margin:0"><label class="form-label">Categoria</label><div class="select-wrap"><select class="form-select" id="pt-category" onchange="tplData.ptCategory=this.value">'+
-        CATEGORIAS.map(function(opt){
-          return '<option'+(((d.ptCategory||'Administrativo')===opt)?' selected':'')+'>'+opt+'</option>';
-        }).join('')+
-      '</select></div></div>'+
-      '<div class="form-group" style="margin:0"><label class="form-label">Estimativa</label><div class="select-wrap"><select class="form-select" id="pt-estimate" onchange="tplData.ptEstimate=this.value">'+
-        ['15 min','30 min','1h','2h+'].map(function(opt){
-          return '<option'+(((d.ptEstimate||'30 min')===opt)?' selected':'')+'>'+opt+'</option>';
-        }).join('')+
-      '</select></div></div>'+
+    '<div class="form-group compact-dropdown" id="pt-cat-dropdown"><label class="form-label">Categoria</label>'+
+      '<button type="button" class="compact-dropdown-btn" onclick="toggleCompactDropdown(\'pt-cat-dropdown\')"><span class="summary" id="pt-cat-summary">'+ (_cur?esc(_cur):'Selecionar categoria')+'</span><span>▾</span></button>'+
+      '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-pt-cat">'+_ptHtml+'</div>'+
+      '<div class="extra-actions"><input class="form-input" id="f-ptcat-novo" placeholder="Nova categoria..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewPtCat()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div>'+
+      '</div>'+
     '</div>'+
+    '<div class="form-group"><label class="form-label">Estimativa</label><div class="select-wrap"><select class="form-select" id="pt-estimate" onchange="tplData.ptEstimate=this.value">'+
+      ['15 min','30 min','1h','2h+'].map(function(opt){
+        return '<option'+(((d.ptEstimate||'30 min')===opt)?' selected':'')+'>'+opt+'</option>';
+      }).join('')+
+    '</select></div></div>'+
     '<div class="form-group">'+rteHtml('pt-desc',d.ptDesc||'','O que precisa ser feito?','tplData.ptDesc=rteGet(\'pt-desc\')','Descrição')+'</div>'+
     '<div class="form-group"><label class="form-label">Checklist</label>'+
     ptClRender()+
@@ -4846,7 +5055,8 @@ function syncSpecialTemplateVisibility(){
   if (descField) descField.style.display = (isPersonal || isMeeting || isCamp) ? 'none' : '';
   if (subTitle) subTitle.style.display = (isPersonal || isMeeting) ? 'none' : '';
   if (subContainer) subContainer.style.display = (isPersonal || isMeeting) ? 'none' : '';
-  if (canaisWrap) canaisWrap.style.display = isMeeting ? 'none' : '';
+  // canais-dropdown is shown inline for reunião — don't hide it
+  if (canaisWrap && !isMeeting) canaisWrap.style.display = '';
   if (emptyThird) emptyThird.style.display = isMeeting ? 'none' : '';
   // Campanhas: participants come from cronograma, hide the dropdown
   if (partDropdown) partDropdown.style.display = isCamp ? 'none' : '';
@@ -4900,7 +5110,7 @@ function campCheckItem(it, idx, path, colorDot) {
   const canalAtual = it?.canal || 'Geral';
   const inputStyle = 'flex:1;min-width:0;border:none;outline:none;font-size:12px;color:var(--text-primary);background:transparent;' + (it?.done ? 'text-decoration:line-through;opacity:.5' : '');
   const selectStyle = 'font-size:10px;border:0.5px solid var(--border);border-radius:4px;background:var(--bg-surface);color:var(--text-secondary);padding:2px 4px;cursor:pointer;max-width:120px;flex-shrink:0';
-  const allCanais = ['Geral'].concat(CANAIS.filter(function(c){ return c !== 'Geral'; })).concat(['+ Novo canal']);
+  const allCanais = ['Geral'].concat(CANAIS.filter(function(c){ return c !== 'Geral'; })).concat(['+ Nova categoria']);
   const optionsHtml = allCanais.map(function(canal){
     return '<option value="' + esc(canal) + '"' + (canal === canalAtual ? ' selected' : '') + '>' + esc(canal) + '</option>';
   }).join('');
@@ -4917,7 +5127,7 @@ function campCheckItem(it, idx, path, colorDot) {
 
 function tplClSelectCanal(path, idx, selectEl) {
   if (!selectEl) return;
-  if (selectEl.value === '+ Novo canal') {
+  if (selectEl.value === '+ Nova categoria') {
     const novo = prompt('Nome do canal:');
     if (novo && novo.trim()) {
       const valor = novo.trim();
@@ -5630,7 +5840,7 @@ function closeCompactDropdowns(){
 }
 
 document.addEventListener('click', function(e){
-  if (!e.target.closest('.compact-dropdown')) closeCompactDropdowns();
+  if (!e.target.closest('.compact-dropdown') && !e.target.closest('.dept-move-popup')) closeCompactDropdowns();
 });
 
 function updateCompactSummaries(){
@@ -5644,7 +5854,7 @@ function updateCompactSummaries(){
   const canalSummary = document.getElementById('canais-summary');
   if (canalSummary) {
     const selected = [...document.querySelectorAll('#multi-canais .multi-item.selected')];
-    if (!selected.length) canalSummary.textContent = 'Selecionar canais';
+    if (!selected.length) canalSummary.textContent = 'Selecionar categoria';
     else if (selected.length === 1) canalSummary.textContent = selected[0].textContent.trim();
     else canalSummary.textContent = selected.length + ' canais';
   }
@@ -5742,23 +5952,272 @@ function removeSubForm(id) {
   document.getElementById('sf-'+id)?.remove();
 }
 
+function deptInlineRename(btn) {
+  var oldName = btn.dataset.dept;
+  var header = btn.closest('.dept-header');
+  if (!header) return;
+  var wrapId = header.dataset.wid;
+  var wasOpen = header.classList.contains('open');
+  // Replace header content with input
+  header.onclick = null;
+  header.innerHTML =
+    '<input class="dept-rename-input" value="'+esc(oldName)+'" data-old="'+esc(oldName)+'" data-wid="'+esc(wrapId)+'" data-open="'+wasOpen+'" '+
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.dataset.done=1;deptRenameSave(this)} '+
+                 'if(event.key===\'Escape\'){this.dataset.done=1;rebuildCanaisDropdown()}" '+
+      'onblur="if(!this.dataset.done){this.dataset.done=1;deptRenameSave(this)}" autofocus>'+
+    '<span class="dept-arrow'+(wasOpen?' open':'')+'" style="pointer-events:none">▶</span>';
+  header.querySelector('input')?.select();
+}
+function deptRenameSave(input) {
+  var oldName = input.dataset.old;
+  var newName = input.value.trim();
+  var wasOpen = input.dataset.open === 'true';
+  if (!newName || newName === oldName) { rebuildCanaisDropdown(); return; }
+  // Rename all tags with this dept
+  CANAIS.forEach(function(c){
+    if (TAG_DEPTS[c] === oldName) TAG_DEPTS[c] = newName;
+  });
+  persistTagSettings();
+  rebuildCanaisDropdown();
+  // Restore open state for renamed dept
+  var newId = 'dtw-'+newName.replace(/[^a-zA-Z0-9]/g,'_');
+  setTimeout(function(){
+    var wrap = document.getElementById(newId);
+    if (wrap && wasOpen) {
+      wrap.classList.add('open');
+      var hdr = wrap.previousElementSibling;
+      if (hdr) hdr.classList.add('open');
+    }
+  }, 10);
+}
+function canalDeptToggle(header, wrapId) {
+  header.classList.toggle('open');
+  var wrap = document.getElementById(wrapId);
+  if (wrap) wrap.classList.toggle('open');
+}
+function toggleDeptTag(el) {
+  el.classList.toggle('selected');
+  var canal = el.dataset.canal;
+  if (!canal) return;
+  var ca = window._canaisAtual || [];
+  if (el.classList.contains('selected')) {
+    if (!ca.includes(canal)) ca.push(canal);
+  } else {
+    ca = ca.filter(function(c){ return c !== canal; });
+  }
+  window._canaisAtual = ca;
+  var summary = document.getElementById('canais-summary');
+  if (summary) summary.textContent = ca.length ? ca.join(', ') : 'Selecionar categoria';
+}
+function canalInlineEdit(btn) {
+  var oldName = btn.dataset.canal;
+  var item = btn.closest('.dept-tag') || btn.closest('.multi-item');
+  if (!item) return;
+  var wasSelected = item.classList.contains('selected');
+  item.innerHTML =
+    '<input id="canal-rename-input" value="'+esc(oldName)+'" data-old="'+esc(oldName)+'" data-sel="'+wasSelected+'" '+
+      'style="width:80px;height:18px;font-size:11px;border:none;outline:none;background:transparent;font-family:var(--font);color:var(--text-primary)" '+
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.dataset.done=1;canalInlineEditSave(this.value,this.dataset.old,this.dataset.sel===\'true\')} '+
+                 'if(event.key===\'Escape\'){this.dataset.done=1;rebuildCanaisDropdown()}" '+
+      'onblur="if(!this.dataset.done){this.dataset.done=1;canalInlineEditSave(this.value,this.dataset.old,this.dataset.sel===\'true\')}" autofocus>'+
+    '<button style="font-size:10px;color:var(--u-urgente);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1" '+
+      'data-name="'+esc(oldName)+'" onmousedown="event.preventDefault();canalInlineDelete(this.dataset.name)">✕</button>';
+  item.onclick = null;
+  setTimeout(function(){ var inp = document.getElementById('canal-rename-input'); if(inp) inp.select(); }, 10);
+}
+function canalInlineEditSave(newName, oldName, wasSelected) {
+  newName = (newName||'').trim();
+  if (!newName || newName === oldName) { rebuildCanaisDropdown(); return; }
+  if (CANAIS.includes(newName)) { alert('Já existe um canal com esse nome.'); rebuildCanaisDropdown(); return; }
+  var idx = CANAIS.indexOf(oldName);
+  if (idx !== -1) CANAIS[idx] = newName;
+  var ca = window._canaisAtual || [];
+  if (ca.includes(oldName)) window._canaisAtual = ca.map(function(c){ return c===oldName?newName:c; });
+  campaigns.forEach(function(c){
+    c.canais = (c.canais||[]).map(function(x){ return x===oldName?newName:x; });
+    (c.subtasks||[]).forEach(function(s){ if(s.canal===oldName) s.canal=newName; });
+    var td=c.templateData||{};
+    (td.cronogramaBlocos||[]).forEach(function(day){ (day.items||[]).forEach(function(it){ if(it.canal===oldName) it.canal=newName; }); });
+  });
+  persistTagSettings(); saveData(); rebuildCanaisDropdown();
+}
+function canalInlineDelete(name) {
+  if (!confirm('Excluir canal "'+name+'"?')) return;
+  CANAIS = CANAIS.filter(function(c){ return c!==name; });
+  _canaisAtual = _canaisAtual.filter(function(c){ return c!==name; });
+  campaigns.forEach(function(c){ c.canais=(c.canais||[]).filter(function(x){ return x!==name; }); });
+  persistTagSettings(); saveData(); renderCampaignForm(null);
+}
+function catInlineEdit(btn) {
+  var oldName = btn.dataset.cat;
+  var item = btn.closest('.multi-item');
+  if (!item) return;
+  item.innerHTML =
+    '<input id="cat-rename-input" value="'+esc(oldName)+'" style="width:100%;height:18px;font-size:11px;border:none;outline:none;background:transparent;font-family:var(--font);color:var(--text-primary)" '+
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();catInlineEditSave(this,\''+esc(oldName)+'\',true)} if(event.key===\'Escape\'){renderTplFields()}" '+
+      'onblur="catInlineEditSave(this,\''+esc(oldName)+'\',false)" autofocus>';
+  item.onclick = null;
+  setTimeout(function(){ var inp = document.getElementById('cat-rename-input'); if(inp) inp.select(); }, 10);
+}
+function catInlineEditSave(input, oldName, fromEnter) {
+  if (input._saved) return; input._saved = true;
+  var newName = input.value.trim();
+  if (!newName || newName === oldName) { renderTplFields(); return; }
+  if (CATEGORIAS.includes(newName)) { alert('Já existe essa categoria.'); renderTplFields(); return; }
+  var idx = CATEGORIAS.indexOf(oldName);
+  if (idx !== -1) CATEGORIAS[idx] = newName;
+  if (tplData.ptCategory === oldName) tplData.ptCategory = newName;
+  campaigns.forEach(function(c){
+    if (c.templateType==='tarefa_pessoal' && c.templateData && c.templateData.ptCategory===oldName)
+      c.templateData.ptCategory = newName;
+  });
+  persistTagSettings(); saveData(); renderTplFields();
+}
+
+
+function canalGetDepts() {
+  var depts = {};
+  CANAIS.forEach(function(c){ var d=TAG_DEPTS[c]; if(d) depts[d]=1; });
+  return Object.keys(depts).sort();
+}
+function canalMovePopup(btn) {
+  // Remove any existing popup
+  var existing = document.getElementById('dept-move-popup');
+  if (existing) { existing.remove(); return; }
+
+  var canal = btn.dataset.canal;
+  var depts = canalGetDepts();
+  var current = TAG_DEPTS[canal] || '';
+
+  var optsHtml = depts.map(function(d){
+    return '<div class="dept-move-opt'+(d===current?' selected':'')+'" data-dept="'+esc(d)+'" data-canal="'+esc(canal)+'" onclick="canalAssignDept(this.dataset.canal,this.dataset.dept)">'+
+      (d===current?'✓ ':'')+esc(d)+
+    '</div>';
+  }).join('');
+
+  if (current) {
+    optsHtml += '<div class="dept-move-opt" style="color:var(--text-muted)" data-canal="'+esc(canal)+'" onclick="canalAssignDept(this.dataset.canal,\'\')">✕ Remover do depto</div>';
+  }
+
+  var popup = document.createElement('div');
+  popup.id = 'dept-move-popup';
+  popup.className = 'dept-move-popup';
+  popup.innerHTML = optsHtml+
+    '<div class="dept-move-new">'+
+      '<input id="dept-move-new-input" class="form-input" placeholder="Novo departamento..." style="height:26px;font-size:11px;flex:1" '+
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();canalAssignDept(\''+esc(canal)+'\',this.value.trim());} if(event.key===\'Escape\'){document.getElementById(\'dept-move-popup\')?.remove()}">'+
+      '<button class="btn-add-sub" style="height:26px;font-size:11px;flex-shrink:0" onclick="canalAssignDept(\''+esc(canal)+'\',document.getElementById(\'dept-move-new-input\').value.trim())">+</button>'+
+    '</div>';
+
+  btn.closest('.dept-tag').appendChild(popup);
+
+  // Close on outside click — use mousedown to catch before click fires
+  var _justOpened = true;
+  setTimeout(function(){ _justOpened = false; }, 150);
+  document.addEventListener('mousedown', function closePopup(e){
+    if (_justOpened) return;
+    if (!popup.contains(e.target)) {
+      popup.remove();
+      document.removeEventListener('mousedown', closePopup);
+    }
+  });
+}
+function canalAssignDept(canal, dept) {
+  var popup = document.getElementById('dept-move-popup');
+  if (popup) popup.remove();
+  if (!canal) return;
+  // Remember which depts are open before rebuild
+  var openDepts = [];
+  document.querySelectorAll('#multi-canais .dept-tags-wrap.open').forEach(function(el){
+    openDepts.push(el.id);
+  });
+  if (!dept) {
+    delete TAG_DEPTS[canal];
+  } else {
+    TAG_DEPTS[canal] = dept;
+    // Make sure the target dept opens after rebuild
+    var targetId = 'dtw-'+dept.replace(/[^a-zA-Z0-9]/g,'_');
+    if (openDepts.indexOf(targetId) === -1) openDepts.push(targetId);
+  }
+  persistTagSettings();
+  rebuildCanaisDropdown();
+  // Restore open state
+  openDepts.forEach(function(id){
+    var wrap = document.getElementById(id);
+    if (wrap) {
+      wrap.classList.add('open');
+      var hdr = wrap.previousElementSibling;
+      if (hdr) hdr.classList.add('open');
+    }
+  });
+}
+function rebuildCanaisDropdown() {
+  var container = document.getElementById('multi-canais');
+  if (!container) return;
+  var ca = window._canaisAtual || [];
+  var allTags = [...CANAIS, ...ca.filter(function(c){ return !CANAIS.includes(c); })];
+  var depts = [];
+  allTags.forEach(function(c){ var d=TAG_DEPTS[c]; if(d && depts.indexOf(d)===-1) depts.push(d); });
+  depts.sort();
+  var unassigned = allTags.filter(function(c){ return !TAG_DEPTS[c]; });
+
+  function tagHtml(c) {
+    var sel = ca.includes(c);
+    return '<div class="dept-tag'+(sel?' selected':'')+'" data-canal="'+esc(c)+'" onclick="toggleDeptTag(this)" style="position:relative">'+
+      esc(c)+
+      '<button class="canal-edit-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalInlineEdit(this)" title="Renomear">✎</button>'+
+      '<button class="canal-move-btn" data-canal="'+esc(c)+'" onmousedown="event.preventDefault();event.stopPropagation();canalMovePopup(this)" title="Mover para departamento">⊞</button>'+
+    '</div>';
+  }
+
+  container.innerHTML =
+    depts.map(function(dept){
+      var tags = allTags.filter(function(c){ return TAG_DEPTS[c]===dept; });
+      if (!tags.length) return '';
+      var hasSelected = tags.some(function(c){ return ca.includes(c); });
+      var deptId = 'dtw-'+dept.replace(/[^a-zA-Z0-9]/g,'_');
+      return '<div>'+
+        '<div class="dept-header'+(hasSelected?' open':'')+' " data-wid="'+deptId+'" data-dept="'+esc(dept)+'" onclick="canalDeptToggle(this,this.dataset.wid)">'+
+          '<span>'+esc(dept)+'</span>'+
+          '<span style="display:flex;align-items:center;gap:2px">'+
+            '<button class="dept-rename-btn" data-dept="'+esc(dept)+'" onmousedown="event.preventDefault();event.stopPropagation();deptInlineRename(this)" title="Renomear">✎</button>'+
+            '<span class="dept-arrow">▶</span>'+
+          '</span>'+
+        '</div>'+
+        '<div class="dept-tags-wrap'+(hasSelected?' open':'')+'" id="'+deptId+'">'+
+          tags.map(tagHtml).join('')+
+        '</div>'+
+      '</div>';
+    }).join('')+
+    (unassigned.length ? '<div class="dept-unassigned">'+unassigned.map(tagHtml).join('')+'</div>' : '');
+
+  var summary = document.getElementById('canais-summary');
+  if (summary) summary.textContent = ca.length ? ca.join(', ') : 'Selecionar categoria';
+}
+function addNewPtCat() {
+  var inp = document.getElementById('f-ptcat-novo');
+  var val = (inp ? inp.value : '').trim();
+  if (!val) return;
+  if (CANAIS.some(function(c){ return c.toLowerCase()===val.toLowerCase(); })) { inp.value=''; return; }
+  var ca = window._canaisAtual || [];
+  CANAIS.push(val);
+  inp.value = '';
+  persistTagSettings();
+  renderTplFields();
+}
 function addNewCanal() {
   const inp = document.getElementById('f-canal-novo');
   const val = inp?.value?.trim();
   if (!val) return;
-  const container = document.getElementById('multi-canais');
-  if (!container) return;
-  // Check if already exists
-  if ([...container.querySelectorAll('.multi-item')].some(el=>el.textContent===val)) { inp.value=''; return; }
-  const el = document.createElement('div');
-  el.className = 'multi-item selected';
-  el.setAttribute('data-canal', val);
-  el.onclick = function(){ this.classList.toggle('selected'); };
-  el.textContent = val;
-  container.insertBefore(el, container.querySelector('+ div') || null);
-  container.appendChild(el);
+  // Check duplicate
+  if (CANAIS.some(function(c){ return c.toLowerCase()===val.toLowerCase(); })) { inp.value=''; return; }
+  CANAIS.push(val);
+  var ca = window._canaisAtual || [];
+  if (!ca.includes(val)) ca.push(val);
+  window._canaisAtual = ca;
   inp.value = '';
-  updateCompactSummaries();
+  persistTagSettings();
+  rebuildCanaisDropdown();
 }
 
 function saveCampaign() {
@@ -5846,6 +6305,43 @@ function renderPersonalFilters() {
   }
 
   const canaisOrdenados = [...CANAIS].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  function ddBtnGrouped(label, key, vals) {
+    const hasVal = vals.length > 0;
+    const labelText = hasVal ? vals.slice(0,2).join(', ')+(vals.length>2?'…':'') : label;
+    const id = 'dd-'+key;
+    var depts = [];
+    canaisOrdenados.forEach(function(c){ var d=TAG_DEPTS[c]; if(d && depts.indexOf(d)===-1) depts.push(d); });
+    depts.sort();
+    var unassigned = canaisOrdenados.filter(function(c){ return !TAG_DEPTS[c]; });
+
+    var items = depts.map(function(dept){
+      var tags = canaisOrdenados.filter(function(c){ return TAG_DEPTS[c]===dept; });
+      if (!tags.length) return '';
+      var deptId = id+'-d-'+dept.replace(/[^a-zA-Z0-9]/g,'_');
+      var hasSel = tags.some(function(t){ return vals.includes(t); });
+      return '<div>'+
+        '<div class="filter-dept-hdr'+(hasSel?' has-value':'')+'" data-did="'+deptId+'" onclick="filterDeptToggle(this)">'+
+          '<span class="dept-arrow">▶</span>'+dept+
+        '</div>'+
+        '<div class="filter-dept-tags" id="'+deptId+'">'+
+          tags.map(function(c){
+            return '<div class="filter-dd-item'+(vals.includes(c)?' sel':'')+'" data-key="'+key+'" data-val="'+c+'" onclick="togglePF(this.dataset.key,this.dataset.val)">'+c+'</div>';
+          }).join('')+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    unassigned.forEach(function(c){
+      items += '<div class="filter-dd-item'+(vals.includes(c)?' sel':'')+'" data-key="'+key+'" data-val="'+c+'" onclick="togglePF(this.dataset.key,this.dataset.val)">'+c+'</div>';
+    });
+
+    return '<div class="filter-dd">'+
+      '<button class="filter-dd-btn'+(hasVal?' has-value':'')+' " data-id="'+id+'" onclick="toggleDD(this.dataset.id)">'+labelText+' ▾</button>'+
+      '<div class="filter-dd-list" id="'+id+'">'+items+
+        (hasVal?'<div class="filter-dd-clear" data-key="'+key+'" onclick="clearPF(this.dataset.key)">Limpar</div>':'')+
+      '</div></div>';
+  }
   const hasPeriod = !!(personalFilter.periodStart || personalFilter.periodEnd || personalFilter.periodPreset);
   const periodId = 'dd-period';
   const periodLabel = getPersonalPeriodLabel();
@@ -5873,7 +6369,7 @@ function renderPersonalFilters() {
     ddBtn('Prioridade','urgency',personalFilter.urgency,URGENCIAS,u=>URG_COLOR[u]) +
     periodHtml +
     ddBtn('Tipo','tipo',personalFilter.tipo,TYPES,null) +
-    ddBtn('Canal','canal',personalFilter.canal,canaisOrdenados,null) +
+    ddBtnGrouped('Categoria','canal',personalFilter.canal) +
     ((personalFilter.urgency.length||personalFilter.canal.length||personalFilter.tipo.length||hasPeriod)?
       '<button class="btn-clear-all" onclick="clearAllPF()">× Limpar tudo</button>':'');
 }
@@ -6371,7 +6867,6 @@ function renderCalendarFilters(){
 
   const entries = getCalendarEntries();
   const types = [...new Set(entries.map(function(x){ return x.typeLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
-  const canais = [...new Set(entries.map(function(x){ return x.canalLabel; }))].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
   const pessoas = [...new Set(entries.filter(function(x){ return x.pessoaId; }).map(function(x){ return JSON.stringify({id:x.pessoaId,name:x.pessoaNome||'Sem nome'}); }))].map(JSON.parse).sort(function(a,b){ return a.name.localeCompare(b.name,'pt-BR'); });
 
   function dd(id, label, selected, items, clickJs, valueGetter, labelGetter){
@@ -6393,7 +6888,7 @@ function renderCalendarFilters(){
 
   bar.innerHTML =
     dd('calf-type','Tipo',calendarFilter.type,types,"toggleCalendarFilter('type', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
-    dd('calf-canal','Canal',calendarFilter.canal,canais,"toggleCalendarFilter('canal', decodeURIComponent('__VAL__'))",function(x){return x;},function(x){return x;}) +
+    ddGroupedFilter('calf-canal','Categoria',calendarFilter.canal,"toggleCalendarFilter('canal', decodeURIComponent('__VAL__'))", entries) +
     dd('calf-pessoa','Pessoa',calendarFilter.pessoa,pessoas,"toggleCalendarFilter('pessoa', decodeURIComponent('__VAL__'))",function(x){return x.id;},function(x){return x.name;}) +
     (hasAny ? '<button class="btn-clear-all" onclick="calendarFilter={type:[],canal:[],pessoa:[]};renderCalendarFilters();renderCalendar();">Limpar filtros</button>' : '');
 }
