@@ -3441,10 +3441,9 @@ function rteGet(id) {
 function rteSaveNota(elId) {
   var el = document.getElementById(elId); if (!el) return;
   var val = el.innerHTML;
-  if (!tplData.notasMembro) tplData.notasMembro = {};
   MEMBERS.forEach(function(m) {
     if (elId === 'nota-'+m.name.replace(/[^a-zA-Z0-9]/g,'_') || elId === 'nota-demanda-'+m.id) {
-      tplData.notasMembro[m.name] = val;
+      persistMemberNote(m.name, val);
     }
   });
 }
@@ -5307,10 +5306,26 @@ function collapseCronoNotaById(nid) {
 // keep old names as aliases for backward compat
 function expandCronoNota(nid){ expandCronoNotaById(nid); }
 function collapseCronoNota(nid){ collapseCronoNotaById(nid); }
-function setCronoNotaRich(el) {
-  const nome = el.dataset.nome || '';
+function persistMemberNote(nome, value) {
+  if (!nome) return;
+
+  if (!tplData || typeof tplData !== 'object') tplData = {};
   if (!tplData.notasMembro) tplData.notasMembro = {};
-  tplData.notasMembro[nome] = el.innerHTML || '';
+  tplData.notasMembro[nome] = value || '';
+
+  if (editingCampId) {
+    const c = getCampaign(editingCampId);
+    if (c) {
+      if (!c.templateData || typeof c.templateData !== 'object') c.templateData = {};
+      if (!c.templateData.notasMembro) c.templateData.notasMembro = {};
+      c.templateData.notasMembro[nome] = value || '';
+      saveData();
+    }
+  }
+}
+function setCronoNotaRich(el) {
+  const nome = el?.dataset?.nome || '';
+  persistMemberNote(nome, el ? (el.innerHTML || '') : '');
 }
 function handleCronoNotaTab(e, el) {
   if (e.key !== 'Tab') return;
@@ -5340,9 +5355,8 @@ function cronoNotaCmd(nid, cmd, val) {
   document.execCommand(cmd, false, val || null);
 }
 function setCronoNota(el) {
-  const nome = el.dataset.nome || '';
-  if (!tplData.notasMembro) tplData.notasMembro = {};
-  tplData.notasMembro[nome] = el.value;
+  const nome = el?.dataset?.nome || '';
+  persistMemberNote(nome, el ? el.value : '');
 }
 
 function buildCronoParticipantesHtml(d, editMode) {
