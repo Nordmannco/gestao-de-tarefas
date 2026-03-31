@@ -1591,28 +1591,97 @@ function getSettingsStore(){
 function saveSettingsStore(store){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(store || {}));
 }
-function loadTagSettings(){
-  const s = getSettingsStore();
-  CANAIS = Array.isArray(s.canais) && s.canais.length ? [...s.canais] : [...DEFAULT_CANAIS];
-  CATEGORIAS = Array.isArray(s.categorias) && s.categorias.length ? [...s.categorias] : [...DEFAULT_CATEGORIAS];
-  TAG_DEPTS = (s.tagDepts && typeof s.tagDepts==='object') ? Object.assign({}, s.tagDepts) : {};
+let _lastTagSettingsUpdatedAt = '';
+function normalizeTagSettingsPayload(raw){
+  const s = raw && typeof raw === 'object' ? raw : {};
+  return {
+    canais: Array.isArray(s.canais) && s.canais.length ? [...s.canais] : [...DEFAULT_CANAIS],
+    categorias: Array.isArray(s.categorias) && s.categorias.length ? [...s.categorias] : [...DEFAULT_CATEGORIAS],
+    tagDepts: (s.tagDepts && typeof s.tagDepts==='object') ? Object.assign({}, s.tagDepts) : {}
+  };
+}
+function applyTagSettingsPayload(raw, opts){
+  const options = opts || {};
+  const normalized = normalizeTagSettingsPayload(raw);
+  CANAIS = [...normalized.canais];
+  CATEGORIAS = [...normalized.categorias];
+  TAG_DEPTS = Object.assign({}, normalized.tagDepts);
+  if (options.persistLocal !== false) saveSettingsStore(normalized);
+  if (options.refreshUI) refreshTagDependentUI();
+}
+async function loadTagSettings(){
+  if (_db) {
+    try {
+      const row = await _db
+        .from('nordmann_data')
+        .select('payload, updated_at')
+        .eq('key','settings_tags')
+        .single()
+        .then(res => res.data || null);
+      if (row?.payload) {
+        applyTagSettingsPayload(JSON.parse(row.payload), {persistLocal:true});
+        _lastTagSettingsUpdatedAt = row.updated_at || _lastTagSettingsUpdatedAt;
+        return;
+      }
+    } catch(e) {}
+  }
+  applyTagSettingsPayload(getSettingsStore(), {persistLocal:false});
 }
 function persistTagSettings(){
   const payload = { canais:[...CANAIS], categorias:[...CATEGORIAS], tagDepts: Object.assign({}, TAG_DEPTS) };
   saveSettingsStore(payload);
+  const nowIso = new Date().toISOString();
+  _lastTagSettingsUpdatedAt = nowIso;
   if (_db) {
     try {
       _db.from('nordmann_data').upsert(
-        {key:'settings_tags', payload:JSON.stringify(payload), updated_at:new Date().toISOString()},
+        {key:'settings_tags', payload:JSON.stringify(payload), updated_at:nowIso},
         {onConflict:'key'}
       );
     } catch(e) {}
   }
 }
+async function syncTagSettingsFromCloud(opts){
+  if (!_db) return false;
+  const options = opts || {};
+  try {
+    const row = await _db
+      .from('nordmann_data')
+      .select('payload, updated_at')
+      .eq('key','settings_tags')
+      .single()
+      .then(res => res.data || null);
+    if (!row?.payload) return false;
+    if (!options.force && row.updated_at && _lastTagSettingsUpdatedAt && row.updated_at === _lastTagSettingsUpdatedAt) return false;
+    applyTagSettingsPayload(JSON.parse(row.payload), {persistLocal:true, refreshUI: options.refreshUI !== false});
+    _lastTagSettingsUpdatedAt = row.updated_at || _lastTagSettingsUpdatedAt;
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+function startTagSettingsAutoSync(){
+  if (window.__tagSettingsAutoSyncStarted) return;
+  window.__tagSettingsAutoSyncStarted = true;
+  async function run(force){
+    await syncTagSettingsFromCloud({force:!!force, refreshUI:true});
+  }
+  window.addEventListener('focus', function(){ run(false); });
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible') run(false);
+  });
+  setInterval(function(){
+    if (document.visibilityState === 'visible') run(false);
+  }, 8000);
+}
 function refreshTagDependentUI(){
   try { renderKanbanFilters?.(); } catch(e){}
+  try { if (currentView==='kanban') renderKanban?.(); } catch(e){}
   try { if (currentView==='calendar') renderCalendar?.(); } catch(e){}
   try { renderPersonalFilters?.(); } catch(e){}
+  try { if (currentView==='personal') renderPersonal?.(); } catch(e){}
+  try { if (currentView==='overview') renderOverview?.(); } catch(e){}
+  try { renderTagSettingsAdmin?.(); } catch(e){}
   try { if (document.getElementById('overlay')?.classList.contains('active') || document.getElementById('slide-panel')?.classList.contains('open')) renderCampaignForm?.(editingCampId ? getCampaign(editingCampId) : null); } catch(e){}
   try { if (currentTemplate==='campanhas' || document.getElementById('cronograma-backdrop')?.style.display==='flex') renderCronogramaEditor?.(); } catch(e){}
 }
@@ -1624,7 +1693,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 let _db = null;
 
 async function refreshAllFromCloud() {
-  loadTagSettings();
+  await loadTagSettings();
   await loadMembers();
   await loadData();
 }
@@ -2070,17 +2139,35 @@ function parseCronogramaPasteText(raw){
       return;
     }
 
-    const itemMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*([^:]+):\s*(.+)$/);
-    if (itemMatch){
+    const normalized = trimmed.replace(/[–—]/g, '-');
+    const itemWithParticipantMatch = normalized.match(/^\*\s*(\d{1,2}:\d{2})\s*-\s*(.+?)\s*-\s*(.+?)\s*-\s*(.+)$/);
+    if (itemWithParticipantMatch){
       if (!current){
         current = { id: uid(), date:'', title:'', items: [] };
         blocks.push(current);
       }
       current.items.push({
         id: uid(),
-        time: itemMatch[1],
-        canal: itemMatch[2].trim(),
-        text: itemMatch[3].trim()
+        time: itemWithParticipantMatch[1],
+        canal: itemWithParticipantMatch[2].trim(),
+        participante: itemWithParticipantMatch[3].trim(),
+        text: itemWithParticipantMatch[4].trim()
+      });
+      return;
+    }
+
+    const itemLegacyMatch = normalized.match(/^\*\s*(\d{1,2}:\d{2})\s*-\s*([^:]+):\s*(.+)$/);
+    if (itemLegacyMatch){
+      if (!current){
+        current = { id: uid(), date:'', title:'', items: [] };
+        blocks.push(current);
+      }
+      current.items.push({
+        id: uid(),
+        time: itemLegacyMatch[1],
+        canal: itemLegacyMatch[2].trim(),
+        text: itemLegacyMatch[3].trim(),
+        participante: ''
       });
       return;
     }
@@ -2106,7 +2193,8 @@ function updateCronogramaPastePreview(){
   blocks.forEach(function(day){
     html += '<div style="font-weight:600;font-size:10px;color:var(--text-primary);margin-top:8px;margin-bottom:4px">'+esc(cronoDayTitlePreview(day) || 'Sem título')+'</div>';
     (day.items||[]).forEach(function(item){
-      html += '<div style="padding:2px 0"><span style="color:var(--c-campanha);font-weight:600">'+esc(item.time||'--:--')+'</span> ' + esc(item.canal||'Geral') + ' · ' + esc(item.text||'') + '</div>';
+      const participantLabel = item.participante ? ' · ' + esc(item.participante) : '';
+      html += '<div style="padding:2px 0"><span style="color:var(--c-campanha);font-weight:600">'+esc(item.time||'--:--')+'</span> ' + esc(item.canal||'Geral') + participantLabel + ' · ' + esc(item.text||'') + '</div>';
     });
   });
   preview.innerHTML = html;
@@ -2462,6 +2550,7 @@ function compressImage(file, cb) {
 /* BOOT */
 function bootApp() {
   refreshAllFromCloud().then(() => {
+    startTagSettingsAutoSync();
     // Auto-migrate: fix Em andamento campaigns without checklist tasks
     let migrated = 0;
     campaigns.forEach(c => {
@@ -5839,6 +5928,19 @@ function closeCompactDropdowns(){
   });
 }
 
+function getOpenCompactDropdownIds(){
+  return Array.from(document.querySelectorAll('.compact-dropdown.open')).map(function(el){
+    return el.id;
+  }).filter(Boolean);
+}
+
+function restoreCompactDropdownIds(ids){
+  (ids||[]).forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.add('open');
+  });
+}
+
 document.addEventListener('click', function(e){
   if (!e.target.closest('.compact-dropdown') && !e.target.closest('.dept-move-popup')) closeCompactDropdowns();
 });
@@ -5972,16 +6074,19 @@ function deptRenameSave(input) {
   var oldName = input.dataset.old;
   var newName = input.value.trim();
   var wasOpen = input.dataset.open === 'true';
-  if (!newName || newName === oldName) { rebuildCanaisDropdown(); return; }
+  var openDropdowns = getOpenCompactDropdownIds();
+  if (!newName || newName === oldName) { rebuildCanaisDropdown(); restoreCompactDropdownIds(openDropdowns); return; }
   // Rename all tags with this dept
   CANAIS.forEach(function(c){
     if (TAG_DEPTS[c] === oldName) TAG_DEPTS[c] = newName;
   });
   persistTagSettings();
   rebuildCanaisDropdown();
+  refreshTagDependentUI();
   // Restore open state for renamed dept
   var newId = 'dtw-'+newName.replace(/[^a-zA-Z0-9]/g,'_');
   setTimeout(function(){
+    restoreCompactDropdownIds(openDropdowns);
     var wrap = document.getElementById(newId);
     if (wrap && wasOpen) {
       wrap.classList.add('open');
@@ -6027,8 +6132,9 @@ function canalInlineEdit(btn) {
 }
 function canalInlineEditSave(newName, oldName, wasSelected) {
   newName = (newName||'').trim();
-  if (!newName || newName === oldName) { rebuildCanaisDropdown(); return; }
-  if (CANAIS.includes(newName)) { alert('Já existe um canal com esse nome.'); rebuildCanaisDropdown(); return; }
+  var openDropdowns = getOpenCompactDropdownIds();
+  if (!newName || newName === oldName) { rebuildCanaisDropdown(); restoreCompactDropdownIds(openDropdowns); return; }
+  if (CANAIS.includes(newName)) { alert('Já existe um canal com esse nome.'); rebuildCanaisDropdown(); restoreCompactDropdownIds(openDropdowns); return; }
   var idx = CANAIS.indexOf(oldName);
   if (idx !== -1) CANAIS[idx] = newName;
   var ca = window._canaisAtual || [];
@@ -6037,16 +6143,35 @@ function canalInlineEditSave(newName, oldName, wasSelected) {
     c.canais = (c.canais||[]).map(function(x){ return x===oldName?newName:x; });
     (c.subtasks||[]).forEach(function(s){ if(s.canal===oldName) s.canal=newName; });
     var td=c.templateData||{};
+    ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
+      (td[path]||[]).forEach(function(item){ if(item?.canal===oldName) item.canal=newName; });
+    });
     (td.cronogramaBlocos||[]).forEach(function(day){ (day.items||[]).forEach(function(it){ if(it.canal===oldName) it.canal=newName; }); });
   });
-  persistTagSettings(); saveData(); rebuildCanaisDropdown();
+  if (TAG_DEPTS[oldName]) {
+    TAG_DEPTS[newName] = TAG_DEPTS[oldName];
+    delete TAG_DEPTS[oldName];
+  }
+  persistTagSettings(); saveData(); rebuildCanaisDropdown(); refreshTagDependentUI();
+  setTimeout(function(){ restoreCompactDropdownIds(openDropdowns); }, 10);
 }
 function canalInlineDelete(name) {
   if (!confirm('Excluir canal "'+name+'"?')) return;
   CANAIS = CANAIS.filter(function(c){ return c!==name; });
-  _canaisAtual = _canaisAtual.filter(function(c){ return c!==name; });
-  campaigns.forEach(function(c){ c.canais=(c.canais||[]).filter(function(x){ return x!==name; }); });
-  persistTagSettings(); saveData(); renderCampaignForm(null);
+  _canaisAtual = (_canaisAtual || []).filter(function(c){ return c!==name; });
+  delete TAG_DEPTS[name];
+  campaigns.forEach(function(c){
+    c.canais=(c.canais||[]).filter(function(x){ return x!==name; });
+    (c.subtasks||[]).forEach(function(s){ if (s.canal===name) s.canal='Geral'; });
+    var td = c.templateData || {};
+    ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
+      (td[path]||[]).forEach(function(item){ if(item?.canal===name) item.canal='Geral'; });
+    });
+    (td.cronogramaBlocos||[]).forEach(function(day){
+      (day.items||[]).forEach(function(item){ if(item?.canal===name) item.canal='Geral'; });
+    });
+  });
+  persistTagSettings(); saveData(); rebuildCanaisDropdown(); refreshTagDependentUI();
 }
 function catInlineEdit(btn) {
   var oldName = btn.dataset.cat;
@@ -6071,7 +6196,7 @@ function catInlineEditSave(input, oldName, fromEnter) {
     if (c.templateType==='tarefa_pessoal' && c.templateData && c.templateData.ptCategory===oldName)
       c.templateData.ptCategory = newName;
   });
-  persistTagSettings(); saveData(); renderTplFields();
+  persistTagSettings(); saveData(); renderTplFields(); refreshTagDependentUI();
 }
 
 
@@ -6126,6 +6251,7 @@ function canalAssignDept(canal, dept) {
   var popup = document.getElementById('dept-move-popup');
   if (popup) popup.remove();
   if (!canal) return;
+  var openDropdowns = getOpenCompactDropdownIds();
   // Remember which depts are open before rebuild
   var openDepts = [];
   document.querySelectorAll('#multi-canais .dept-tags-wrap.open').forEach(function(el){
@@ -6141,15 +6267,19 @@ function canalAssignDept(canal, dept) {
   }
   persistTagSettings();
   rebuildCanaisDropdown();
+  refreshTagDependentUI();
   // Restore open state
-  openDepts.forEach(function(id){
-    var wrap = document.getElementById(id);
-    if (wrap) {
-      wrap.classList.add('open');
-      var hdr = wrap.previousElementSibling;
-      if (hdr) hdr.classList.add('open');
-    }
-  });
+  setTimeout(function(){
+    restoreCompactDropdownIds(openDropdowns);
+    openDepts.forEach(function(id){
+      var wrap = document.getElementById(id);
+      if (wrap) {
+        wrap.classList.add('open');
+        var hdr = wrap.previousElementSibling;
+        if (hdr) hdr.classList.add('open');
+      }
+    });
+  }, 10);
 }
 function rebuildCanaisDropdown() {
   var container = document.getElementById('multi-canais');
@@ -6218,6 +6348,7 @@ function addNewCanal() {
   inp.value = '';
   persistTagSettings();
   rebuildCanaisDropdown();
+  refreshTagDependentUI();
 }
 
 function saveCampaign() {
