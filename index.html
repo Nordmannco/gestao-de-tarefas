@@ -4592,6 +4592,7 @@ function getTemplateDataForSave() {
 }
 
 function updateCampaign(id) {
+  collectMemberNotesFromEditors();
   const c = getCampaign(id); if (!c) return;
   const oldStatus = c.status;
   const name = document.getElementById('f-name')?.value?.trim();
@@ -5319,9 +5320,23 @@ function persistMemberNote(nome, value) {
       if (!c.templateData || typeof c.templateData !== 'object') c.templateData = {};
       if (!c.templateData.notasMembro) c.templateData.notasMembro = {};
       c.templateData.notasMembro[nome] = value || '';
-      saveData();
     }
   }
+}
+function collectMemberNotesFromEditors() {
+  document.querySelectorAll('[data-member-note-editor="1"]').forEach(function(el){
+    var nome = (el.dataset && el.dataset.nome) ? el.dataset.nome : '';
+    if (!nome) return;
+    var value = '';
+    if (el.isContentEditable) value = el.innerHTML || '';
+    else value = el.value || '';
+    persistMemberNote(nome, value);
+  });
+}
+function saveParticipantNotesOnly() {
+  collectMemberNotesFromEditors();
+  if (editingCampId) saveData();
+  showToast('Anotações salvas', '#7c6af7');
 }
 function setCronoNotaRich(el) {
   const nome = el?.dataset?.nome || '';
@@ -5414,7 +5429,7 @@ function buildCronoParticipantesHtml(d, editMode) {
         'Anotações'
       ).replace(
         'class="mini-editor"',
-        'class="mini-editor" data-nome="'+esc(nome)+'"'
+        'class="mini-editor" data-nome="'+esc(nome)+'" data-member-note-editor="1"'
       );
       infoHtml = '<div style="margin-bottom:10px">'+notaEditorHtml+'</div>';
     } else {
@@ -5555,7 +5570,9 @@ function renderTplCampanhasForm() {
       '<div id="tpl-dyn-datasChave">'+datasHtml+'</div>'+
     '</div>'+
     '<div class="tpl-section">'+
-      '<div class="tpl-section-title">✅ Participantes e tarefas</div>'+
+      '<div class="tpl-section-title" style="justify-content:space-between">✅ Participantes e tarefas'+
+        '<button type="button" class="btn-add-sub" onclick="saveParticipantNotesOnly()">Salvar anotações</button>'+
+      '</div>'+
       (cronoTasksCount > 0
         ? buildCronoParticipantesHtml(d, true) // edit mode
         : (membrosVisiveis.length ? clMembrosHtml :
@@ -6374,6 +6391,7 @@ function addNewCanal() {
 }
 
 function saveCampaign() {
+  collectMemberNotesFromEditors();
   const name = document.getElementById('f-name')?.value?.trim();
   if (!name) { _saving = false; alert('Insira o nome da campanha'); return; }
 
