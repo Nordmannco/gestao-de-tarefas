@@ -2678,16 +2678,27 @@ function renderAdmin() {
 }
 
 function adminTab(tab) {
-  document.getElementById('admin-tab-members').style.display = tab==='members' ? '' : 'none';
-  document.getElementById('admin-tab-templates').style.display = tab==='templates' ? '' : 'none';
-  document.getElementById('admin-tab-settings').style.display = tab==='settings' ? '' : 'none';
-  document.getElementById('admin-tab-backups').style.display = tab==='backups' ? '' : 'none';
-  document.getElementById('atab-members').classList.toggle('active', tab==='members');
-  const t = document.getElementById('atab-templates'); if (t) t.classList.toggle('active', tab==='templates');
-  document.getElementById('atab-settings').classList.toggle('active', tab==='settings');
-  document.getElementById('atab-backups').classList.toggle('active', tab==='backups');
-  if (tab==='templates') renderTemplatesAdmin();
-  if (tab==='settings') renderTagSettingsAdmin();
+  const membersPane = document.getElementById('admin-tab-members');
+  const backupsPane = document.getElementById('admin-tab-backups');
+  const templatesPane = document.getElementById('admin-tab-templates');
+  const settingsPane = document.getElementById('admin-tab-settings');
+
+  if (membersPane) membersPane.style.display = tab==='members' ? '' : 'none';
+  if (backupsPane) backupsPane.style.display = tab==='backups' ? '' : 'none';
+  if (templatesPane) templatesPane.style.display = 'none';
+  if (settingsPane) settingsPane.style.display = 'none';
+
+  const membersBtn = document.getElementById('atab-members');
+  const backupsBtn = document.getElementById('atab-backups');
+  const templatesBtn = document.getElementById('atab-templates');
+  const settingsBtn = document.getElementById('atab-settings');
+
+  if (membersBtn) membersBtn.classList.toggle('active', tab==='members');
+  if (backupsBtn) backupsBtn.classList.toggle('active', tab==='backups');
+  if (templatesBtn) templatesBtn.classList.remove('active');
+  if (settingsBtn) settingsBtn.classList.remove('active');
+
+  if (tab==='members') renderAdmin();
   if (tab==='backups') renderBackupAdmin();
 }
 
