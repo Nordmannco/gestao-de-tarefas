@@ -5406,9 +5406,17 @@ function buildCronoParticipantesHtml(d, editMode) {
     let infoHtml = '';
     // Info field
     if (editMode) {
-      infoHtml = '<div style="margin-bottom:10px">'+
-        rteHtml(nid, nota, 'Informações para '+esc(nome)+'...', 'setCronoNotaRich(document.getElementById(this.id))', 'Anotações')+
-      '</div>';
+      const notaEditorHtml = rteHtml(
+        nid,
+        nota,
+        'Informações para '+esc(nome)+'...',
+        'setCronoNotaRich(document.getElementById(this.id))',
+        'Anotações'
+      ).replace(
+        'class="mini-editor"',
+        'class="mini-editor" data-nome="'+esc(nome)+'"'
+      );
+      infoHtml = '<div style="margin-bottom:10px">'+notaEditorHtml+'</div>';
     } else {
       // View mode: clean text preview, HTML content when expanded
       const notaStripped = nota ? nota.replace(/<br\s*\/?>/gi,' · ').replace(/<\/?(li|p|div)[^>]*>/gi,' · ').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').replace(/( · )+/g,' · ').replace(/^ · | · $/g,'').trim() : '';
