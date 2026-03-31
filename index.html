@@ -1384,7 +1384,7 @@ body.modal-open #btn-new-campaign{display:none !important}
         <div style="font-size:18px;font-weight:600;margin-bottom:20px">⚙️ Administração</div>
         <div style="display:flex;gap:8px;margin-bottom:24px;border-bottom:0.5px solid var(--border);padding-bottom:0">
           <button onclick="adminTab('members')" id="atab-members" class="admin-tab active">👥 Membros</button>
-          <button onclick="adminTab('settings')" id="atab-settings" class="admin-tab">🏷️ Tags</button>
+          <button onclick="adminTab('backups')" id="atab-backups" class="admin-tab">🛟 Segurança</button>
         </div>
         <div id="admin-tab-members">
           <div class="task-section-title">Membros ativos</div>
@@ -1395,6 +1395,9 @@ body.modal-open #btn-new-campaign{display:none !important}
         </div>
         <div id="admin-tab-settings" style="display:none">
           <div id="admin-settings-list"></div>
+        </div>
+        <div id="admin-tab-backups" style="display:none">
+          <div id="admin-backups-list"></div>
         </div>
       </div>
     </div>
@@ -1565,9 +1568,25 @@ const STORAGE_KEY  = 'nordmann_campaigns_v2';
 const MEMBERS_KEY  = 'nordmann_members_v1';
 const SETTINGS_KEY = 'nordmann_settings_v1';
 const SESSION_KEY  = 'nordmann_current_user';
+const ARCHIVED_KEY = 'nordmann_archived_campaigns_v1';
+const TRASH_KEY    = 'nordmann_deleted_campaigns_v1';
+const BACKUPS_KEY  = 'nordmann_backups_v1';
+const CAMPAIGN_HISTORY_KEY = 'nordmann_campaign_history_v1';
+const STATE_VERSION = 4;
+const BACKUP_RETENTION_DAYS = 7;
+const BACKUP_MAX_ITEMS = 60;
+const CAMPAIGN_HISTORY_MAX_ITEMS = 400;
 
 let MEMBERS = [];
 let campaigns = [];
+let archivedCampaigns = [];
+let deletedCampaigns = [];
+let stateBackups = [];
+let campaignHistory = [];
+let _lastStateUpdatedAt = '';
+let _hasLoadedState = false;
+let _lastBackupSignature = '';
+let _lastBackupAt = 0;
 let currentView = 'kanban';
 let currentMember = null;
 let kanbanFilter  = { type: [], canal: [], pessoa: [] };
@@ -1591,97 +1610,28 @@ function getSettingsStore(){
 function saveSettingsStore(store){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(store || {}));
 }
-let _lastTagSettingsUpdatedAt = '';
-function normalizeTagSettingsPayload(raw){
-  const s = raw && typeof raw === 'object' ? raw : {};
-  return {
-    canais: Array.isArray(s.canais) && s.canais.length ? [...s.canais] : [...DEFAULT_CANAIS],
-    categorias: Array.isArray(s.categorias) && s.categorias.length ? [...s.categorias] : [...DEFAULT_CATEGORIAS],
-    tagDepts: (s.tagDepts && typeof s.tagDepts==='object') ? Object.assign({}, s.tagDepts) : {}
-  };
-}
-function applyTagSettingsPayload(raw, opts){
-  const options = opts || {};
-  const normalized = normalizeTagSettingsPayload(raw);
-  CANAIS = [...normalized.canais];
-  CATEGORIAS = [...normalized.categorias];
-  TAG_DEPTS = Object.assign({}, normalized.tagDepts);
-  if (options.persistLocal !== false) saveSettingsStore(normalized);
-  if (options.refreshUI) refreshTagDependentUI();
-}
-async function loadTagSettings(){
-  if (_db) {
-    try {
-      const row = await _db
-        .from('nordmann_data')
-        .select('payload, updated_at')
-        .eq('key','settings_tags')
-        .single()
-        .then(res => res.data || null);
-      if (row?.payload) {
-        applyTagSettingsPayload(JSON.parse(row.payload), {persistLocal:true});
-        _lastTagSettingsUpdatedAt = row.updated_at || _lastTagSettingsUpdatedAt;
-        return;
-      }
-    } catch(e) {}
-  }
-  applyTagSettingsPayload(getSettingsStore(), {persistLocal:false});
+function loadTagSettings(){
+  const s = getSettingsStore();
+  CANAIS = Array.isArray(s.canais) && s.canais.length ? [...s.canais] : [...DEFAULT_CANAIS];
+  CATEGORIAS = Array.isArray(s.categorias) && s.categorias.length ? [...s.categorias] : [...DEFAULT_CATEGORIAS];
+  TAG_DEPTS = (s.tagDepts && typeof s.tagDepts==='object') ? Object.assign({}, s.tagDepts) : {};
 }
 function persistTagSettings(){
   const payload = { canais:[...CANAIS], categorias:[...CATEGORIAS], tagDepts: Object.assign({}, TAG_DEPTS) };
   saveSettingsStore(payload);
-  const nowIso = new Date().toISOString();
-  _lastTagSettingsUpdatedAt = nowIso;
   if (_db) {
     try {
       _db.from('nordmann_data').upsert(
-        {key:'settings_tags', payload:JSON.stringify(payload), updated_at:nowIso},
+        {key:'settings_tags', payload:JSON.stringify(payload), updated_at:new Date().toISOString()},
         {onConflict:'key'}
       );
     } catch(e) {}
   }
 }
-async function syncTagSettingsFromCloud(opts){
-  if (!_db) return false;
-  const options = opts || {};
-  try {
-    const row = await _db
-      .from('nordmann_data')
-      .select('payload, updated_at')
-      .eq('key','settings_tags')
-      .single()
-      .then(res => res.data || null);
-    if (!row?.payload) return false;
-    if (!options.force && row.updated_at && _lastTagSettingsUpdatedAt && row.updated_at === _lastTagSettingsUpdatedAt) return false;
-    applyTagSettingsPayload(JSON.parse(row.payload), {persistLocal:true, refreshUI: options.refreshUI !== false});
-    _lastTagSettingsUpdatedAt = row.updated_at || _lastTagSettingsUpdatedAt;
-    return true;
-  } catch(e) {
-    return false;
-  }
-}
-function startTagSettingsAutoSync(){
-  if (window.__tagSettingsAutoSyncStarted) return;
-  window.__tagSettingsAutoSyncStarted = true;
-  async function run(force){
-    await syncTagSettingsFromCloud({force:!!force, refreshUI:true});
-  }
-  window.addEventListener('focus', function(){ run(false); });
-  document.addEventListener('visibilitychange', function(){
-    if (document.visibilityState === 'visible') run(false);
-  });
-  setInterval(function(){
-    if (document.visibilityState === 'visible') run(false);
-  }, 8000);
-}
 function refreshTagDependentUI(){
   try { renderKanbanFilters?.(); } catch(e){}
-  try { if (currentView==='kanban') renderKanban?.(); } catch(e){}
   try { if (currentView==='calendar') renderCalendar?.(); } catch(e){}
   try { renderPersonalFilters?.(); } catch(e){}
-  try { if (currentView==='personal') renderPersonal?.(); } catch(e){}
-  try { if (currentView==='overview') renderOverview?.(); } catch(e){}
-  try { renderTagSettingsAdmin?.(); } catch(e){}
   try { if (document.getElementById('overlay')?.classList.contains('active') || document.getElementById('slide-panel')?.classList.contains('open')) renderCampaignForm?.(editingCampId ? getCampaign(editingCampId) : null); } catch(e){}
   try { if (currentTemplate==='campanhas' || document.getElementById('cronograma-backdrop')?.style.display==='flex') renderCronogramaEditor?.(); } catch(e){}
 }
@@ -1693,7 +1643,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 let _db = null;
 
 async function refreshAllFromCloud() {
-  await loadTagSettings();
+  loadTagSettings();
   await loadMembers();
   await loadData();
 }
@@ -2139,35 +2089,17 @@ function parseCronogramaPasteText(raw){
       return;
     }
 
-    const normalized = trimmed.replace(/[–—]/g, '-');
-    const itemWithParticipantMatch = normalized.match(/^\*\s*(\d{1,2}:\d{2})\s*-\s*(.+?)\s*-\s*(.+?)\s*-\s*(.+)$/);
-    if (itemWithParticipantMatch){
+    const itemMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*([^:]+):\s*(.+)$/);
+    if (itemMatch){
       if (!current){
         current = { id: uid(), date:'', title:'', items: [] };
         blocks.push(current);
       }
       current.items.push({
         id: uid(),
-        time: itemWithParticipantMatch[1],
-        canal: itemWithParticipantMatch[2].trim(),
-        participante: itemWithParticipantMatch[3].trim(),
-        text: itemWithParticipantMatch[4].trim()
-      });
-      return;
-    }
-
-    const itemLegacyMatch = normalized.match(/^\*\s*(\d{1,2}:\d{2})\s*-\s*([^:]+):\s*(.+)$/);
-    if (itemLegacyMatch){
-      if (!current){
-        current = { id: uid(), date:'', title:'', items: [] };
-        blocks.push(current);
-      }
-      current.items.push({
-        id: uid(),
-        time: itemLegacyMatch[1],
-        canal: itemLegacyMatch[2].trim(),
-        text: itemLegacyMatch[3].trim(),
-        participante: ''
+        time: itemMatch[1],
+        canal: itemMatch[2].trim(),
+        text: itemMatch[3].trim()
       });
       return;
     }
@@ -2193,8 +2125,7 @@ function updateCronogramaPastePreview(){
   blocks.forEach(function(day){
     html += '<div style="font-weight:600;font-size:10px;color:var(--text-primary);margin-top:8px;margin-bottom:4px">'+esc(cronoDayTitlePreview(day) || 'Sem título')+'</div>';
     (day.items||[]).forEach(function(item){
-      const participantLabel = item.participante ? ' · ' + esc(item.participante) : '';
-      html += '<div style="padding:2px 0"><span style="color:var(--c-campanha);font-weight:600">'+esc(item.time||'--:--')+'</span> ' + esc(item.canal||'Geral') + participantLabel + ' · ' + esc(item.text||'') + '</div>';
+      html += '<div style="padding:2px 0"><span style="color:var(--c-campanha);font-weight:600">'+esc(item.time||'--:--')+'</span> ' + esc(item.canal||'Geral') + ' · ' + esc(item.text||'') + '</div>';
     });
   });
   preview.innerHTML = html;
@@ -2550,7 +2481,6 @@ function compressImage(file, cb) {
 /* BOOT */
 function bootApp() {
   refreshAllFromCloud().then(() => {
-    startTagSettingsAutoSync();
     // Auto-migrate: fix Em andamento campaigns without checklist tasks
     let migrated = 0;
     campaigns.forEach(c => {
@@ -2751,11 +2681,14 @@ function adminTab(tab) {
   document.getElementById('admin-tab-members').style.display = tab==='members' ? '' : 'none';
   document.getElementById('admin-tab-templates').style.display = tab==='templates' ? '' : 'none';
   document.getElementById('admin-tab-settings').style.display = tab==='settings' ? '' : 'none';
+  document.getElementById('admin-tab-backups').style.display = tab==='backups' ? '' : 'none';
   document.getElementById('atab-members').classList.toggle('active', tab==='members');
-  document.getElementById('atab-templates').classList.toggle('active', tab==='templates');
+  const t = document.getElementById('atab-templates'); if (t) t.classList.toggle('active', tab==='templates');
   document.getElementById('atab-settings').classList.toggle('active', tab==='settings');
+  document.getElementById('atab-backups').classList.toggle('active', tab==='backups');
   if (tab==='templates') renderTemplatesAdmin();
   if (tab==='settings') renderTagSettingsAdmin();
+  if (tab==='backups') renderBackupAdmin();
 }
 
 
@@ -3147,9 +3080,9 @@ function saveTemplateEditorFull(id) {
 /* PERSISTENCE */
 let _syncPending = false;
 let _syncRetryTimer = null;
+let _backupSyncPending = false;
 
 function setSyncStatus(status) {
-  // status: 'ok' | 'pending' | 'error'
   const el = document.getElementById('storage-info');
   if (!el) return;
   const kb = (new Blob([localStorage.getItem(STORAGE_KEY)||'']).size/1024).toFixed(1);
@@ -3162,59 +3095,320 @@ function setSyncStatus(status) {
              status==='pending' ? 'Sincronizando...' : 'Sincronizado com banco de dados';
 }
 
-async function syncToSupabase() {
+function cloneStatePayload(payload){
+  return JSON.parse(JSON.stringify(payload||{}));
+}
+function countStateItems(payload){
+  const p = payload || {};
+  return (Array.isArray(p.campaigns)?p.campaigns.length:0) + (Array.isArray(p.archivedCampaigns)?p.archivedCampaigns.length:0) + (Array.isArray(p.deletedCampaigns)?p.deletedCampaigns.length:0);
+}
+function normalizeStatePayload(raw){
+  if (Array.isArray(raw)) {
+    return { version: STATE_VERSION, updatedAt: '', campaigns: raw, archivedCampaigns: [], deletedCampaigns: [] };
+  }
+  const obj = raw && typeof raw === 'object' ? raw : {};
+  return {
+    version: Number(obj.version||STATE_VERSION),
+    updatedAt: String(obj.updatedAt||obj.updated_at||''),
+    campaigns: Array.isArray(obj.campaigns) ? obj.campaigns : [],
+    archivedCampaigns: Array.isArray(obj.archivedCampaigns) ? obj.archivedCampaigns : [],
+    deletedCampaigns: Array.isArray(obj.deletedCampaigns) ? obj.deletedCampaigns : []
+  };
+}
+function buildStatePayload(updatedAt){
+  return {
+    version: STATE_VERSION,
+    updatedAt: updatedAt || new Date().toISOString(),
+    campaigns: cloneStatePayload(campaigns),
+    archivedCampaigns: cloneStatePayload(archivedCampaigns),
+    deletedCampaigns: cloneStatePayload(deletedCampaigns)
+  };
+}
+function applyStatePayload(raw, persistLocal){
+  const payload = normalizeStatePayload(raw);
+  campaigns = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+  archivedCampaigns = Array.isArray(payload.archivedCampaigns) ? payload.archivedCampaigns : [];
+  deletedCampaigns = Array.isArray(payload.deletedCampaigns) ? payload.deletedCampaigns : [];
+  _lastStateUpdatedAt = payload.updatedAt || _lastStateUpdatedAt;
+  if (persistLocal !== false) persistStateLocal(payload);
+  return payload;
+}
+function persistStateLocal(raw){
+  const payload = normalizeStatePayload(raw);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  localStorage.setItem(ARCHIVED_KEY, JSON.stringify(payload.archivedCampaigns||[]));
+  localStorage.setItem(TRASH_KEY, JSON.stringify(payload.deletedCampaigns||[]));
+}
+function readLocalState(){
+  try {
+    const main = localStorage.getItem(STORAGE_KEY);
+    if (main) {
+      const parsed = JSON.parse(main);
+      if (Array.isArray(parsed)) {
+        return normalizeStatePayload({ campaigns: parsed, archivedCampaigns: JSON.parse(localStorage.getItem(ARCHIVED_KEY)||'[]'), deletedCampaigns: JSON.parse(localStorage.getItem(TRASH_KEY)||'[]') });
+      }
+      return normalizeStatePayload(parsed);
+    }
+  } catch(e) {}
+  try {
+    return normalizeStatePayload({ campaigns: [], archivedCampaigns: JSON.parse(localStorage.getItem(ARCHIVED_KEY)||'[]'), deletedCampaigns: JSON.parse(localStorage.getItem(TRASH_KEY)||'[]') });
+  } catch(e) {}
+  return normalizeStatePayload(null);
+}
+function pruneBackups(list){
+  const now = Date.now();
+  const cutoff = now - (BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  const safe = Array.isArray(list) ? list.filter(function(x){ return x && x.ts && new Date(x.ts).getTime() >= cutoff; }) : [];
+  safe.sort(function(a,b){ return new Date(b.ts).getTime() - new Date(a.ts).getTime(); });
+  return safe.slice(0, BACKUP_MAX_ITEMS);
+}
+function loadBackupsLocal(){
+  try {
+    stateBackups = pruneBackups(JSON.parse(localStorage.getItem(BACKUPS_KEY)||'[]'));
+  } catch(e) {
+    stateBackups = [];
+  }
+}
+function persistBackupsLocal(){
+  stateBackups = pruneBackups(stateBackups);
+  localStorage.setItem(BACKUPS_KEY, JSON.stringify(stateBackups));
+}
+
+function pruneCampaignHistory(list){
+  const now = Date.now();
+  const cutoff = now - (BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  const safe = Array.isArray(list) ? list.filter(function(x){
+    const ts = x && x.ts ? new Date(x.ts).getTime() : 0;
+    return x && x.campaignId && ts >= cutoff;
+  }) : [];
+  safe.sort(function(a,b){ return new Date(b.ts).getTime() - new Date(a.ts).getTime(); });
+  return safe.slice(0, CAMPAIGN_HISTORY_MAX_ITEMS);
+}
+function loadCampaignHistoryLocal(){
+  try {
+    campaignHistory = pruneCampaignHistory(JSON.parse(localStorage.getItem(CAMPAIGN_HISTORY_KEY)||'[]'));
+  } catch(e) {
+    campaignHistory = [];
+  }
+}
+function persistCampaignHistoryLocal(){
+  campaignHistory = pruneCampaignHistory(campaignHistory);
+  localStorage.setItem(CAMPAIGN_HISTORY_KEY, JSON.stringify(campaignHistory));
+}
+function createCampaignVersionEntry(campaign, location, reason, ts){
+  const c = campaign && typeof campaign === 'object' ? campaign : null;
+  if (!c || !c.id) return;
+  const when = ts || new Date().toISOString();
+  const snapshot = JSON.parse(JSON.stringify(c));
+  const signature = JSON.stringify(snapshot);
+  const previous = campaignHistory.find(function(entry){ return entry && entry.campaignId===c.id; });
+  if (previous && previous.signature === signature && previous.location === location && previous.reason === reason) return;
+  campaignHistory.unshift({
+    id:'hist_'+uid()+uid(),
+    campaignId:c.id,
+    campaignName:c.name || 'Sem nome',
+    location:location || 'active',
+    reason:reason || 'save',
+    ts:when,
+    signature:signature,
+    payload:snapshot
+  });
+}
+function createCampaignHistoryEntries(prevState, nextState, reason, ts){
+  const before = normalizeStatePayload(prevState);
+  const after = normalizeStatePayload(nextState);
+  const buckets = [
+    { key:'campaigns', location:'active' },
+    { key:'archivedCampaigns', location:'archived' },
+    { key:'deletedCampaigns', location:'trash' }
+  ];
+  buckets.forEach(function(bucket){
+    const prevMap = new Map((before[bucket.key]||[]).map(function(c){ return [c.id, JSON.stringify(c)]; }));
+    (after[bucket.key]||[]).forEach(function(c){
+      const sig = JSON.stringify(c);
+      if (prevMap.get(c.id) !== sig) createCampaignVersionEntry(c, bucket.location, reason, ts);
+    });
+  });
+  campaignHistory = pruneCampaignHistory(campaignHistory);
+  persistCampaignHistoryLocal();
+}
+async function syncCampaignHistoryToSupabase(){
   if (!_db) return;
+  try {
+    await _db.from('nordmann_data').upsert(
+      {key:'campaign_history', payload:JSON.stringify(pruneCampaignHistory(campaignHistory)), updated_at:new Date().toISOString()},
+      {onConflict:'key'}
+    );
+  } catch(e) {}
+}
+async function loadCampaignHistoryFromCloud(){
+  loadCampaignHistoryLocal();
+  if (!_db) return;
+  try {
+    const row = await _db.from('nordmann_data').select('payload').eq('key','campaign_history').single().then(function(res){ return res.data || null; });
+    if (row && row.payload) {
+      const cloud = pruneCampaignHistory(JSON.parse(row.payload));
+      const localNewest = campaignHistory[0] ? new Date(campaignHistory[0].ts).getTime() : 0;
+      const cloudNewest = cloud[0] ? new Date(cloud[0].ts).getTime() : 0;
+      if (cloudNewest >= localNewest) {
+        campaignHistory = cloud;
+        persistCampaignHistoryLocal();
+      }
+    }
+  } catch(e) {}
+}
+function restoreCampaignVersion(historyId){
+  const entry = (campaignHistory||[]).find(function(x){ return x.id===historyId; });
+  if (!entry || !entry.payload || !entry.payload.id) return;
+  const snapshot = JSON.parse(JSON.stringify(entry.payload));
+  const targetId = snapshot.id;
+  campaigns = (campaigns||[]).filter(function(c){ return c.id!==targetId; });
+  archivedCampaigns = (archivedCampaigns||[]).filter(function(c){ return c.id!==targetId; });
+  deletedCampaigns = (deletedCampaigns||[]).filter(function(c){ return c.id!==targetId; });
+  campaigns.unshift(snapshot);
+  saveData({reason:'restore_campaign_version', force:true, allowEmptyOverwrite:true, forceSnapshot:true});
+  renderKanban(); renderPersonal(); renderOverview(); renderAdmin();
+  showToast('Versão da campanha restaurada','#3ecf8e');
+}
+function getStateSignature(payload){
+  const p = normalizeStatePayload(payload);
+  return [
+    (p.campaigns||[]).map(function(c){ return c.id; }).join('|'),
+    (p.archivedCampaigns||[]).map(function(c){ return c.id; }).join('|'),
+    (p.deletedCampaigns||[]).map(function(c){ return c.id; }).join('|')
+  ].join('::');
+}
+function createStateSnapshot(reason, payload, force){
+  const p = normalizeStatePayload(payload);
+  const sig = getStateSignature(p);
+  const now = Date.now();
+  const shouldSkip = !force && sig === _lastBackupSignature && (now - _lastBackupAt) < 5*60*1000;
+  if (shouldSkip) return false;
+  stateBackups.unshift({
+    id: 'bkp_'+uid()+uid(),
+    ts: p.updatedAt || new Date().toISOString(),
+    reason: reason || 'save',
+    counts: { active: (p.campaigns||[]).length, archived: (p.archivedCampaigns||[]).length, deleted: (p.deletedCampaigns||[]).length },
+    payload: cloneStatePayload(p)
+  });
+  stateBackups = pruneBackups(stateBackups);
+  persistBackupsLocal();
+  _backupSyncPending = true;
+  _lastBackupSignature = sig;
+  _lastBackupAt = now;
+  return true;
+}
+async function syncBackupsToSupabase(){
+  if (!_db || !_backupSyncPending) return;
+  try {
+    await _db.from('nordmann_data').upsert(
+      {key:'campaign_backups', payload:JSON.stringify(pruneBackups(stateBackups)), updated_at:new Date().toISOString()},
+      {onConflict:'key'}
+    );
+    _backupSyncPending = false;
+  } catch(e) {}
+}
+async function loadBackupsFromCloud(){
+  loadBackupsLocal();
+  if (!_db) return;
+  try {
+    const row = await _db.from('nordmann_data').select('payload').eq('key','campaign_backups').single().then(function(res){ return res.data || null; });
+    if (row && row.payload) {
+      const cloud = pruneBackups(JSON.parse(row.payload));
+      const localNewest = stateBackups[0] ? new Date(stateBackups[0].ts).getTime() : 0;
+      const cloudNewest = cloud[0] ? new Date(cloud[0].ts).getTime() : 0;
+      if (cloudNewest >= localNewest) {
+        stateBackups = cloud;
+        persistBackupsLocal();
+      }
+    }
+  } catch(e) {}
+}
+function choosePreferredState(localState, cloudState){
+  const local = normalizeStatePayload(localState);
+  const cloud = normalizeStatePayload(cloudState);
+  const localCount = countStateItems(local);
+  const cloudCount = countStateItems(cloud);
+  const localTs = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+  const cloudTs = cloud.updatedAt ? new Date(cloud.updatedAt).getTime() : 0;
+  if (!localCount && cloudCount) return cloud;
+  if (!cloudCount && localCount) return local;
+  if (cloudTs > localTs) return cloud;
+  return local;
+}
+
+async function syncToSupabase(payload) {
+  if (!_db) return;
+  const state = normalizeStatePayload(payload || buildStatePayload());
   try {
     setSyncStatus('pending');
     const {error} = await _db.from('nordmann_data').upsert(
-      {key:'campaigns', payload:JSON.stringify(campaigns), updated_at:new Date().toISOString()},
+      {key:'campaigns', payload:JSON.stringify(state), updated_at:state.updatedAt||new Date().toISOString()},
       {onConflict:'key'}
     );
     if (error) throw error;
+    await syncBackupsToSupabase();
+    await syncCampaignHistoryToSupabase();
     setSyncStatus('ok');
     _syncPending = false;
     if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
   } catch(e) {
     setSyncStatus('error');
     _syncPending = true;
-    // Retry in 5 seconds
     if (_syncRetryTimer) clearTimeout(_syncRetryTimer);
-    _syncRetryTimer = setTimeout(syncToSupabase, 5000);
+    _syncRetryTimer = setTimeout(function(){ syncToSupabase(buildStatePayload(_lastStateUpdatedAt || new Date().toISOString())); }, 5000);
   }
 }
 
-function saveData() {
-  // Always save to localStorage first — immediate, never fails
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(campaigns));
+function saveData(meta) {
+  const options = meta || {};
+  if (!_hasLoadedState && !options.force) {
+    console.warn('[Nordmann] saveData bloqueado antes do loadData completar');
+    return false;
+  }
+  const updatedAt = new Date().toISOString();
+  const payload = buildStatePayload(updatedAt);
+  const localBefore = readLocalState();
+  const hadExistingData = countStateItems(localBefore) > 0;
+  const isTryingToOverwriteWithEmpty = !options.allowEmptyOverwrite && hadExistingData && countStateItems(payload) === 0;
+  if (isTryingToOverwriteWithEmpty) {
+    console.warn('[Nordmann] saveData abortado para evitar sobrescrever estado com vazio');
+    showToast('Proteção ativa: save vazio bloqueado','#ef4444');
+    return false;
+  }
+  createCampaignHistoryEntries(localBefore, payload, options.reason || 'save', payload.updatedAt);
+  persistStateLocal(payload);
+  _lastStateUpdatedAt = payload.updatedAt;
+  const forceSnapshot = !!options.forceSnapshot || options.reason === 'delete' || options.reason === 'bulk_delete' || options.reason === 'archive' || options.reason === 'restore';
+  if (options.snapshot !== false) createStateSnapshot(options.reason || 'save', payload, forceSnapshot);
   updateStorageInfo();
-  // Sync to Supabase with retry
-  syncToSupabase();
+  syncToSupabase(payload);
+  return true;
 }
 
 async function loadData() {
+  const localState = readLocalState();
+  let cloudState = null;
   if (_db) {
     try {
-      const payload = await _db
+      const row = await _db
         .from('nordmann_data')
-        .select('payload')
+        .select('payload, updated_at')
         .eq('key','campaigns')
         .single()
-        .then(res => res.data?.payload || null);
-      if (payload) {
-        const r = JSON.parse(payload);
-        if (Array.isArray(r)) {
-          campaigns = r;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
-          return;
-        }
+        .then(function(res){ return res.data || null; });
+      if (row && row.payload) {
+        cloudState = normalizeStatePayload(JSON.parse(row.payload));
+        if (!cloudState.updatedAt && row.updated_at) cloudState.updatedAt = row.updated_at;
       }
     } catch(e) {}
   }
-
-  try {
-    const s = localStorage.getItem(STORAGE_KEY);
-    if (s) campaigns = JSON.parse(s);
-  } catch(e) {}
+  const chosen = choosePreferredState(localState, cloudState);
+  applyStatePayload(chosen, true);
+  _hasLoadedState = true;
+  if (countStateItems(chosen) > 0) createStateSnapshot('load_state', chosen, false);
+  await loadBackupsFromCloud();
+  await loadCampaignHistoryFromCloud();
 }
 
 function updateStorageInfo() {
@@ -3227,7 +3421,7 @@ function updateStorageInfo() {
 }
 
 function exportBackup() {
-  const blob = new Blob([JSON.stringify({v:2,campaigns,members:MEMBERS},null,2)],{type:'application/json'});
+  const blob = new Blob([JSON.stringify({v:STATE_VERSION,state:buildStatePayload(_lastStateUpdatedAt||new Date().toISOString()),backups:stateBackups,campaignHistory:campaignHistory,members:MEMBERS},null,2)],{type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'nordmann-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
   showToast('Backup exportado','#3ecf8e');
@@ -3236,11 +3430,17 @@ function exportBackup() {
 function importBackup(e) {
   const file = e.target.files[0]; if (!file) return;
   const r = new FileReader();
-  r.onload = ev => {
+  r.onload = function(ev){
     try {
       const d = JSON.parse(ev.target.result);
-      if (d.campaigns) { campaigns = d.campaigns; saveData(); }
+      const importedState = d.state ? normalizeStatePayload(d.state) : normalizeStatePayload({ campaigns: d.campaigns || [], archivedCampaigns: d.archivedCampaigns || [], deletedCampaigns: d.deletedCampaigns || [] });
+      applyStatePayload(importedState, true);
+      _hasLoadedState = true;
+      createStateSnapshot('import_backup', importedState, true);
+      saveData({reason:'import_backup', force:true, allowEmptyOverwrite:true, snapshot:false});
       if (d.members)   { MEMBERS = d.members; saveMembers(); updateSidebarMembers(); }
+      if (Array.isArray(d.backups) && d.backups.length) { stateBackups = pruneBackups(d.backups.concat(stateBackups)); persistBackupsLocal(); _backupSyncPending = true; syncBackupsToSupabase(); }
+      if (Array.isArray(d.campaignHistory) && d.campaignHistory.length) { campaignHistory = pruneCampaignHistory(d.campaignHistory.concat(campaignHistory)); persistCampaignHistoryLocal(); syncCampaignHistoryToSupabase(); }
       if (currentView==='kanban') renderKanban();
       showToast('Backup importado','#3ecf8e');
     } catch(err) { showToast('Arquivo inválido','#ef4444'); }
@@ -3249,12 +3449,134 @@ function importBackup(e) {
 }
 
 function confirmReset() {
-  if (!confirm('Apagar TODOS os dados? Esta ação não pode ser desfeita.')) return;
-  campaigns = []; saveData();
+  if (!confirm('Mover todas as campanhas ativas para a lixeira? Esta ação pode ser revertida pelo painel de backup.')) return;
+  const nowIso = new Date().toISOString();
+  deletedCampaigns = campaigns.map(function(c){ return Object.assign({}, c, {_deletedAt: nowIso}); }).concat(deletedCampaigns || []);
+  campaigns = [];
+  saveData({reason:'reset', allowEmptyOverwrite:true, forceSnapshot:true});
   if (currentView==='kanban') renderKanban();
-  showToast('Dados resetados','#ef4444');
+  renderBackupAdmin();
+  showToast('Campanhas movidas para a lixeira','#ef4444');
 }
 
+function archiveCampaign(id){
+  const idx = campaigns.findIndex(function(c){ return c.id===id; });
+  if (idx < 0) return;
+  const c = campaigns[idx];
+  campaigns.splice(idx,1);
+  archivedCampaigns.unshift(Object.assign({}, c, {_archivedAt:new Date().toISOString()}));
+  saveData({reason:'archive', forceSnapshot:true});
+  try { if (editingCampId===id) closePanel(); } catch(e){}
+  renderKanban();
+  renderBackupAdmin();
+  showToast('Campanha arquivada','#7c6af7');
+}
+function restoreArchivedCampaign(id){
+  const idx = archivedCampaigns.findIndex(function(c){ return c.id===id; });
+  if (idx < 0) return;
+  const c = archivedCampaigns[idx];
+  archivedCampaigns.splice(idx,1);
+  delete c._archivedAt;
+  campaigns.unshift(c);
+  saveData({reason:'restore', forceSnapshot:true});
+  renderKanban(); renderBackupAdmin();
+  showToast('Campanha restaurada do arquivo','#3ecf8e');
+}
+function moveCampaignToTrash(id){
+  const idx = campaigns.findIndex(function(c){ return c.id===id; });
+  if (idx < 0) return;
+  const c = campaigns[idx];
+  campaigns.splice(idx,1);
+  deletedCampaigns.unshift(Object.assign({}, c, {_deletedAt:new Date().toISOString()}));
+  saveData({reason:'delete', forceSnapshot:true});
+  renderKanban(); renderBackupAdmin();
+  showToast('Campanha movida para a lixeira','#ef4444');
+}
+function restoreDeletedCampaign(id){
+  const idx = deletedCampaigns.findIndex(function(c){ return c.id===id; });
+  if (idx < 0) return;
+  const c = deletedCampaigns[idx];
+  deletedCampaigns.splice(idx,1);
+  delete c._deletedAt;
+  campaigns.unshift(c);
+  saveData({reason:'restore', forceSnapshot:true});
+  renderKanban(); renderBackupAdmin();
+  showToast('Campanha restaurada da lixeira','#3ecf8e');
+}
+function restoreStateBackup(id){
+  const snap = (stateBackups||[]).find(function(x){ return x.id===id; });
+  if (!snap || !snap.payload) return;
+  applyStatePayload(snap.payload, true);
+  _hasLoadedState = true;
+  saveData({reason:'restore_backup', force:true, allowEmptyOverwrite:true, forceSnapshot:true, snapshot:false});
+  createStateSnapshot('restore_backup_applied', buildStatePayload(_lastStateUpdatedAt || new Date().toISOString()), true);
+  renderKanban(); renderPersonal(); renderOverview(); renderAdmin();
+  showToast('Backup restaurado com sucesso','#3ecf8e');
+}
+function permanentlyDeleteFromTrash(id){
+  if (!confirm('Excluir permanentemente da lixeira?')) return;
+  deletedCampaigns = (deletedCampaigns||[]).filter(function(c){ return c.id!==id; });
+  saveData({reason:'permanent_delete', forceSnapshot:true, allowEmptyOverwrite:true});
+  renderBackupAdmin();
+  showToast('Item removido da lixeira','#ef4444');
+}
+function renderBackupCard(c, actionsHtml, metaLabel){
+  return '<div class="admin-card">'+
+    '<div style="flex:1;min-width:0">'+
+      '<div style="font-size:13px;font-weight:600;color:var(--text-primary)">'+esc(c.name||'Sem nome')+'</div>'+
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:3px">'+esc(metaLabel||'')+'</div>'+
+    '</div>'+
+    actionsHtml+
+  '</div>';
+}
+function itemAdminTypeLabel(item){
+  if (!item) return 'Item';
+  if (item.templateType === 'campanhas') return 'Campanha';
+  if (item.templateType === 'publicacoes') return 'Publicação';
+  if (item.templateType === 'email') return 'E-mail';
+  if (item.templateType === 'demanda') return 'Demanda interna';
+  if (item.templateType === 'tarefa_pessoal') return 'Tarefa pessoal';
+  if (item.templateType === 'reuniao_planejamento') return 'Reunião / Planejamento';
+  return item.type || 'Item';
+}
+
+function renderBackupAdmin(){
+  const el = document.getElementById('admin-backups-list');
+  if (!el) return;
+
+  const activeCampaignsOnly = (campaigns||[]).filter(function(c){ return c.templateType === 'campanhas'; });
+  const activeHtml = activeCampaignsOnly.slice().sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||''),'pt-BR'); }).map(function(c){
+    const actions = '<button class="settings-btn" onclick="openCampaignDetail(\''+c.id+'\')">Abrir</button>'+
+      '<button class="settings-btn" onclick="archiveCampaign(\''+c.id+'\')">Arquivar</button>';
+    return renderBackupCard(c, actions, 'Campanha ativa' + ((c.status||'') ? ' · ' + c.status : '') + (c.startDate ? ' · ' + formatDate(c.startDate) : ''));
+  }).join('') || '<div class="settings-empty">Nenhuma campanha ativa para arquivar.</div>';
+
+  const archHtml = (archivedCampaigns||[]).filter(function(c){ return c.templateType === 'campanhas'; }).map(function(c){
+    const actions = '<button class="settings-btn primary" onclick="restoreArchivedCampaign(\''+c.id+'\')">Restaurar</button>';
+    return renderBackupCard(c, actions, 'Campanha · arquivada em ' + (c._archivedAt ? new Date(c._archivedAt).toLocaleString('pt-BR') : ''));
+  }).join('') || '<div class="settings-empty">Nenhuma campanha arquivada.</div>';
+
+  const trashHtml = (deletedCampaigns||[]).map(function(c){
+    const typeLabel = itemAdminTypeLabel(c);
+    const actions = '<button class="settings-btn primary" onclick="restoreDeletedCampaign(\''+c.id+'\')">Restaurar</button>'+
+      '<button class="settings-btn danger" onclick="permanentlyDeleteFromTrash(\''+c.id+'\')">Excluir</button>';
+    return renderBackupCard(c, actions, typeLabel + ' · movido para lixeira em ' + (c._deletedAt ? new Date(c._deletedAt).toLocaleString('pt-BR') : ''));
+  }).join('') || '<div class="settings-empty">Nenhum item excluído na lixeira.</div>';
+
+  const backupsHtml = (stateBackups||[]).map(function(b){
+    const label = (b.reason||'save') + ' · ' + new Date(b.ts).toLocaleString('pt-BR') + ' · ' + ((b.counts&&b.counts.active)||0) + ' ativos';
+    return '<div class="settings-item"><div class="settings-item-name"><div style="font-size:12px;color:var(--text-primary)">'+esc(label)+'</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">Arquivadas: '+(((b.counts&&b.counts.archived)||0))+' · Lixeira: '+(((b.counts&&b.counts.deleted)||0))+'</div></div><button class="settings-btn primary" onclick="restoreStateBackup(\''+b.id+'\')">Restaurar backup</button></div>';
+  }).join('') || '<div class="settings-empty">Nenhum backup salvo ainda.</div>';
+
+  const createBackupJs = "createStateSnapshot('manual_backup', buildStatePayload(new Date().toISOString()), true); persistBackupsLocal(); _backupSyncPending=true; syncBackupsToSupabase(); renderBackupAdmin(); showToast('Backup manual criado','#3ecf8e')";
+
+  el.innerHTML = '<div class="settings-grid">'+
+    '<div class="settings-card"><div class="settings-title">Backups de 7 dias</div><div class="settings-sub">Snapshots automáticos locais e em nuvem para restauração rápida.</div><div class="settings-add-row"><button class="settings-btn primary" onclick="'+createBackupJs+'">Criar backup agora</button><button class="settings-btn" onclick="exportBackup()">Exportar JSON</button><label class="settings-btn" style="display:flex;align-items:center;justify-content:center"><input type="file" accept="application/json" style="display:none" onchange="importBackup(event)">Importar JSON</label></div><div class="settings-list">'+backupsHtml+'</div></div>'+
+    '<div class="settings-card"><div class="settings-title">Campanhas arquivadas</div><div class="settings-sub">Somente campanhas ficam arquivadas para sair da operação sem perder o histórico.</div><div class="settings-list">'+archHtml+'</div></div>'+
+    '<div class="settings-card"><div class="settings-title">Lixeira</div><div class="settings-sub">Tudo que foi criado no sistema e depois excluído cai aqui e pode ser restaurado.</div><div class="settings-list">'+trashHtml+'</div></div>'+
+    '<div class="settings-card"><div class="settings-title">Campanhas ativas</div><div class="settings-sub">Somente campanhas aparecem aqui para arquivamento manual.</div><div class="settings-list">'+activeHtml+'</div></div>'+
+  '</div>';
+}
 /* HELPERS */
 function getCampaign(id) { return campaigns.find(c => c.id===id); }
 
@@ -3441,9 +3763,10 @@ function rteGet(id) {
 function rteSaveNota(elId) {
   var el = document.getElementById(elId); if (!el) return;
   var val = el.innerHTML;
+  if (!tplData.notasMembro) tplData.notasMembro = {};
   MEMBERS.forEach(function(m) {
     if (elId === 'nota-'+m.name.replace(/[^a-zA-Z0-9]/g,'_') || elId === 'nota-demanda-'+m.id) {
-      persistMemberNote(m.name, val);
+      tplData.notasMembro[m.name] = val;
     }
   });
 }
@@ -4382,11 +4705,8 @@ function closePanel() {
 function deleteCampaign() {
   if (!editingCampId) return;
   const c = getCampaign(editingCampId); if (!c) return;
-  campaigns = campaigns.filter(x=>x.id!==editingCampId);
-  saveData();
+  moveCampaignToTrash(editingCampId);
   closePanel();
-  renderKanban();
-  showToast('"'+c.name+'" excluída','#ef4444');
 }
 
 /* NEW / EDIT CAMPAIGN PANEL */
@@ -4592,7 +4912,6 @@ function getTemplateDataForSave() {
 }
 
 function updateCampaign(id) {
-  collectMemberNotesFromEditors();
   const c = getCampaign(id); if (!c) return;
   const oldStatus = c.status;
   const name = document.getElementById('f-name')?.value?.trim();
@@ -5307,40 +5626,10 @@ function collapseCronoNotaById(nid) {
 // keep old names as aliases for backward compat
 function expandCronoNota(nid){ expandCronoNotaById(nid); }
 function collapseCronoNota(nid){ collapseCronoNotaById(nid); }
-function persistMemberNote(nome, value) {
-  if (!nome) return;
-
-  if (!tplData || typeof tplData !== 'object') tplData = {};
-  if (!tplData.notasMembro) tplData.notasMembro = {};
-  tplData.notasMembro[nome] = value || '';
-
-  if (editingCampId) {
-    const c = getCampaign(editingCampId);
-    if (c) {
-      if (!c.templateData || typeof c.templateData !== 'object') c.templateData = {};
-      if (!c.templateData.notasMembro) c.templateData.notasMembro = {};
-      c.templateData.notasMembro[nome] = value || '';
-    }
-  }
-}
-function collectMemberNotesFromEditors() {
-  document.querySelectorAll('[data-member-note-editor="1"]').forEach(function(el){
-    var nome = (el.dataset && el.dataset.nome) ? el.dataset.nome : '';
-    if (!nome) return;
-    var value = '';
-    if (el.isContentEditable) value = el.innerHTML || '';
-    else value = el.value || '';
-    persistMemberNote(nome, value);
-  });
-}
-function saveParticipantNotesOnly() {
-  collectMemberNotesFromEditors();
-  if (editingCampId) saveData();
-  showToast('Anotações salvas', '#7c6af7');
-}
 function setCronoNotaRich(el) {
-  const nome = el?.dataset?.nome || '';
-  persistMemberNote(nome, el ? (el.innerHTML || '') : '');
+  const nome = el.dataset.nome || '';
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+  tplData.notasMembro[nome] = el.innerHTML || '';
 }
 function handleCronoNotaTab(e, el) {
   if (e.key !== 'Tab') return;
@@ -5370,8 +5659,9 @@ function cronoNotaCmd(nid, cmd, val) {
   document.execCommand(cmd, false, val || null);
 }
 function setCronoNota(el) {
-  const nome = el?.dataset?.nome || '';
-  persistMemberNote(nome, el ? el.value : '');
+  const nome = el.dataset.nome || '';
+  if (!tplData.notasMembro) tplData.notasMembro = {};
+  tplData.notasMembro[nome] = el.value;
 }
 
 function buildCronoParticipantesHtml(d, editMode) {
@@ -5421,17 +5711,9 @@ function buildCronoParticipantesHtml(d, editMode) {
     let infoHtml = '';
     // Info field
     if (editMode) {
-      const notaEditorHtml = rteHtml(
-        nid,
-        nota,
-        'Informações para '+esc(nome)+'...',
-        'setCronoNotaRich(document.getElementById(this.id))',
-        'Anotações'
-      ).replace(
-        'class="mini-editor"',
-        'class="mini-editor" data-nome="'+esc(nome)+'" data-member-note-editor="1"'
-      );
-      infoHtml = '<div style="margin-bottom:10px">'+notaEditorHtml+'</div>';
+      infoHtml = '<div style="margin-bottom:10px">'+
+        rteHtml(nid, nota, 'Informações para '+esc(nome)+'...', 'setCronoNotaRich(document.getElementById(this.id))', 'Anotações')+
+      '</div>';
     } else {
       // View mode: clean text preview, HTML content when expanded
       const notaStripped = nota ? nota.replace(/<br\s*\/?>/gi,' · ').replace(/<\/?(li|p|div)[^>]*>/gi,' · ').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').replace(/( · )+/g,' · ').replace(/^ · | · $/g,'').trim() : '';
@@ -5570,9 +5852,7 @@ function renderTplCampanhasForm() {
       '<div id="tpl-dyn-datasChave">'+datasHtml+'</div>'+
     '</div>'+
     '<div class="tpl-section">'+
-      '<div class="tpl-section-title" style="justify-content:space-between">✅ Participantes e tarefas'+
-        '<button type="button" class="btn-add-sub" onclick="saveParticipantNotesOnly()">Salvar anotações</button>'+
-      '</div>'+
+      '<div class="tpl-section-title">✅ Participantes e tarefas</div>'+
       (cronoTasksCount > 0
         ? buildCronoParticipantesHtml(d, true) // edit mode
         : (membrosVisiveis.length ? clMembrosHtml :
@@ -5967,19 +6247,6 @@ function closeCompactDropdowns(){
   });
 }
 
-function getOpenCompactDropdownIds(){
-  return Array.from(document.querySelectorAll('.compact-dropdown.open')).map(function(el){
-    return el.id;
-  }).filter(Boolean);
-}
-
-function restoreCompactDropdownIds(ids){
-  (ids||[]).forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.classList.add('open');
-  });
-}
-
 document.addEventListener('click', function(e){
   if (!e.target.closest('.compact-dropdown') && !e.target.closest('.dept-move-popup')) closeCompactDropdowns();
 });
@@ -6113,19 +6380,16 @@ function deptRenameSave(input) {
   var oldName = input.dataset.old;
   var newName = input.value.trim();
   var wasOpen = input.dataset.open === 'true';
-  var openDropdowns = getOpenCompactDropdownIds();
-  if (!newName || newName === oldName) { rebuildCanaisDropdown(); restoreCompactDropdownIds(openDropdowns); return; }
+  if (!newName || newName === oldName) { rebuildCanaisDropdown(); return; }
   // Rename all tags with this dept
   CANAIS.forEach(function(c){
     if (TAG_DEPTS[c] === oldName) TAG_DEPTS[c] = newName;
   });
   persistTagSettings();
   rebuildCanaisDropdown();
-  refreshTagDependentUI();
   // Restore open state for renamed dept
   var newId = 'dtw-'+newName.replace(/[^a-zA-Z0-9]/g,'_');
   setTimeout(function(){
-    restoreCompactDropdownIds(openDropdowns);
     var wrap = document.getElementById(newId);
     if (wrap && wasOpen) {
       wrap.classList.add('open');
@@ -6171,9 +6435,8 @@ function canalInlineEdit(btn) {
 }
 function canalInlineEditSave(newName, oldName, wasSelected) {
   newName = (newName||'').trim();
-  var openDropdowns = getOpenCompactDropdownIds();
-  if (!newName || newName === oldName) { rebuildCanaisDropdown(); restoreCompactDropdownIds(openDropdowns); return; }
-  if (CANAIS.includes(newName)) { alert('Já existe um canal com esse nome.'); rebuildCanaisDropdown(); restoreCompactDropdownIds(openDropdowns); return; }
+  if (!newName || newName === oldName) { rebuildCanaisDropdown(); return; }
+  if (CANAIS.includes(newName)) { alert('Já existe um canal com esse nome.'); rebuildCanaisDropdown(); return; }
   var idx = CANAIS.indexOf(oldName);
   if (idx !== -1) CANAIS[idx] = newName;
   var ca = window._canaisAtual || [];
@@ -6182,35 +6445,16 @@ function canalInlineEditSave(newName, oldName, wasSelected) {
     c.canais = (c.canais||[]).map(function(x){ return x===oldName?newName:x; });
     (c.subtasks||[]).forEach(function(s){ if(s.canal===oldName) s.canal=newName; });
     var td=c.templateData||{};
-    ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
-      (td[path]||[]).forEach(function(item){ if(item?.canal===oldName) item.canal=newName; });
-    });
     (td.cronogramaBlocos||[]).forEach(function(day){ (day.items||[]).forEach(function(it){ if(it.canal===oldName) it.canal=newName; }); });
   });
-  if (TAG_DEPTS[oldName]) {
-    TAG_DEPTS[newName] = TAG_DEPTS[oldName];
-    delete TAG_DEPTS[oldName];
-  }
-  persistTagSettings(); saveData(); rebuildCanaisDropdown(); refreshTagDependentUI();
-  setTimeout(function(){ restoreCompactDropdownIds(openDropdowns); }, 10);
+  persistTagSettings(); saveData(); rebuildCanaisDropdown();
 }
 function canalInlineDelete(name) {
   if (!confirm('Excluir canal "'+name+'"?')) return;
   CANAIS = CANAIS.filter(function(c){ return c!==name; });
-  _canaisAtual = (_canaisAtual || []).filter(function(c){ return c!==name; });
-  delete TAG_DEPTS[name];
-  campaigns.forEach(function(c){
-    c.canais=(c.canais||[]).filter(function(x){ return x!==name; });
-    (c.subtasks||[]).forEach(function(s){ if (s.canal===name) s.canal='Geral'; });
-    var td = c.templateData || {};
-    ['datasChave','checklistExecucao','checklistEncerramento'].forEach(function(path){
-      (td[path]||[]).forEach(function(item){ if(item?.canal===name) item.canal='Geral'; });
-    });
-    (td.cronogramaBlocos||[]).forEach(function(day){
-      (day.items||[]).forEach(function(item){ if(item?.canal===name) item.canal='Geral'; });
-    });
-  });
-  persistTagSettings(); saveData(); rebuildCanaisDropdown(); refreshTagDependentUI();
+  _canaisAtual = _canaisAtual.filter(function(c){ return c!==name; });
+  campaigns.forEach(function(c){ c.canais=(c.canais||[]).filter(function(x){ return x!==name; }); });
+  persistTagSettings(); saveData(); renderCampaignForm(null);
 }
 function catInlineEdit(btn) {
   var oldName = btn.dataset.cat;
@@ -6235,7 +6479,7 @@ function catInlineEditSave(input, oldName, fromEnter) {
     if (c.templateType==='tarefa_pessoal' && c.templateData && c.templateData.ptCategory===oldName)
       c.templateData.ptCategory = newName;
   });
-  persistTagSettings(); saveData(); renderTplFields(); refreshTagDependentUI();
+  persistTagSettings(); saveData(); renderTplFields();
 }
 
 
@@ -6290,7 +6534,6 @@ function canalAssignDept(canal, dept) {
   var popup = document.getElementById('dept-move-popup');
   if (popup) popup.remove();
   if (!canal) return;
-  var openDropdowns = getOpenCompactDropdownIds();
   // Remember which depts are open before rebuild
   var openDepts = [];
   document.querySelectorAll('#multi-canais .dept-tags-wrap.open').forEach(function(el){
@@ -6306,19 +6549,15 @@ function canalAssignDept(canal, dept) {
   }
   persistTagSettings();
   rebuildCanaisDropdown();
-  refreshTagDependentUI();
   // Restore open state
-  setTimeout(function(){
-    restoreCompactDropdownIds(openDropdowns);
-    openDepts.forEach(function(id){
-      var wrap = document.getElementById(id);
-      if (wrap) {
-        wrap.classList.add('open');
-        var hdr = wrap.previousElementSibling;
-        if (hdr) hdr.classList.add('open');
-      }
-    });
-  }, 10);
+  openDepts.forEach(function(id){
+    var wrap = document.getElementById(id);
+    if (wrap) {
+      wrap.classList.add('open');
+      var hdr = wrap.previousElementSibling;
+      if (hdr) hdr.classList.add('open');
+    }
+  });
 }
 function rebuildCanaisDropdown() {
   var container = document.getElementById('multi-canais');
@@ -6387,11 +6626,9 @@ function addNewCanal() {
   inp.value = '';
   persistTagSettings();
   rebuildCanaisDropdown();
-  refreshTagDependentUI();
 }
 
 function saveCampaign() {
-  collectMemberNotesFromEditors();
   const name = document.getElementById('f-name')?.value?.trim();
   if (!name) { _saving = false; alert('Insira o nome da campanha'); return; }
 
@@ -7245,14 +7482,17 @@ function bulkDelete() {
   if (!selectedCards.size) return;
   const n = selectedCards.size;
   const noun = n > 1 ? 's' : '';
+  const nowIso = new Date().toISOString();
+  const removed = campaigns.filter(c => selectedCards.has(c.id)).map(function(c){ return Object.assign({}, c, {_deletedAt: nowIso}); });
   campaigns = campaigns.filter(c => !selectedCards.has(c.id));
+  deletedCampaigns = removed.concat(deletedCampaigns || []);
   selectedCards.clear();
-  saveData();
+  saveData({reason:'bulk_delete', forceSnapshot:true});
   renderKanban(); // cards re-rendered, selection cleared visually
-  // Force hide bar
   const bar = document.getElementById('bulk-delete-bar');
   if (bar) bar.classList.remove('show');
-  showToast(n + ' campanha' + noun + ' excluída' + noun, '#ef4444');
+  if (currentView==='admin') renderBackupAdmin();
+  showToast(n + ' campanha' + noun + ' movida' + noun + ' para a lixeira', '#ef4444');
 }
 
 // Keyboard: Delete key to bulk delete, Escape to clear
