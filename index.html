@@ -5161,10 +5161,11 @@ function renderCampaignForm(existingData) {
           '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
           '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Nova categoria..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div></div>'
       ) : '<div></div>')+
-      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento' ? (
-        '<div class="form-group" style="margin:0"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
-      ) : '<div></div>')+
+      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento' ? '<div></div>' : '')+
     '</div>'+
+    ((currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento') ? (
+      '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
+    ) : '')+
     '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'||currentTemplate==='campanhas'?' style="display:none"':'')+'>'+
       rteHtml('f-desc-rich', existingData?.description||'', 'Objetivo, contexto e informações relevantes...', 'syncInfoToHidden()', 'Informações gerais')+
       '<input type="hidden" id="f-desc" value="">'+
