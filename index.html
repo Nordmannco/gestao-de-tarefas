@@ -1464,10 +1464,10 @@ body.modal-open #btn-new-campaign{display:none !important}
         <div style="font-size:11px;color:var(--text-muted);line-height:1.5">
           Cole no formato abaixo para criar os blocos automaticamente.<br>
           <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">17.03.2026 - Início da divulgação</code><br>
-          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">* 10:00 - Stories IG: abertura</code><br>
-          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">* 19:00 - E-mail: últimas horas</code>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">* 10:00 - Stories IG - Eric - Criar abertura</code><br>
+          <code style="font-size:10px;background:var(--bg-surface);padding:2px 6px">* 19:00 - E-mail - Bia - Agendar últimas horas</code>
         </div>
-        <textarea id="cronograma-paste-textarea" style="flex:1;width:100%;min-height:300px;border:0.5px solid var(--border);padding:12px;font-size:13px;font-family:var(--font-mono);line-height:1.7;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="17.03.2026 - Início da divulgação&#10;* 10:00 - Stories IG: abertura&#10;* 19:00 - E-mail: últimas horas"></textarea>
+        <textarea id="cronograma-paste-textarea" style="flex:1;width:100%;min-height:300px;border:0.5px solid var(--border);padding:12px;font-size:13px;font-family:var(--font-mono);line-height:1.7;resize:vertical;background:var(--bg-surface);color:var(--text-primary);outline:none;box-sizing:border-box" placeholder="17.03.2026 - Início da divulgação&#10;* 10:00 - Stories IG - Eric - Criar abertura&#10;* 19:00 - E-mail - Bia - Agendar últimas horas"></textarea>
       </div>
       <div style="width:220px;flex-shrink:0">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Prévia</div>
@@ -2089,17 +2089,34 @@ function parseCronogramaPasteText(raw){
       return;
     }
 
-    const itemMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*([^:]+):\s*(.+)$/);
-    if (itemMatch){
+    const newFormatMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*(.+?)\s*[-–]\s*(.+?)\s*[-–]\s*(.+)$/);
+    if (newFormatMatch){
       if (!current){
         current = { id: uid(), date:'', title:'', items: [] };
         blocks.push(current);
       }
       current.items.push({
         id: uid(),
-        time: itemMatch[1],
-        canal: itemMatch[2].trim(),
-        text: itemMatch[3].trim()
+        time: newFormatMatch[1],
+        canal: newFormatMatch[2].trim(),
+        participante: newFormatMatch[3].trim(),
+        text: newFormatMatch[4].trim()
+      });
+      return;
+    }
+
+    const oldFormatMatch = trimmed.match(/^\*\s*(\d{1,2}:\d{2})\s*[-–]\s*([^:]+):\s*(.+)$/);
+    if (oldFormatMatch){
+      if (!current){
+        current = { id: uid(), date:'', title:'', items: [] };
+        blocks.push(current);
+      }
+      current.items.push({
+        id: uid(),
+        time: oldFormatMatch[1],
+        canal: oldFormatMatch[2].trim(),
+        participante: '',
+        text: oldFormatMatch[3].trim()
       });
       return;
     }
@@ -2125,7 +2142,10 @@ function updateCronogramaPastePreview(){
   blocks.forEach(function(day){
     html += '<div style="font-weight:600;font-size:10px;color:var(--text-primary);margin-top:8px;margin-bottom:4px">'+esc(cronoDayTitlePreview(day) || 'Sem título')+'</div>';
     (day.items||[]).forEach(function(item){
-      html += '<div style="padding:2px 0"><span style="color:var(--c-campanha);font-weight:600">'+esc(item.time||'--:--')+'</span> ' + esc(item.canal||'Geral') + ' · ' + esc(item.text||'') + '</div>';
+      var linha = '<span style="color:var(--c-campanha);font-weight:600">'+esc(item.time||'--:--')+'</span> ' + esc(item.canal||'Geral');
+      if ((item.participante||'').trim()) linha += ' · ' + esc(item.participante||'');
+      linha += ' · ' + esc(item.text||'');
+      html += '<div style="padding:2px 0">' + linha + '</div>';
     });
   });
   preview.innerHTML = html;
@@ -5131,6 +5151,7 @@ function renderCampaignForm(existingData) {
         URGENCIAS.map(function(u){return '<option value="'+u+'"'+((u===(existingData?.urgency||'Normal'))?' selected':'')+'>'+u+'</option>';}).join('')+
       '</select></div></div>'+
     '</div>'+
+    (currentTemplate === 'campanhas' ? '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>' : '')+
     (currentTemplate==='reuniao_planejamento' ?
       // Reunião: Participantes + Categoria lado a lado
       '<div class="tpl-row">'+
@@ -5161,11 +5182,10 @@ function renderCampaignForm(existingData) {
           '<div class="compact-dropdown-panel"><div class="multi-select" id="multi-canais">'+canaisHtml+'</div>'+
           '<div class="extra-actions"><input class="form-input" id="f-canal-novo" placeholder="Nova categoria..." style="flex:1;height:32px;font-size:12px"><button onclick="addNewCanal()" class="btn-add-sub" style="height:32px">+ Adicionar</button></div></div></div>'
       ) : '<div></div>')+
-      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento' ? '<div></div>' : '')+
+      (currentTemplate !== 'campanhas' && currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento' ? (
+        '<div class="form-group" style="margin:0"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
+      ) : '<div></div>')+
     '</div>'+
-    ((currentTemplate !== 'tarefa_pessoal' && currentTemplate !== 'reuniao_planejamento') ? (
-      '<div class="form-group"><label class="form-label">🔗 Pasta no Google Drive</label><input class="form-input" id="f-drive" placeholder="https://drive.google.com/..." value="'+(existingData?.driveLink||'')+'"></div>'
-    ) : '')+
     '<div class="form-group" id="info-field-wrap"'+(currentTemplate==='tarefa_pessoal'||currentTemplate==='campanhas'?' style="display:none"':'')+'>'+
       rteHtml('f-desc-rich', existingData?.description||'', 'Objetivo, contexto e informações relevantes...', 'syncInfoToHidden()', 'Informações gerais')+
       '<input type="hidden" id="f-desc" value="">'+
