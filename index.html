@@ -2200,7 +2200,15 @@ function saveCronogramaModal() {
       if (!parentCamp.templateData) parentCamp.templateData = {};
       parentCamp.templateData.cronogramaBlocos = JSON.parse(JSON.stringify(tplData.cronogramaBlocos || []));
       if (parentCamp.status === 'Em andamento') {
+        // Snapshot status before sync to preserve completed tasks
+        const _snap = {};
+        (parentCamp.subtasks||[]).filter(s=>s._fromCrono).forEach(s=>{ _snap[s.title+'|'+s.owner] = s.status; });
         syncCronoSubtasks(parentCamp);
+        // Restore statuses that syncCronoSubtasks may have reset
+        (parentCamp.subtasks||[]).filter(s=>s._fromCrono).forEach(function(s){
+          const key = s.title+'|'+s.owner;
+          if (_snap[key]) s.status = _snap[key];
+        });
         saveData();
         renderKanban();
         renderPersonal();
@@ -4302,9 +4310,17 @@ function applyStatusRules(c, oldStatus, newStatus) {
       const cronoBlocos = c.templateData?.cronogramaBlocos || [];
       const hasCrono = cronoBlocos.some(function(day){ return (day.items||[]).some(function(it){ return (it.text||'').trim(); }); });
       if (hasCrono) {
+        // Snapshot existing _fromCrono statuses before wiping
+        const _snapAsr = {};
+        (c.subtasks||[]).filter(s=>s._fromCrono).forEach(s=>{ _snapAsr[s.title+'|'+s.owner] = s.status; });
         // Remove any existing _auto checklist tasks (from CL_DEFAULTS or previous runs)
         c.subtasks = (c.subtasks||[]).filter(function(s){ return s._auto !== 'checklist' && !s._fromCrono; });
         syncCronoSubtasks(c);
+        // Restore statuses preserved before wipe
+        (c.subtasks||[]).filter(s=>s._fromCrono).forEach(function(s){
+          const key = s.title+'|'+s.owner;
+          if (_snapAsr[key]) s.status = _snapAsr[key];
+        });
         return;
       }
     }
@@ -5025,6 +5041,9 @@ function updateCampaign(id) {
   }));
   // Keep existing auto subtasks, replace manual ones
   const autoSubs = (c.subtasks||[]).filter(s=>s._auto);
+  // Snapshot status of all _fromCrono subtasks before any modification
+  const _cronoStatusMap = {};
+  (c.subtasks||[]).filter(s=>s._fromCrono).forEach(s=>{ _cronoStatusMap[s.title+'|'+s.owner] = s.status; });
   const newStatus = document.getElementById('f-status').value;
   c.name = name;
   c.type = document.getElementById('f-type').value;
@@ -5057,6 +5076,12 @@ function updateCampaign(id) {
   } else {
     c.status = newStatus;
   }
+  // Restore _fromCrono subtask statuses that may have been reset by syncCronoSubtasks
+  // This protects against any sync that resets status to 'Pendente'
+  (c.subtasks||[]).filter(s=>s._fromCrono).forEach(function(s){
+    const key = s.title+'|'+s.owner;
+    if (_cronoStatusMap[key]) s.status = _cronoStatusMap[key];
+  });
   saveData();
   renderKanban();
   renderPersonal();
