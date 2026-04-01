@@ -4386,8 +4386,8 @@ function c_updateStatus(id, status) {
 function toggleSubtaskDetail(campId, subId) {
   toggleSubtask(campId, subId);
   openCampaignDetail(campId);
-  if (currentView==='kanban') renderKanban();
-  else if (currentView==='personal') renderPersonal();
+  renderKanban();
+  if (currentView==='personal') renderPersonal();
 }
 
 function addSubtaskToDetail(campId) {
@@ -4599,7 +4599,7 @@ function renderTplCampanhasDetail(c,d){
 
   // Use same layout as edit form — buildCronoParticipantesHtml
   const hasCrono = (d.cronogramaBlocos||[]).some(function(day){ return (day.items||[]).some(function(it){ return (it.text||'').trim(); }); });
-  const cronoParticipantesHtml = buildCronoParticipantesHtml(d, false); // view mode
+  const cronoParticipantesHtml = buildCronoParticipantesHtml(d, false, c); // view mode
 
   return '<div class="td-section">'+
     tdCol('RESUMO ESTRATÉGICO', d.resumoEstrategico||'', 'resumo')+
@@ -5703,7 +5703,7 @@ function setCronoNota(el) {
   tplData.notasMembro[nome] = el.value;
 }
 
-function buildCronoParticipantesHtml(d, editMode) {
+function buildCronoParticipantesHtml(d, editMode, campaign) {
   // editMode=true: contenteditable + toolbar | editMode=false: read-only collapsed
   const blocos = d.cronogramaBlocos || [];
   const byPart = {}, partOrder = [];
@@ -5720,6 +5720,16 @@ function buildCronoParticipantesHtml(d, editMode) {
   if (!partOrder.length) {
     return '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Adicione itens ao cronograma com participantes definidos.</div>';
   }
+
+  // In view mode, build a lookup of subtask status by title+owner for real-time check state
+  const subLookup = {};
+  if (!editMode && campaign) {
+    (campaign.subtasks||[]).filter(function(s){ return s._fromCrono; }).forEach(function(s){
+      const key = (s.title||'').trim() + '|' + s.owner;
+      subLookup[key] = s;
+    });
+  }
+
   return partOrder.map(function(nome){
     const m = MEMBERS.find(function(x){ return x.name===nome; });
     const color = m ? m.color : '#888';
@@ -5739,9 +5749,26 @@ function buildCronoParticipantesHtml(d, editMode) {
       const dateTimeHtml = (datePart||time) ?
         '<span style="font-size:11px;font-weight:600;color:var(--c-campanha);font-family:var(--font-mono);margin-right:4px">'+(datePart?datePart+' ':'')+(time||'')+'</span><span style="color:var(--text-muted);margin-right:6px">·</span>'
         : '';
+
+      // In view mode: resolve real subtask for status + toggle
+      let cbHtml = '<div style="width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0"></div>';
+      let textStyle = 'font-size:12px;color:var(--text-primary);flex:1';
+      if (!editMode && campaign) {
+        const key = (item.text||'').trim() + '|' + (m ? m.id : campaign.owner);
+        const sub = subLookup[key];
+        const isDone = sub && sub.status === 'Concluído';
+        const cbStyle = isDone
+          ? 'width:14px;height:14px;border-radius:3px;flex-shrink:0;background:var(--c-campanha);border:1.5px solid var(--c-campanha);display:flex;align-items:center;justify-content:center;cursor:pointer'
+          : 'width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;cursor:pointer';
+        const checkSvg = isDone ? '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" stroke-width="2"><path d="M1 4l2 2 4-4"/></svg>' : '';
+        const onclick = sub ? 'event.stopPropagation();toggleSubtaskDetail(\''+campaign.id+'\',\''+sub.id+'\')' : '';
+        cbHtml = '<div style="'+cbStyle+'" onclick="'+onclick+'">'+checkSvg+'</div>';
+        if (isDone) textStyle = 'font-size:12px;color:var(--text-muted);flex:1;text-decoration:line-through;opacity:.6';
+      }
+
       return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border-light)">'+
-        '<div style="width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0"></div>'+
-        '<span style="font-size:12px;color:var(--text-primary);flex:1">'+dateTimeHtml+text+'</span>'+
+        cbHtml+
+        '<span style="'+textStyle+'">'+dateTimeHtml+text+'</span>'+
         '<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--bg-surface);color:var(--text-muted)">'+esc(canal)+'</span>'+
       '</div>';
     }).join('');
@@ -7178,8 +7205,10 @@ function renderPersonal() {
 }
 
 function toggleSubtaskPersonal(campId, subId) {
-  toggleSubtask(campId, subId); renderPersonal();
-  if (currentView==='kanban') renderKanban();
+  toggleSubtask(campId, subId);
+  renderPersonal();
+  renderKanban();
+  if (editingCampId === campId) openCampaignDetail(campId);
 }
 
 function changeUrgency(campId, subId, urgency) {
