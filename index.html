@@ -2228,19 +2228,37 @@ function syncCronoSubtasks(c) {
       cronoItems.push({ item: item, date: date });
     });
   });
+  // Preserve existing _fromCrono subtask statuses before wiping
+  const existingFromCrono = (c.subtasks||[]).filter(function(s){ return s._fromCrono; }).slice();
   c.subtasks = (c.subtasks||[]).filter(function(s){ return !s._fromCrono; });
+  var remainingExisting = existingFromCrono.slice();
+
   cronoItems.forEach(function(entry){
     const item = entry.item;
     const date = entry.date; // 'YYYY-MM-DD'
+    const title = (item.text||'').trim();
     const nomePart = (item.participante || '').trim();
     var ownerId = null;
     if (nomePart) {
-      var m = MEMBERS.find(function(x){ return x.name === nomePart || x.name.toLowerCase() === nomePart.toLowerCase(); });
+      var m = MEMBERS.find(function(x){
+        const xn = (x.name||'').trim();
+        const np = nomePart;
+        return xn === np || xn.toLowerCase() === np.toLowerCase() ||
+               xn.toLowerCase().startsWith(np.toLowerCase()) ||
+               np.toLowerCase().startsWith(xn.toLowerCase());
+      });
       ownerId = m ? m.id : null;
     }
     if (!ownerId) ownerId = c.owner;
-    // time stored in due field, not in title
-    // Build ISO due datetime: 'YYYY-MM-DDTHH:MM'
+
+    // Preserve status of existing subtask with same title
+    var existIdx = remainingExisting.findIndex(function(s){ return (s.title||'').trim() === title; });
+    var existStatus = 'Pendente';
+    if (existIdx !== -1) {
+      existStatus = remainingExisting[existIdx].status || 'Pendente';
+      remainingExisting.splice(existIdx, 1);
+    }
+
     var due = '';
     if (date && item.time) {
       due = date + 'T' + item.time;
@@ -2249,13 +2267,13 @@ function syncCronoSubtasks(c) {
     }
     c.subtasks.push({
       id: uid(),
-      title: (item.text||'').trim(),
+      title: title,
       _date: date,
       canal: item.canal || 'Geral',
       urgency: 'Normal',
       owner: ownerId,
       due: due,
-      status: 'Pendente',
+      status: existStatus,
       dep: null,
       checklist: [],
       _auto: 'checklist',
@@ -2527,9 +2545,9 @@ function bootApp() {
         return;
       }
       if (!c._fromCrono && c.templateType === 'campanhas') {
-        var hadDefaults = (c.subtasks||[]).some(function(s){ return s._auto==='checklist' && defaultTitles.indexOf(s.title) !== -1; });
+        var hadDefaults = (c.subtasks||[]).some(function(s){ return s._auto==='checklist' && !s._fromCrono && defaultTitles.indexOf(s.title) !== -1; });
         if (hadDefaults) {
-          c.subtasks = (c.subtasks||[]).filter(function(s){ return !(s._auto==='checklist' && defaultTitles.indexOf(s.title) !== -1); });
+          c.subtasks = (c.subtasks||[]).filter(function(s){ return !(s._auto==='checklist' && !s._fromCrono && defaultTitles.indexOf(s.title) !== -1); });
         }
       }
     });
@@ -2558,6 +2576,49 @@ function bootApp() {
               }
             }
           }
+        }
+      });
+    });
+
+    // Fix owner of _fromCrono subtasks that fell back to c.owner incorrectly
+    // Re-resolve owner from cronogramaBlocos participante field
+    campaigns.forEach(function(c){
+      if (!c.templateData || !c.templateData.cronogramaBlocos) return;
+      var blocos = c.templateData.cronogramaBlocos;
+      // Build a map: title → ownerId from cronograma
+      var cronoOwnerMap = [];
+      blocos.forEach(function(day){
+        var date = normalizeCronoDate(day.date || '');
+        (day.items||[]).forEach(function(item){
+          var title = (item.text||'').trim();
+          if (!title) return;
+          var nomePart = (item.participante||'').trim();
+          var ownerId = null;
+          if (nomePart) {
+            var m = MEMBERS.find(function(x){
+              var xn = (x.name||'').trim();
+              return xn === nomePart || xn.toLowerCase() === nomePart.toLowerCase() ||
+                     xn.toLowerCase().startsWith(nomePart.toLowerCase()) ||
+                     nomePart.toLowerCase().startsWith(xn.toLowerCase());
+            });
+            ownerId = m ? m.id : null;
+          }
+          if (!ownerId) ownerId = c.owner;
+          cronoOwnerMap.push({ title: title, date: date, ownerId: ownerId });
+        });
+      });
+      // For each _fromCrono subtask, if its owner is c.owner but cronograma says different, fix it
+      var usedIndices = [];
+      (c.subtasks||[]).forEach(function(s){
+        if (!s._fromCrono) return;
+        var mapIdx = cronoOwnerMap.findIndex(function(entry, i){
+          return usedIndices.indexOf(i) === -1 && entry.title === (s.title||'').trim();
+        });
+        if (mapIdx === -1) return;
+        usedIndices.push(mapIdx);
+        var correctOwner = cronoOwnerMap[mapIdx].ownerId;
+        if (s.owner !== correctOwner) {
+          s.owner = correctOwner;
         }
       });
     });
@@ -5721,13 +5782,32 @@ function buildCronoParticipantesHtml(d, editMode, campaign) {
     return '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Adicione itens ao cronograma com participantes definidos.</div>';
   }
 
-  // In view mode, build a lookup of subtask status by title+owner for real-time check state
-  const subLookup = {};
+  // In view mode, build a lookup list of subtasks by title+owner for real-time check state
+  // Use array (not dict) to handle duplicate titles correctly — each match is consumed once
+  let subList = [];
   if (!editMode && campaign) {
-    (campaign.subtasks||[]).filter(function(s){ return s._fromCrono; }).forEach(function(s){
-      const key = (s.title||'').trim() + '|' + s.owner;
-      subLookup[key] = s;
+    subList = (campaign.subtasks||[]).filter(function(s){ return s._fromCrono; }).slice();
+  }
+
+  function findAndConsumeSub(title, ownerId, fallbackOwnerId) {
+    // 1. Exact owner match
+    let idx = subList.findIndex(function(s){
+      return (s.title||'').trim() === title && s.owner === ownerId;
     });
+    // 2. Fallback owner match (when name→id resolution failed at creation time)
+    if (idx === -1 && fallbackOwnerId && fallbackOwnerId !== ownerId) {
+      idx = subList.findIndex(function(s){
+        return (s.title||'').trim() === title && s.owner === fallbackOwnerId;
+      });
+    }
+    // 3. Title-only match — last resort when owner mapping is completely off
+    if (idx === -1) {
+      idx = subList.findIndex(function(s){
+        return (s.title||'').trim() === title;
+      });
+    }
+    if (idx === -1) return null;
+    return subList.splice(idx, 1)[0];
   }
 
   return partOrder.map(function(nome){
@@ -5754,8 +5834,8 @@ function buildCronoParticipantesHtml(d, editMode, campaign) {
       let cbHtml = '<div style="width:14px;height:14px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0"></div>';
       let textStyle = 'font-size:12px;color:var(--text-primary);flex:1';
       if (!editMode && campaign) {
-        const key = (item.text||'').trim() + '|' + (m ? m.id : campaign.owner);
-        const sub = subLookup[key];
+        const ownerId = m ? m.id : campaign.owner;
+        const sub = findAndConsumeSub((item.text||'').trim(), ownerId, campaign.owner);
         const isDone = sub && sub.status === 'Concluído';
         const cbStyle = isDone
           ? 'width:14px;height:14px;border-radius:3px;flex-shrink:0;background:var(--c-campanha);border:1.5px solid var(--c-campanha);display:flex;align-items:center;justify-content:center;cursor:pointer'
