@@ -5659,7 +5659,14 @@ function collapseCronoNotaById(nid) {
 function expandCronoNota(nid){ expandCronoNotaById(nid); }
 function collapseCronoNota(nid){ collapseCronoNotaById(nid); }
 function setCronoNotaRich(el) {
-  const nome = el.dataset.nome || '';
+  if (!el) return;
+  let nome = el.dataset.nome || '';
+  if (!nome && el.id && el.id.indexOf('crono-nota-') === 0) {
+    const slug = el.id.replace('crono-nota-','');
+    const found = MEMBERS.find(function(m){ return m.name.replace(/[^a-zA-Z0-9]/g,'_') === slug; });
+    if (found) nome = found.name;
+  }
+  if (!nome) return;
   if (!tplData.notasMembro) tplData.notasMembro = {};
   tplData.notasMembro[nome] = el.innerHTML || '';
 }
@@ -5744,7 +5751,7 @@ function buildCronoParticipantesHtml(d, editMode) {
     // Info field
     if (editMode) {
       infoHtml = '<div style="margin-bottom:10px">'+
-        rteHtml(nid, nota, 'Informações para '+esc(nome)+'...', 'setCronoNotaRich(document.getElementById(this.id))', 'Anotações')+
+        rteHtml(nid, nota, 'Informações para '+esc(nome)+'...', 'setCronoNotaRich(document.getElementById(this.id))', 'Anotações').replace('id="'+nid+'"', 'id="'+nid+'" data-nome="'+esc(nome)+'"')+
       '</div>';
     } else {
       // View mode: clean text preview, HTML content when expanded
