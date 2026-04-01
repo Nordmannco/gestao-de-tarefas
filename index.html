@@ -1575,7 +1575,7 @@ const CAMPAIGN_HISTORY_KEY = 'nordmann_campaign_history_v1';
 const STATE_VERSION = 4;
 const BACKUP_RETENTION_DAYS = 7;
 const BACKUP_MAX_ITEMS = 60;
-const CAMPAIGN_HISTORY_MAX_ITEMS = 400;
+const CAMPAIGN_HISTORY_MAX_ITEMS = 50;
 
 let MEMBERS = [];
 let campaigns = [];
@@ -3293,7 +3293,19 @@ function loadCampaignHistoryLocal(){
 }
 function persistCampaignHistoryLocal(){
   campaignHistory = pruneCampaignHistory(campaignHistory);
-  localStorage.setItem(CAMPAIGN_HISTORY_KEY, JSON.stringify(campaignHistory));
+  // Guard: if payload is too large, trim further until it fits
+  let payload = JSON.stringify(campaignHistory);
+  while (payload.length > 1024 * 1024 && campaignHistory.length > 5) {
+    campaignHistory = campaignHistory.slice(0, Math.floor(campaignHistory.length * 0.7));
+    payload = JSON.stringify(campaignHistory);
+  }
+  try {
+    localStorage.setItem(CAMPAIGN_HISTORY_KEY, payload);
+  } catch(e) {
+    // Last resort: clear history if still too large
+    campaignHistory = campaignHistory.slice(0, 5);
+    try { localStorage.setItem(CAMPAIGN_HISTORY_KEY, JSON.stringify(campaignHistory)); } catch(e2) {}
+  }
 }
 function createCampaignVersionEntry(campaign, location, reason, ts){
   const c = campaign && typeof campaign === 'object' ? campaign : null;
