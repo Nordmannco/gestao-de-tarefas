@@ -7392,6 +7392,35 @@ function getCalendarEntries() {
   const items = [];
   campaigns.forEach(function(c){
     if (!allowedTemplates.includes(c.templateType || '')) return;
+
+    // --- Campanha com cronograma: puxa subtasks marcados com # ---
+    if (c.templateType === 'campanhas') {
+      (c.subtasks||[]).filter(function(s){
+        return s._fromCrono && (s.title||'').trimStart().startsWith('#');
+      }).forEach(function(s){
+        if (!s.due) return;
+        const date = new Date(s.due);
+        if (Number.isNaN(date.getTime())) return;
+        const displayTitle = s.title.trimStart().replace(/^#+\s*/, '');
+        const m = getMember(s.owner);
+        items.push({
+          id: s.id,
+          date: date,
+          campaign: c,
+          typeLabel: 'Publicação',
+          canalLabel: s.canal || 'Geral',
+          pessoaId: s.owner || '',
+          pessoaNome: m ? m.name : '',
+          urgency: s.urgency || 'Normal',
+          parentName: c.name,
+          dateLabel: date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+          displayTitle: displayTitle,
+          _isCronoItem: true,
+        });
+      });
+    }
+
+    // --- Entrada principal da campanha / publicação / email / reunião ---
     const rawDate = c.templateType === 'reuniao_planejamento' ? (c.endDate || c.startDate || '') : (c.startDate || c.endDate || '');
     if (!rawDate) return;
     const date = new Date(rawDate);
@@ -7522,9 +7551,11 @@ function renderCalendar() {
     const items=entriesByDate[d]||[];
     const dots=items.slice(0,3).map(function(item){
       const tagColor = getCalendarTagColor(item.canalLabel);
+      const label = item._isCronoItem ? item.displayTitle : item.campaign.name;
+      const subLabel = item._isCronoItem ? (item.pessoaNome ? item.pessoaNome + ' · ' + item.canalLabel : item.canalLabel) : item.canalLabel;
       return '<div class="cal-mini-item">'+
-        '<div class="cal-mini-title">'+item.campaign.name+'</div>'+
-        '<div class="cal-mini-sub"><span class="cal-mini-dot" style="background:'+tagColor+'"></span><span>'+item.canalLabel+'</span></div>'+
+        '<div class="cal-mini-title">'+label+'</div>'+
+        '<div class="cal-mini-sub"><span class="cal-mini-dot" style="background:'+tagColor+'"></span><span>'+subLabel+'</span></div>'+
       '</div>';
     }).join('');
     html+='<div class="cal-cell'+(isToday?' today':'')+(isSelected?' selected':'')+'" onclick="calSelectDay('+d+','+year+','+month+')">'+
@@ -7547,10 +7578,13 @@ function calSelectDay(d,y,m) {
   const el=document.getElementById('cal-side-tasks');
   if (!items.length){el.innerHTML='<div style="color:var(--text-muted);font-size:13px">Nenhum item</div>';renderCalendar();return;}
   el.innerHTML=items.map(function(item){
+    const title = item._isCronoItem ? item.displayTitle : item.campaign.name;
+    const sub = item._isCronoItem ? item.campaign.name : (item.parentName || '');
+    const hora = item._isCronoItem ? item.dateLabel : '';
     return '<div class="cal-task-item" onclick="openCampaignDetail(\''+item.campaign.id+'\')">'+
-      '<div class="cal-task-name">'+item.campaign.name+'</div>'+
-      '<div class="cal-task-meta">'+(item.parentName || '')+'</div>'+
-      '<div class="cal-task-meta">'+item.typeLabel+' · '+item.canalLabel+' · '+(item.pessoaNome || 'Sem responsável')+' · '+item.dateLabel+'</div>'+
+      '<div class="cal-task-name">'+(hora?'<span style="font-family:var(--font-mono);font-size:10px;color:var(--c-campanha);margin-right:6px">'+hora+'</span>':'')+title+'</div>'+
+      (sub?'<div class="cal-task-meta">'+sub+'</div>':'')+
+      '<div class="cal-task-meta">'+item.typeLabel+' · '+item.canalLabel+' · '+(item.pessoaNome || 'Sem responsável')+'</div>'+
       '</div>';
   }).join('');
   renderCalendar();
